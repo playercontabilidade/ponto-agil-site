@@ -154,29 +154,84 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Form submission
+// Form submission com Formspree
 const leadForm = document.getElementById('leadForm');
 if (leadForm) {
-    leadForm.addEventListener('submit', (e) => {
+    leadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Simular envio
         const button = leadForm.querySelector('button[type="submit"]');
-        const originalText = button.textContent;
-        button.textContent = 'Enviando...';
+        const buttonText = button.querySelector('.btn-text');
+        const formMessage = document.getElementById('form-message');
+        const originalText = buttonText ? buttonText.textContent : button.textContent;
+        
+        // Feedback visual durante o envio
+        if (buttonText) {
+            buttonText.textContent = 'Enviando...';
+        } else {
+            button.textContent = 'Enviando...';
+        }
         button.disabled = true;
-
-        setTimeout(() => {
-            button.textContent = '✓ Enviado com sucesso!';
-            button.style.background = '#10b981';
-            leadForm.reset();
+        formMessage.style.display = 'none';
+        
+        // Coletar dados do formulário
+        const formData = new FormData(leadForm);
+        
+        try {
+            const response = await fetch(leadForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
             
-            setTimeout(() => {
-                button.textContent = originalText;
+            if (response.ok) {
+                // Sucesso
+                if (buttonText) {
+                    buttonText.textContent = '✓ Enviado com sucesso!';
+                } else {
+                    button.textContent = '✓ Enviado com sucesso!';
+                }
+                button.style.background = '#10b981';
+                button.disabled = true;
+                
+                formMessage.textContent = 'Obrigado! Entraremos em contato em breve.';
+                formMessage.style.display = 'block';
+                formMessage.className = 'form-message success';
+                
+                leadForm.reset();
+            } else {
+                // Erro
+                const data = await response.json();
+                if (data.errors) {
+                    formMessage.textContent = data.errors.map(error => error.message).join(', ');
+                } else {
+                    formMessage.textContent = 'Ops! Algo deu errado. Tente novamente.';
+                }
+                formMessage.style.display = 'block';
+                formMessage.className = 'form-message error';
+                
+                if (buttonText) {
+                    buttonText.textContent = originalText;
+                } else {
+                    button.textContent = originalText;
+                }
                 button.disabled = false;
-                button.style.background = '';
-            }, 3000);
-        }, 1500);
+            }
+        } catch (error) {
+            // Erro de rede
+            formMessage.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+            formMessage.style.display = 'block';
+            formMessage.className = 'form-message error';
+            
+            if (buttonText) {
+                buttonText.textContent = originalText;
+            } else {
+                button.textContent = originalText;
+            }
+            button.disabled = false;
+        }
     });
 }
 

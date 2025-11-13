@@ -261,58 +261,6 @@
         </div>
     </section>
 
-    <!-- Depoimento -->
-    <section class="testimonial">
-        <div class="container">
-            <div class="testimonial-card" data-scroll-reveal>
-                <div class="testimonial-header">
-                    <div class="testimonial-avatar">
-                        <img src="https://i.pravatar.cc/150?img=47" alt="Ana Souza" class="avatar-img">
-                    </div>
-                    <div class="testimonial-info">
-                        <div class="testimonial-name">Ana Souza</div>
-                        <div class="testimonial-role">Gerente de RH — Empresa Cliente</div>
-                        <div class="testimonial-stars">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="star-icon">
-                                <path
-                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="star-icon">
-                                <path
-                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="star-icon">
-                                <path
-                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="star-icon">
-                                <path
-                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                class="star-icon">
-                                <path
-                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <blockquote class="testimonial-text">
-                    "Antes passávamos horas fechando ponto manualmente. Agora é tudo automático. Nossos colaboradores
-                    adoram a facilidade e eu adoro não ter que ficar corrigindo erro de digitação nas planilhas."
-                </blockquote>
-                <div class="testimonial-footer">
-                    <span class="testimonial-verified">✓ Verificado</span>
-                    <span class="testimonial-date">Há 2 semanas</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Captura de Lead -->
     <section class="lead-capture" id="contato">
         <div class="container">
@@ -321,7 +269,7 @@
                 <p class="lead-subtitle">Preencha seus dados e agende uma demonstração personalizada. Sem compromisso,
                     sem pressão de venda.</p>
                 <div class="form-modal">
-                    <form class="lead-form" id="leadForm">
+                    <form class="lead-form" id="leadForm" action="https://formspree.io/f/mgvrvrbr" method="POST">
                         <div class="form-group">
                             <input type="text" id="name" name="name" class="form-input" placeholder="Seu nome" required>
                         </div>
@@ -333,6 +281,7 @@
                             <input type="text" id="company" name="company" class="form-input"
                                 placeholder="Nome da empresa" required>
                         </div>
+                        <div id="form-message" class="form-message" style="display: none;"></div>
                         <button type="submit" class="btn btn-primary btn-full btn-submit">
                             <span class="btn-text">Solicitar demonstração gratuita</span>
                             <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"

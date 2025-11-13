@@ -618,7 +618,7 @@ html {
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
     margin-top: 3rem;
     width: 100%;
@@ -1260,6 +1260,28 @@ html {
 
 .form-input:invalid:not(:placeholder-shown) {
     border-color: #ef4444;
+}
+
+.form-message {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.form-message.success {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.form-message.error {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .form-checkbox {
