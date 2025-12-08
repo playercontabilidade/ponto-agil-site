@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidade - Ponto Ágil</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .privacy-page {
+            padding-top: 100px;
+            padding-bottom: 80px;
+            background: var(--white);
+            min-height: 100vh;
+        }
+
+        .privacy-header {
+            text-align: center;
+            margin-bottom: 4rem;
+            padding-top: 2rem;
+        }
+
+        .privacy-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 1rem;
+        }
+
+        .privacy-subtitle {
+            font-size: 1.125rem;
+            color: var(--gray-600);
+        }
+
+        .privacy-content {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--gray-200);
+        }
+
+        .privacy-section {
+            margin-bottom: 3rem;
+        }
+
+        .privacy-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .privacy-section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+
+        .privacy-section-text {
+            color: var(--gray-700);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .privacy-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 1rem 0;
+        }
+
+        .privacy-list li {
+            padding: 0.75rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--gray-700);
+            line-height: 1.7;
+        }
+
+        .privacy-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .privacy-highlight {
+            background: rgba(113, 198, 58, 0.1);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--secondary-color);
+            margin: 1.5rem 0;
+        }
+
+        .privacy-highlight-text {
+            color: var(--gray-800);
+            font-weight: 500;
+            line-height: 1.7;
+        }
+
+        .privacy-contact {
+            background: var(--very-light-blue);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-top: 3rem;
+            text-align: center;
+        }
+
+        .privacy-contact-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .privacy-contact-text {
+            color: var(--gray-600);
+        }
+
+        .privacy-contact-link {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .privacy-contact-link:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .privacy-content {
+                padding: 2rem 1.5rem;
+            }
+
+            .privacy-page {
+                padding-top: 80px;
+                padding-bottom: 60px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .privacy-content {
+                padding: 1.5rem;
+                border-radius: 16px;
+            }
+
+            .privacy-section-title {
+                font-size: 1.25rem;
+            }
+
+            .privacy-title {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header Fixo -->
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <a href="index.html">
+                        <img src="images/logo.png" alt="Ponto Ágil" class="logo-img">
+                    </a>
+                </div>
+                <nav class="nav">
+                    <a href="index.html#inicio" class="nav-link">Início</a>
+                    <a href="index.html#recursos" class="nav-link">Recursos</a>
+                    <a href="index.html#contato" class="nav-link">Contato</a>
+                </nav>
+                <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo da Política de Privacidade -->
+    <section class="privacy-page">
+        <div class="container">
+            <div class="privacy-header">
+                <h1 class="privacy-title">Política de Privacidade</h1>
+                <p class="privacy-subtitle">Última atualização: Dezembro de 2025</p>
+            </div>
+
+            <div class="privacy-content">
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">1. Introdução</h2>
+                    <p class="privacy-section-text">
+                        A Ponto Ágil respeita sua privacidade e está comprometida em proteger
+                        seus dados pessoais. Esta Política de Privacidade explica como coletamos, usamos, armazenamos e
+                        protegemos suas informações quando você utiliza nosso aplicativo e serviços.
+                    </p>
+                    <p class="privacy-section-text">
+                        Ao utilizar o Ponto Ágil, você concorda com a coleta e uso de informações de acordo com esta política.
+                        Se você não concordar com esta política, por favor, não utilize nossos serviços.
+                    </p>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">2. Informações que Coletamos</h2>
+                    <p class="privacy-section-text">
+                        Coletamos diferentes tipos de informações para fornecer e melhorar nossos serviços:
+                    </p>
+                    <ul class="privacy-list">
+                        <li><strong>Dados de Cadastro:</strong> Nome completo, CPF, e-mail, telefone, cargo, departamento e
+                            outras informações profissionais necessárias para o registro de ponto.</li>
+                        <li><strong>Dados de Localização:</strong> Coordenadas de geolocalização (GPS) quando você marca ponto,
+                            para garantir a autenticidade e conformidade dos registros.</li>
+                        <li><strong>Fotos e Imagens:</strong> Fotografias capturadas durante o registro de ponto para validação
+                            e segurança dos registros.</li>
+                        <li><strong>Documentos:</strong> Arquivos que você anexa ao sistema, incluindo certificados, comprovantes
+                            e outros documentos relacionados ao controle de ponto e gestão de RH.</li>
+                        <li><strong>Dados de Uso:</strong> Informações sobre como você utiliza o aplicativo, incluindo horários
+                            de acesso, funcionalidades utilizadas e interações com o sistema.</li>
+                        <li><strong>Dados Técnicos:</strong> Informações do dispositivo, sistema operacional, endereço IP,
+                            tipo de navegador e identificadores únicos do dispositivo.</li>
+                    </ul>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">3. Permissões do Aplicativo</h2>
+                    <p class="privacy-section-text">
+                        Para funcionar adequadamente, o Ponto Ágil solicita as seguintes permissões:
+                    </p>
+                    <div class="privacy-highlight">
+                        <h3 style="color: var(--gray-900); margin-bottom: 0.75rem; font-size: 1.125rem;">Câmera</h3>
+                        <p class="privacy-highlight-text">
+                            Utilizamos acesso à câmera do dispositivo para capturar fotografias durante o registro de ponto. As
+                            fotos são utilizadas exclusivamente para validação e autenticação dos registros, garantindo maior
+                            segurança e conformidade com a legislação trabalhista.
+                        </p>
+                    </div>
+                    <div class="privacy-highlight">
+                        <h3 style="color: var(--gray-900); margin-bottom: 0.75rem; font-size: 1.125rem;">Geolocalização</h3>
+                        <p class="privacy-highlight-text">
+                            Acessamos sua localização GPS para registrar as coordenadas geográficas no momento da marcação de
+                            ponto. Esta informação é essencial para garantir a autenticidade dos registros e atender aos
+                            requisitos legais de controle de ponto eletrônico. Sua localização é armazenada de forma segura e
+                            utilizada apenas para fins de registro de ponto.
+                        </p>
+                    </div>
+                    <div class="privacy-highlight">
+                        <h3 style="color: var(--gray-900); margin-bottom: 0.75rem; font-size: 1.125rem;">Acesso a Documentos</h3>
+                        <p class="privacy-highlight-text">
+                            Solicitamos permissão para acessar documentos e arquivos do seu dispositivo para permitir o anexo de
+                            documentos ao sistema. Você pode anexar certificados, comprovantes, atestados e outros documentos
+                            relacionados ao controle de ponto e gestão de RH. Os documentos são armazenados de forma segura e
+                            criptografada.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">4. Como Utilizamos suas Informações</h2>
+                    <p class="privacy-section-text">
+                        Utilizamos as informações coletadas para os seguintes propósitos:
+                    </p>
+                    <ul class="privacy-list">
+                        <li>Registrar e gerenciar marcações de ponto eletrônico</li>
+                        <li>Gerar relatórios e documentos conforme a legislação trabalhista (Portaria 671)</li>
+                        <li>Validar a autenticidade dos registros através de geolocalização e fotos</li>
+                        <li>Armazenar e gerenciar documentos anexados pelos usuários</li>
+                        <li>Melhorar nossos serviços e funcionalidades</li>
+                        <li>Garantir a segurança e prevenir fraudes</li>
+                        <li>Cumprir obrigações legais e regulatórias</li>
+                        <li>Comunicar atualizações importantes sobre o serviço</li>
+                    </ul>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">5. Compartilhamento de Informações</h2>
+                    <p class="privacy-section-text">
+                        Não vendemos, alugamos ou compartilhamos suas informações pessoais com terceiros, exceto nas seguintes
+                        situações:
+                    </p>
+                    <ul class="privacy-list">
+                        <li><strong>Empresa Contratante:</strong> Seus dados de ponto são compartilhados com a empresa para
+                            a qual você presta serviços, conforme necessário para gestão de RH e controle de ponto.</li>
+                        <li><strong>Prestadores de Serviço:</strong> Podemos compartilhar informações com prestadores de serviço
+                            confiáveis que nos auxiliam na operação do sistema, sempre sob rigorosos acordos de confidencialidade.
+                        </li>
+                        <li><strong>Obrigações Legais:</strong> Podemos divulgar informações quando exigido por lei, ordem
+                            judicial ou autoridades governamentais competentes.</li>
+                        <li><strong>Com seu Consentimento:</strong> Em outras situações, apenas com seu consentimento explícito.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">6. Segurança dos Dados</h2>
+                    <p class="privacy-section-text">
+                        Implementamos medidas de segurança técnicas e organizacionais de nível bancário para proteger suas
+                        informações:
+                    </p>
+                    <ul class="privacy-list">
+                        <li>Criptografia de dados em trânsito e em repouso</li>
+                        <li>Assinatura digital ICP-Brasil para documentos</li>
+                        <li>Controles de acesso rigorosos</li>
+                        <li>Monitoramento contínuo de segurança</li>
+                        <li>Backups regulares e sistemas de recuperação</li>
+                        <li>Conformidade com a LGPD (Lei Geral de Proteção de Dados)</li>
+                    </ul>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">7. Retenção de Dados</h2>
+                    <p class="privacy-section-text">
+                        Mantemos suas informações pessoais pelo tempo necessário para cumprir os propósitos descritos nesta
+                        política, ou conforme exigido por lei. Dados de registro de ponto são mantidos conforme a legislação
+                        trabalhista vigente, que exige a conservação de registros por período mínimo de 5 anos.
+                    </p>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">8. Seus Direitos (LGPD)</h2>
+                    <p class="privacy-section-text">
+                        De acordo com a Lei Geral de Proteção de Dados (LGPD), você possui os seguintes direitos:
+                    </p>
+                    <ul class="privacy-list">
+                        <li><strong>Acesso:</strong> Solicitar acesso aos seus dados pessoais</li>
+                        <li><strong>Correção:</strong> Solicitar correção de dados incompletos ou desatualizados</li>
+                        <li><strong>Exclusão:</strong> Solicitar a exclusão de dados desnecessários ou excessivos</li>
+                        <li><strong>Portabilidade:</strong> Solicitar a portabilidade dos seus dados</li>
+                        <li><strong>Revogação:</strong> Revogar seu consentimento a qualquer momento</li>
+                        <li><strong>Oposição:</strong> Opor-se ao tratamento de dados em certas circunstâncias</li>
+                    </ul>
+                    <p class="privacy-section-text">
+                        Para exercer seus direitos, entre em contato conosco através dos canais indicados nesta política.
+                    </p>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">9. Cookies e Tecnologias Similares</h2>
+                    <p class="privacy-section-text">
+                        Utilizamos cookies e tecnologias similares para melhorar sua experiência, analisar o uso do aplicativo e
+                        personalizar conteúdo. Você pode gerenciar suas preferências de cookies através das configurações do seu
+                        dispositivo ou navegador.
+                    </p>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">10. Alterações nesta Política</h2>
+                    <p class="privacy-section-text">
+                        Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre alterações
+                        significativas através do aplicativo ou por e-mail. A data da última atualização está indicada no topo
+                        desta página.
+                    </p>
+                </div>
+
+                <div class="privacy-section">
+                    <h2 class="privacy-section-title">11. Menores de Idade</h2>
+                    <p class="privacy-section-text">
+                        Nossos serviços são destinados a empresas e profissionais. Não coletamos intencionalmente dados de
+                        menores de 18 anos. Se tomarmos conhecimento de que coletamos dados de um menor sem o consentimento
+                        adequado, tomaremos medidas para excluir essas informações.
+                    </p>
+                </div>
+
+                <div class="privacy-contact">
+                    <h3 class="privacy-contact-title">Dúvidas ou Solicitações?</h3>
+                    <p class="privacy-contact-text">
+                        Se você tiver dúvidas sobre esta Política de Privacidade ou desejar exercer seus direitos, entre em
+                        contato conosco:
+                    </p>
+                    <p class="privacy-contact-text" style="margin-top: 1rem;">
+                        <strong>E-mail:</strong> <a href="mailto:privacidade@pontoagil.com.br" class="privacy-contact-link">privacidade@pontoagil.com.br</a>
+                    </p>
+                    <p class="privacy-contact-text">
+                        <strong>Ou através do formulário de contato em nosso site:</strong> <a href="index.html#contato" class="privacy-contact-link">página de contato</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="logo">
+                        <a href="index.html">
+                            <img src="images/logo.png" alt="Ponto Ágil" class="logo-img">
+                        </a>
+                    </div>
+                    <p class="footer-description">Automatize seu controle de ponto e ganhe tempo para o que realmente
+                        importa.</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Links</h4>
+                    <a href="privacidade.html" class="footer-link">Política de Privacidade</a>
+                    <a href="#" class="footer-link">Termos de Uso</a>
+                    <a href="#" class="footer-link">Sobre Nós</a>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Redes Sociais</h4>
+                    <div class="social-links">
+                        <a href="#" class="social-link" aria-label="LinkedIn">LinkedIn</a>
+                        <a href="#" class="social-link" aria-label="Facebook">Facebook</a>
+                        <a href="#" class="social-link" aria-label="Instagram">Instagram</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Ponto Ágil. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
+
