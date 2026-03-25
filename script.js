@@ -362,7 +362,7 @@ function initScrollReveal() {
         rootMargin: '0px 0px -50px 0px'
     });
     
-    const cards = document.querySelectorAll('.feature-card[data-scroll-reveal], .benefit-item[data-scroll-reveal]');
+    const cards = document.querySelectorAll('.feature-card[data-scroll-reveal], .benefit-item[data-scroll-reveal], .plan-card[data-scroll-reveal]');
     cards.forEach(card => cardObserver.observe(card));
 }
 
@@ -429,7 +429,7 @@ function initHeroSlider() {
 
 // Adicionar cursor smooth para melhor UX
 document.addEventListener('mousemove', (e) => {
-    const cards = document.querySelectorAll('.feature-card, .benefit-item');
+    const cards = document.querySelectorAll('.feature-card, .benefit-item, .plan-card');
     cards.forEach(card => {
         const rect = card.getBoundingClientRect();
         const x = e.clientX - rect.left;
