@@ -973,11 +973,7 @@ html {
     color: var(--gray-900);
 }
 
-.pricing-compare:has(#pricing-band-1:checked) label[for="pricing-band-1"],
-.pricing-compare:has(#pricing-band-2:checked) label[for="pricing-band-2"],
-.pricing-compare:has(#pricing-band-3:checked) label[for="pricing-band-3"],
-.pricing-compare:has(#pricing-band-4:checked) label[for="pricing-band-4"],
-.pricing-compare:has(#pricing-band-5:checked) label[for="pricing-band-5"] {
+.pricing-toggle-btn.active {
     background: var(--primary-blue);
     color: var(--white);
     border-color: var(--primary-blue);
@@ -993,11 +989,7 @@ html {
     display: none;
 }
 
-.pricing-compare:has(#pricing-band-1:checked) #pricing-panel-1,
-.pricing-compare:has(#pricing-band-2:checked) #pricing-panel-2,
-.pricing-compare:has(#pricing-band-3:checked) #pricing-panel-3,
-.pricing-compare:has(#pricing-band-4:checked) #pricing-panel-4,
-.pricing-compare:has(#pricing-band-5:checked) #pricing-panel-5 {
+.pricing-panel.active {
     display: grid;
 }
 

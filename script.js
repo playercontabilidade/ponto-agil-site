@@ -1,6 +1,7 @@
 // Menu Toggle Mobile
 const menuToggle = document.getElementById('menuToggle');
 const nav = document.querySelector('.nav');
+const baseUrl = 'http://localhost:8080';
 
 if (menuToggle) {
     menuToggle.addEventListener('click', () => {
@@ -14,6 +15,133 @@ if (menuToggle) {
             nav.classList.remove('active');
         });
     });
+}
+
+function formatCurrencyBRL(value) {
+    return Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function sanitizeBandName(name) {
+    return String(name || '').trim().toLowerCase();
+}
+
+function getPlanWeight(name) {
+    const normalized = String(name || '').toLowerCase();
+    if (normalized.includes('essencial')) return 1;
+    if (normalized.includes('profissional')) return 2;
+    if (normalized.includes('completo')) return 3;
+    return 99;
+}
+
+function createSummaryCard(plan, index, featuredIndex) {
+    const firstBand = Array.isArray(plan.faixas) && plan.faixas.length > 0 ? plan.faixas[0] : null;
+    const card = document.createElement('article');
+    card.className = `plan-card plan-card--summary${index === featuredIndex ? ' plan-card--featured' : ''}`;
+    card.setAttribute('data-scroll-reveal', '');
+    const badge = index === featuredIndex ? '<span class="plan-badge">Mais equilibrado</span>' : '';
+    const ctaClass = index === featuredIndex ? 'btn btn-primary' : 'btn btn-secondary-light';
+    const fromPrice = firstBand ? formatCurrencyBRL(firstBand.preco) : '--';
+    const footnote = firstBand ? `Faixa ${firstBand.nome}.` : 'Consulte valores com nossa equipe.';
+    card.innerHTML = `
+        ${badge}
+        <h3 class="plan-name">${plan.nome || ''}</h3>
+        <p class="plan-tagline">${plan.descricao || ''}</p>
+        <p class="plan-from">A partir de <strong>R$&nbsp;${fromPrice}</strong> <span class="plan-period">/mês</span></p>
+        <p class="plan-footnote">${footnote}</p>
+        <a href="#contato" class="${ctaClass}">Falar com a equipe</a>
+    `;
+    return card;
+}
+
+function createDetailCard(plan, faixaNome, faixaPreco, isFeatured) {
+    const card = document.createElement('article');
+    card.className = `plan-detail-card${isFeatured ? ' plan-detail-card--highlight' : ''}`;
+    const funcionalidades = Array.isArray(plan.funcionalidades) ? plan.funcionalidades : [];
+    const ctaClass = isFeatured ? 'plan-detail-cta plan-detail-cta--primary' : 'plan-detail-cta';
+    card.innerHTML = `
+        <h4 class="plan-detail-name">${plan.nome || ''}</h4>
+        <p class="plan-detail-audience">${faixaNome || ''}</p>
+        <p class="plan-detail-price">R$&nbsp;<span>${formatCurrencyBRL(faixaPreco)}</span><small>/mês</small></p>
+        <ul class="plan-detail-list">
+            ${funcionalidades.map((item) => `<li>${item.nome || ''}</li>`).join('')}
+        </ul>
+        <a href="#contato" class="${ctaClass}">Quero detalhes</a>
+    `;
+    return card;
+}
+
+async function initPricingPlans() {
+    const summaryGrid = document.getElementById('pricing-summary-grid');
+    const toggle = document.getElementById('pricing-toggle');
+    const panelWrap = document.getElementById('pricing-panel-wrap');
+    if (!summaryGrid || !toggle || !panelWrap) return;
+
+    try {
+        const response = await fetch(`${baseUrl}/plano/publico`);
+        if (!response.ok) return;
+        const plansPayload = await response.json();
+        if (!Array.isArray(plansPayload) || plansPayload.length === 0) return;
+
+        const plans = [...plansPayload].sort((a, b) => getPlanWeight(a.nome) - getPlanWeight(b.nome));
+        const featuredIndex = plans.findIndex((plan) => String(plan.nome || '').toLowerCase().includes('profissional'));
+        const effectiveFeaturedIndex = featuredIndex >= 0 ? featuredIndex : Math.min(1, plans.length - 1);
+
+        summaryGrid.innerHTML = '';
+        plans.forEach((plan, index) => {
+            summaryGrid.appendChild(createSummaryCard(plan, index, effectiveFeaturedIndex));
+        });
+
+        const bandMap = new Map();
+        plans.forEach((plan) => {
+            (Array.isArray(plan.faixas) ? plan.faixas : []).forEach((faixa) => {
+                const key = sanitizeBandName(faixa.nome);
+                if (!bandMap.has(key)) {
+                    bandMap.set(key, faixa.nome);
+                }
+            });
+        });
+
+        const bands = Array.from(bandMap.values());
+        if (bands.length === 0) return;
+
+        toggle.innerHTML = '';
+        panelWrap.innerHTML = '';
+
+        bands.forEach((bandName, bandIndex) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = `pricing-toggle-btn${bandIndex === 0 ? ' active' : ''}`;
+            button.textContent = bandName;
+            button.setAttribute('role', 'tab');
+            toggle.appendChild(button);
+
+            const panel = document.createElement('div');
+            panel.className = `pricing-panel pricing-panel-grid${bandIndex === 0 ? ' active' : ''}`;
+            panel.setAttribute('data-band', sanitizeBandName(bandName));
+
+            plans.forEach((plan, planIndex) => {
+                const faixa = (Array.isArray(plan.faixas) ? plan.faixas : []).find((item) => sanitizeBandName(item.nome) === sanitizeBandName(bandName));
+                if (faixa) {
+                    panel.appendChild(createDetailCard(plan, faixa.nome, faixa.preco, planIndex === effectiveFeaturedIndex));
+                }
+            });
+
+            panelWrap.appendChild(panel);
+
+            button.addEventListener('click', () => {
+                toggle.querySelectorAll('.pricing-toggle-btn').forEach((btn) => btn.classList.remove('active'));
+                panelWrap.querySelectorAll('.pricing-panel').forEach((item) => item.classList.remove('active'));
+                button.classList.add('active');
+                panel.classList.add('active');
+            });
+        });
+
+        if (document.body.classList.contains('loaded')) {
+            initScrollReveal();
+        }
+    } catch (_) {
+        return;
+    }
 }
 
 // Scroll suave para links
@@ -152,6 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
         leadContent.dataset.delay = '0';
         observer.observe(leadContent);
     }
+
+    initPricingPlans();
 });
 
 // Form submission com Formspree
