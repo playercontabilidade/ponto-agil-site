@@ -78,7 +78,7 @@
                         </p>
                         <div class="hero-bottom">
                             <div class="hero-buttons fade-in" data-scroll-reveal>
-                                <a href="#contato" class="btn btn-primary">Ver demonstração grátis</a>
+                                <a href="#planos" class="btn btn-primary">Ver planos</a>
                                 <a href="#recursos" class="btn btn-secondary">Ver como funciona</a>
                             </div>
                         </div>
@@ -281,52 +281,97 @@
                 <div class="pricing-toggle" id="pricing-toggle" role="tablist" aria-label="Faixa de colaboradores"></div>
                 <div class="pricing-panel-wrap" id="pricing-panel-wrap"></div>
             </div>
-            <p class="pricing-disclaimer">Valores meramente informativos e sujeitos a alteração.
-                Contratação e faturamento serão confirmados na proposta formal. Nenhuma compra é realizada por este
-                site.</p>
+            <p class="pricing-disclaimer">Valores meramente informativos e sujeitos a alteração. O pagamento da primeira
+                mensalidade é feito em ambiente seguro do provedor de pagamentos (checkout), após você preencher seus
+                dados no formulário (aberto ao clicar em Assinar ou em Contato).</p>
         </div>
     </section>
 
-    <!-- Captura de Lead -->
-    <section class="lead-capture" id="contato">
-        <div class="container">
-            <div class="lead-content">
-                <h2 class="lead-title">Veja o sistema funcionando na prática</h2>
-                <p class="lead-subtitle">Preencha seus dados e agende uma demonstração personalizada. Sem compromisso,
-                    sem pressão de venda.</p>
-                <div class="form-modal">
-                    <form class="lead-form" id="leadForm" action="https://formspree.io/f/mgvrvrbr" method="POST">
-                        <div class="form-group">
-                            <input type="text" id="name" name="name" class="form-input" placeholder="Seu nome" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" id="email" name="email" class="form-input"
-                                placeholder="Seu e-mail corporativo" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" id="company" name="company" class="form-input"
-                                placeholder="Nome da empresa" required>
-                        </div>
-                        <div id="form-message" class="form-message" style="display: none;"></div>
-                        <button type="submit" class="btn btn-primary btn-full btn-submit">
-                            <span class="btn-text">Solicitar demonstração gratuita</span>
-                            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </button>
-                    </form>
-                </div>
+    <!-- Contato / atalho para assinatura (formulário no modal) -->
+    <section class="contact-strip" id="contato">
+        <div class="container contact-strip__inner">
+            <div class="contact-strip__text">
+                <h2 class="contact-strip__title">Contato e assinatura</h2>
+                <p class="contact-strip__lead">Escolha um plano acima em <strong>Assinar</strong> ou abra o formulário
+                    aqui para informar os dados da empresa e seguir para o pagamento.</p>
             </div>
+            <button type="button" class="btn btn-primary contact-strip__btn" id="openLeadModalBtn">
+                Preencher dados e pagar
+            </button>
         </div>
     </section>
+
+    <!-- Modal: dados do lead + checkout -->
+    <div class="checkout-modal" id="checkoutModal" hidden aria-hidden="true">
+        <div class="checkout-modal__backdrop" id="checkoutModalBackdrop" tabindex="-1"></div>
+        <div class="checkout-modal__panel" role="dialog" aria-modal="true" aria-labelledby="checkoutModalTitle">
+            <button type="button" class="checkout-modal__close" id="checkoutModalClose" aria-label="Fechar formulário">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h2 class="checkout-modal__title" id="checkoutModalTitle">Assinatura Ponto Ágil</h2>
+            <p class="checkout-modal__subtitle">Seus dados são usados para gerar a cobrança e criar sua empresa após a
+                confirmação do pagamento.</p>
+            <p class="lead-selection-hint" id="lead-selection-hint">Nenhum plano selecionado. Feche este formulário e
+                clique em <strong>Assinar</strong> em um dos planos, ou escolha um plano antes de continuar.</p>
+            <div class="form-modal checkout-modal__form-card">
+                <form class="lead-form" id="leadForm" action="#" method="post">
+                    <input type="hidden" name="plano_id" id="field_plano_id" value="">
+                    <input type="hidden" name="faixa_id" id="field_faixa_id" value="">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="email">E-mail</label>
+                            <input type="email" id="email" name="email" class="form-input"
+                                placeholder="contato@empresa.com.br" required autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="razao_social">Razão social</label>
+                            <input type="text" id="razao_social" name="razao_social" class="form-input"
+                                placeholder="Nome legal da empresa" required maxlength="160" autocomplete="organization">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="cnpj">CNPJ</label>
+                            <input type="text" id="cnpj" name="cnpj" class="form-input" placeholder="00.000.000/0001-00"
+                                required maxlength="20" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cep">CEP</label>
+                            <input type="text" id="cep" name="cep" class="form-input" placeholder="00000-000" required
+                                maxlength="12" autocomplete="postal-code">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="cpf_proprietario">CPF do responsável legal</label>
+                            <input type="text" id="cpf_proprietario" name="cpf_proprietario" class="form-input"
+                                placeholder="000.000.000-00" required maxlength="14" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="telefone">Telefone (opcional)</label>
+                            <input type="tel" id="telefone" name="telefone" class="form-input"
+                                placeholder="(00) 00000-0000" maxlength="20" autocomplete="tel">
+                        </div>
+                    </div>
+                    <div id="form-message" class="form-message" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary btn-full btn-submit">
+                        <span class="btn-text">Ir para pagamento</span>
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Chamada Final -->
     <section class="cta">
         <div class="container">
             <div class="cta-content">
                 <h2 class="cta-title">Pronto para transformar seu controle de ponto?</h2>
-                <a href="#contato" class="btn btn-primary btn-large">Solicitar demonstração gratuita</a>
+                <a href="#planos" class="btn btn-primary btn-large">Ver planos e assinar</a>
             </div>
         </div>
     </section>

@@ -1,7 +1,12 @@
 // Menu Toggle Mobile
 const menuToggle = document.getElementById('menuToggle');
 const nav = document.querySelector('.nav');
-const baseUrl = 'http://localhost:8080';
+const baseUrl = typeof window.PONTO_AGIL_API === 'string' && window.PONTO_AGIL_API
+    ? window.PONTO_AGIL_API.replace(/\/$/, '')
+    : 'http://localhost:8080';
+
+/** Planos retornados por GET /plano/publico (para rótulo do plano selecionado). */
+let pricingPlansCache = [];
 
 if (menuToggle) {
     menuToggle.addEventListener('click', () => {
@@ -42,22 +47,30 @@ function createSummaryCard(plan, index, featuredIndex) {
     const ctaClass = index === featuredIndex ? 'btn btn-primary' : 'btn btn-secondary-light';
     const fromPrice = firstBand ? formatCurrencyBRL(firstBand.preco) : '--';
     const footnote = firstBand ? `Faixa ${firstBand.nome}.` : 'Consulte valores com nossa equipe.';
+    const ctaHtml = firstBand && plan.id != null && firstBand.id != null
+        ? `<button type="button" class="${ctaClass} plan-checkout-btn" data-plan-id="${plan.id}" data-faixa-id="${firstBand.id}" aria-label="Assinar ${plan.nome || 'plano'}">Assinar este plano</button>`
+        : `<a href="#planos" class="${ctaClass}">Ver planos</a>`;
     card.innerHTML = `
         ${badge}
         <h3 class="plan-name">${plan.nome || ''}</h3>
         <p class="plan-tagline">${plan.descricao || ''}</p>
         <p class="plan-from">A partir de <strong>R$&nbsp;${fromPrice}</strong> <span class="plan-period">/mês</span></p>
         <p class="plan-footnote">${footnote}</p>
-        <a href="#contato" class="${ctaClass}">Falar com a equipe</a>
+        ${ctaHtml}
     `;
     return card;
 }
 
-function createDetailCard(plan, faixaNome, faixaPreco, isFeatured) {
+function createDetailCard(plan, faixa, isFeatured) {
     const card = document.createElement('article');
     card.className = `plan-detail-card${isFeatured ? ' plan-detail-card--highlight' : ''}`;
     const funcionalidades = Array.isArray(plan.funcionalidades) ? plan.funcionalidades : [];
     const ctaClass = isFeatured ? 'plan-detail-cta plan-detail-cta--primary' : 'plan-detail-cta';
+    const faixaNome = faixa ? faixa.nome : '';
+    const faixaPreco = faixa ? faixa.preco : 0;
+    const ctaHtml = plan.id != null && faixa && faixa.id != null
+        ? `<button type="button" class="${ctaClass} plan-checkout-btn" data-plan-id="${plan.id}" data-faixa-id="${faixa.id}" aria-label="Assinar ${plan.nome || ''} ${faixaNome}">Assinar</button>`
+        : `<button type="button" class="${ctaClass} open-lead-modal-btn">Falar com a equipe</button>`;
     card.innerHTML = `
         <h4 class="plan-detail-name">${plan.nome || ''}</h4>
         <p class="plan-detail-audience">${faixaNome || ''}</p>
@@ -65,9 +78,127 @@ function createDetailCard(plan, faixaNome, faixaPreco, isFeatured) {
         <ul class="plan-detail-list">
             ${funcionalidades.map((item) => `<li>${item.nome || ''}</li>`).join('')}
         </ul>
-        <a href="#contato" class="${ctaClass}">Quero detalhes</a>
+        ${ctaHtml}
     `;
     return card;
+}
+
+let checkoutModalLastFocus = null;
+
+function openCheckoutModal() {
+    const modal = document.getElementById('checkoutModal');
+    if (!modal) return;
+    checkoutModalLastFocus = document.activeElement;
+    modal.removeAttribute('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    const email = document.getElementById('email');
+    window.requestAnimationFrame(() => {
+        if (email) email.focus();
+    });
+}
+
+function closeCheckoutModal() {
+    const modal = document.getElementById('checkoutModal');
+    if (!modal) return;
+    modal.setAttribute('hidden', '');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (checkoutModalLastFocus && typeof checkoutModalLastFocus.focus === 'function') {
+        checkoutModalLastFocus.focus({ preventScroll: true });
+    }
+    checkoutModalLastFocus = null;
+}
+
+function openLeadModalFromStrip() {
+    const plano = document.getElementById('field_plano_id')?.value?.trim();
+    const faixa = document.getElementById('field_faixa_id')?.value?.trim();
+    const hint = document.getElementById('lead-selection-hint');
+    if ((!plano || !faixa) && hint) {
+        hint.classList.remove('is-ok');
+        hint.innerHTML = 'Nenhum plano selecionado. Feche e clique em <strong>Assinar</strong> em um dos planos antes de ir ao pagamento.';
+    }
+    openCheckoutModal();
+}
+
+function findCheckoutLabel(planId, faixaId) {
+    const pid = Number(planId);
+    const fid = Number(faixaId);
+    const plan = pricingPlansCache.find((p) => Number(p.id) === pid);
+    const faixa = plan && Array.isArray(plan.faixas)
+        ? plan.faixas.find((f) => Number(f.id) === fid)
+        : null;
+    if (plan && faixa) {
+        return `${plan.nome} — ${faixa.nome} (R$ ${formatCurrencyBRL(faixa.preco)}/mês)`;
+    }
+    return 'Plano selecionado';
+}
+
+function setCheckoutSelection(planId, faixaId) {
+    const planoInput = document.getElementById('field_plano_id');
+    const faixaInput = document.getElementById('field_faixa_id');
+    const hint = document.getElementById('lead-selection-hint');
+    if (planoInput) planoInput.value = String(planId);
+    if (faixaInput) faixaInput.value = String(faixaId);
+    if (hint) {
+        hint.textContent = `Selecionado: ${findCheckoutLabel(planId, faixaId)}. Preencha os dados e prossiga ao pagamento.`;
+        hint.classList.add('is-ok');
+    }
+    openCheckoutModal();
+}
+
+document.addEventListener('click', (e) => {
+    const planBtn = e.target.closest('.plan-checkout-btn');
+    if (planBtn && !planBtn.disabled) {
+        const planId = planBtn.getAttribute('data-plan-id');
+        const faixaId = planBtn.getAttribute('data-faixa-id');
+        if (planId != null && faixaId != null && planId !== '' && faixaId !== '') {
+            setCheckoutSelection(planId, faixaId);
+        }
+        return;
+    }
+    if (e.target.closest('.open-lead-modal-btn')) {
+        openLeadModalFromStrip();
+    }
+});
+
+function bindCheckoutModalUi() {
+    document.getElementById('checkoutModalClose')?.addEventListener('click', closeCheckoutModal);
+    document.getElementById('checkoutModalBackdrop')?.addEventListener('click', closeCheckoutModal);
+    document.getElementById('openLeadModalBtn')?.addEventListener('click', openLeadModalFromStrip);
+}
+
+bindCheckoutModalUi();
+
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const modal = document.getElementById('checkoutModal');
+    if (!modal || modal.hasAttribute('hidden')) return;
+    closeCheckoutModal();
+});
+
+async function parseApiError(response) {
+    const text = await response.text();
+    try {
+        const data = JSON.parse(text);
+        if (typeof data.mensagem === 'string' && data.mensagem) return data.mensagem;
+        if (typeof data.message === 'string' && data.message) return data.message;
+        if (Array.isArray(data.errors)) {
+            return data.errors
+                .map((err) => (typeof err === 'string' ? err : err.defaultMessage || err.message || ''))
+                .filter(Boolean)
+                .join(' ') || text;
+        }
+        if (data.errors && typeof data.errors === 'object' && !Array.isArray(data.errors)) {
+            return Object.entries(data.errors)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join('; ');
+        }
+        if (typeof data.error === 'string') return data.error;
+    } catch (_) {
+        /* texto não JSON */
+    }
+    return text || `Erro HTTP ${response.status}`;
 }
 
 async function initPricingPlans() {
@@ -83,6 +214,7 @@ async function initPricingPlans() {
         if (!Array.isArray(plansPayload) || plansPayload.length === 0) return;
 
         const plans = [...plansPayload].sort((a, b) => getPlanWeight(a.nome) - getPlanWeight(b.nome));
+        pricingPlansCache = plans;
         const featuredIndex = plans.findIndex((plan) => String(plan.nome || '').toLowerCase().includes('profissional'));
         const effectiveFeaturedIndex = featuredIndex >= 0 ? featuredIndex : Math.min(1, plans.length - 1);
 
@@ -122,7 +254,7 @@ async function initPricingPlans() {
             plans.forEach((plan, planIndex) => {
                 const faixa = (Array.isArray(plan.faixas) ? plan.faixas : []).find((item) => sanitizeBandName(item.nome) === sanitizeBandName(bandName));
                 if (faixa) {
-                    panel.appendChild(createDetailCard(plan, faixa.nome, faixa.preco, planIndex === effectiveFeaturedIndex));
+                    panel.appendChild(createDetailCard(plan, faixa, planIndex === effectiveFeaturedIndex));
                 }
             });
 
@@ -274,93 +406,127 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(testimonialCard);
     }
 
-    // Animar lead capture
-    const leadContent = document.querySelector('.lead-content');
-    if (leadContent) {
-        leadContent.dataset.delay = '0';
-        observer.observe(leadContent);
+    const contactStripInner = document.querySelector('.contact-strip__inner');
+    if (contactStripInner) {
+        contactStripInner.dataset.delay = '0';
+        observer.observe(contactStripInner);
     }
 
     initPricingPlans();
 });
 
-// Form submission com Formspree
+// Lead + cobrança (API) → checkout Asaas
 const leadForm = document.getElementById('leadForm');
 if (leadForm) {
     leadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const button = leadForm.querySelector('button[type="submit"]');
-        const buttonText = button.querySelector('.btn-text');
+        const buttonText = button ? button.querySelector('.btn-text') : null;
         const formMessage = document.getElementById('form-message');
-        const originalText = buttonText ? buttonText.textContent : button.textContent;
-        
-        // Feedback visual durante o envio
-        if (buttonText) {
-            buttonText.textContent = 'Enviando...';
-        } else {
-            button.textContent = 'Enviando...';
-        }
-        button.disabled = true;
-        formMessage.style.display = 'none';
-        
-        // Coletar dados do formulário
-        const formData = new FormData(leadForm);
-        
-        try {
-            const response = await fetch(leadForm.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                // Sucesso
-                if (buttonText) {
-                    buttonText.textContent = '✓ Enviado com sucesso!';
-                } else {
-                    button.textContent = '✓ Enviado com sucesso!';
-                }
-                button.style.background = '#10b981';
-                button.disabled = true;
-                
-                formMessage.textContent = 'Obrigado! Entraremos em contato em breve.';
-                formMessage.style.display = 'block';
-                formMessage.className = 'form-message success';
-                
-                leadForm.reset();
-            } else {
-                // Erro
-                const data = await response.json();
-                if (data.errors) {
-                    formMessage.textContent = data.errors.map(error => error.message).join(', ');
-                } else {
-                    formMessage.textContent = 'Ops! Algo deu errado. Tente novamente.';
-                }
+        const originalText = buttonText ? buttonText.textContent : button ? button.textContent : '';
+
+        const planoIdVal = document.getElementById('field_plano_id')?.value?.trim();
+        const faixaIdVal = document.getElementById('field_faixa_id')?.value?.trim();
+
+        if (!planoIdVal || !faixaIdVal) {
+            if (formMessage) {
+                formMessage.textContent = 'Selecione um plano nos cards acima (botão Assinar) antes de continuar.';
                 formMessage.style.display = 'block';
                 formMessage.className = 'form-message error';
-                
-                if (buttonText) {
-                    buttonText.textContent = originalText;
-                } else {
-                    button.textContent = originalText;
-                }
-                button.disabled = false;
             }
-        } catch (error) {
-            // Erro de rede
-            formMessage.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
-            formMessage.style.display = 'block';
-            formMessage.className = 'form-message error';
-            
-            if (buttonText) {
-                buttonText.textContent = originalText;
-            } else {
-                button.textContent = originalText;
+            const hint = document.getElementById('lead-selection-hint');
+            if (hint) {
+                hint.classList.remove('is-ok');
+                hint.innerHTML = 'Nenhum plano selecionado. Feche e clique em <strong>Assinar</strong> em um dos planos.';
             }
-            button.disabled = false;
+            openCheckoutModal();
+            return;
+        }
+
+        const planoId = Number(planoIdVal);
+        const faixaId = Number(faixaIdVal);
+        if (!Number.isFinite(planoId) || !Number.isFinite(faixaId)) {
+            if (formMessage) {
+                formMessage.textContent = 'Seleção de plano inválida. Escolha novamente em Planos.';
+                formMessage.style.display = 'block';
+                formMessage.className = 'form-message error';
+            }
+            return;
+        }
+
+        if (buttonText) buttonText.textContent = 'Processando...';
+        else if (button) button.textContent = 'Processando...';
+        if (button) button.disabled = true;
+        if (formMessage) formMessage.style.display = 'none';
+
+        const leadBody = {
+            email: document.getElementById('email')?.value?.trim() || '',
+            razao_social: document.getElementById('razao_social')?.value?.trim() || '',
+            cnpj: document.getElementById('cnpj')?.value?.trim() || '',
+            cep: document.getElementById('cep')?.value?.trim() || '',
+            cpf_proprietario: document.getElementById('cpf_proprietario')?.value?.trim() || ''
+        };
+        const telefone = document.getElementById('telefone')?.value?.trim();
+        if (telefone) leadBody.telefone = telefone;
+
+        try {
+            const leadRes = await fetch(`${baseUrl}/leads`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(leadBody)
+            });
+
+            if (!leadRes.ok) {
+                throw new Error(await parseApiError(leadRes));
+            }
+
+            const leadData = await leadRes.json();
+            const leadId = leadData.lead_id ?? leadData.leadId;
+            if (!leadId) {
+                throw new Error('Resposta da API sem identificador do lead.');
+            }
+
+            if (buttonText) buttonText.textContent = 'Abrindo pagamento...';
+            else if (button) button.textContent = 'Abrindo pagamento...';
+
+            const cobRes = await fetch(`${baseUrl}/cobrancas`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lead_id: leadId,
+                    plano_id: planoId,
+                    faixa_id: faixaId
+                })
+            });
+
+            if (!cobRes.ok) {
+                throw new Error(await parseApiError(cobRes));
+            }
+
+            const cobData = await cobRes.json();
+            const checkoutUrl = cobData.checkout_url ?? cobData.checkoutUrl;
+            if (!checkoutUrl) {
+                throw new Error('Não foi possível obter o link de pagamento. Tente novamente ou contate o suporte.');
+            }
+
+            window.location.href = checkoutUrl;
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Erro inesperado. Tente novamente.';
+            if (formMessage) {
+                formMessage.textContent = msg;
+                formMessage.style.display = 'block';
+                formMessage.className = 'form-message error';
+            }
+            if (buttonText) buttonText.textContent = originalText;
+            else if (button) button.textContent = originalText;
+            if (button) button.disabled = false;
         }
     });
 }
