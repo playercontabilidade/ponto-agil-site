@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Revisar denúncia - Ponto Ágil</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="card">
+      <span class="badge">Revisão</span>
+      <h1>Revise sua denúncia</h1>
+      <p>Confira os dados abaixo antes do envio.</p>
+
+      <div class="grid" id="reviewGrid" hidden></div>
+
+      <div class="actions" id="actions" hidden>
+        <button type="button" class="btn btn-secondary" id="btnVoltar">
+          Voltar e editar
+        </button>
+        <button type="button" class="btn btn-primary" id="btnConfirmar">
+          Confirmar e enviar
+        </button>
+      </div>
+
+      <p class="error" id="envioError" role="alert" hidden></p>
+
+      <div class="error" id="draftError">
+        Nenhum formulário encontrado para revisar.
+      </div>
+    </main>
+
+    <script src="./script.js" defer></script>
+  </body>
+</html>
