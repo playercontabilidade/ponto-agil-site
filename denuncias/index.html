@@ -7,42 +7,43 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="card">
-      <span class="badge">Canal de denúncias</span>
-      <h1>Registrar denúncia</h1>
-      <div class="top-actions" role="group" aria-label="Ações">
-        <button
-          class="btn btn-secondary"
-          type="button"
-          id="btnNovaDenuncia"
-          disabled
-        >
-          Nova denúncia
-        </button>
-        <button
-          class="btn btn-secondary"
-          type="button"
-          id="btnConsultarProtocolo"
-        >
-          Consultar protocolo
-        </button>
-      </div>
-      <p id="message">
-        Preencha o formulário abaixo. Você poderá revisar antes do envio.
-      </p>
+    <div class="denuncias-shell">
+      <main class="card">
+        <span class="badge">Canal de denúncias</span>
+        <h1>Registrar denúncia</h1>
+        <div class="top-actions" role="group" aria-label="Ações">
+          <button
+            class="btn btn-secondary"
+            type="button"
+            id="btnNovaDenuncia"
+            disabled
+          >
+            Nova denúncia
+          </button>
+          <button
+            class="btn btn-secondary"
+            type="button"
+            id="btnConsultarProtocolo"
+          >
+            Consultar protocolo
+          </button>
+        </div>
+        <p id="message">
+          Preencha o formulário abaixo. Você poderá revisar antes do envio.
+        </p>
 
-      <p class="info-note" role="note">
-        Este canal de denúncias respeita a
-        <a
-          href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          LGPD (Lei Geral de Proteção de Dados) </a
-        >, com tratamento responsável e sigiloso das informações registradas.
-      </p>
+        <p class="info-note" role="note">
+          Este canal de denúncias respeita a
+          <a
+            href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            LGPD (Lei Geral de Proteção de Dados) </a
+          >, com tratamento responsável e sigiloso das informações registradas.
+        </p>
 
-      <!-- <section class="token-box" aria-live="polite">
+        <!-- <section class="token-box" aria-live="polite">
             <span class="token-label">Token recebido</span>
             <p class="token-value" id="tokenValue">Nenhum token informado.</p>
         </section>
@@ -52,107 +53,289 @@
             <p class="token-value" id="cpfValue">Não informado.</p>
         </section> -->
 
-      <section id="protocoloBox" class="is-hidden" aria-live="polite">
-        <form id="protocoloForm" novalidate>
+        <section id="protocoloBox" class="is-hidden" aria-live="polite">
+          <form id="protocoloForm" novalidate>
+            <div class="field">
+              <label class="label" for="protocoloNumero"
+                >Número do protocolo</label
+              >
+              <input
+                class="control"
+                type="text"
+                id="protocoloNumero"
+                name="protocoloNumero"
+                autocomplete="off"
+                placeholder="Ex.: 0107d15b-39c2-44de-9ae5-1de9fcb587a5"
+                required
+              />
+              <span class="help"
+                >Insira o número do protocolo para consultar.</span
+              >
+            </div>
+
+            <button class="btn" type="submit" id="btnConsultar">
+              Consultar
+            </button>
+          </form>
+
+          <div
+            id="protocoloResult"
+            class="protocolo-result is-hidden"
+            aria-live="polite"
+          >
+            <p
+              id="protocoloResultMessage"
+              class="protocolo-result-msg is-hidden"
+            ></p>
+
+            <div id="protocoloDetalhe" class="protocolo-detalhe is-hidden">
+              <div class="protocolo-detalhe-top">
+                <span
+                  id="protocoloStatusBadge"
+                  class="protocolo-status-badge"
+                ></span>
+              </div>
+              <dl class="protocolo-dl">
+                <div class="protocolo-dl-row">
+                  <dt>Protocolo</dt>
+                  <dd id="protocoloValor"></dd>
+                </div>
+                <div class="protocolo-dl-row">
+                  <dt>Denúncia anônima</dt>
+                  <dd id="protocoloAnonima"></dd>
+                </div>
+                <div class="protocolo-dl-row">
+                  <dt>Categoria</dt>
+                  <dd id="protocoloCategoria"></dd>
+                </div>
+                <div class="protocolo-dl-row">
+                  <dt>Departamento</dt>
+                  <dd id="protocoloDepartamento"></dd>
+                </div>
+                <div class="protocolo-dl-row">
+                  <dt>Data do ocorrido</dt>
+                  <dd id="protocoloDataOcorrido"></dd>
+                </div>
+                <div class="protocolo-dl-row">
+                  <dt>Data de abertura</dt>
+                  <dd id="protocoloDataAbertura"></dd>
+                </div>
+                <div class="protocolo-dl-row protocolo-dl-full">
+                  <dt>Descrição</dt>
+                  <dd id="protocoloDescricao" class="protocolo-descricao"></dd>
+                </div>
+                <div class="protocolo-dl-row protocolo-dl-full">
+                  <dt>Anexos</dt>
+                  <dd>
+                    <div
+                      id="protocoloDenunciaAnexos"
+                      class="protocolo-denuncia-anexos"
+                      aria-live="polite"
+                    ></div>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </section>
+
+        <form id="denunciaForm" novalidate>
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="categoria">Categoria</label>
+              <select id="categoria" name="categoria" required>
+                <option value="" selected disabled>Selecione</option>
+              </select>
+              <span class="error" id="categoriaError"></span>
+            </div>
+
+            <div class="field">
+              <label class="label" for="departamento">Departamento</label>
+              <select id="departamento" name="departamento" required>
+                <option value="" selected disabled>Selecione</option>
+              </select>
+              <span class="error" id="departamentoError"></span>
+            </div>
+          </div>
+
           <div class="field">
-            <label class="label" for="protocoloNumero"
-              >Número do protocolo</label
+            <label class="label" for="dataAproximada"
+              >Data aproximada do ocorrido</label
             >
             <input
               class="control"
-              type="text"
-              id="protocoloNumero"
-              name="protocoloNumero"
-              autocomplete="off"
-              placeholder="Ex.: 0107d15b-39c2-44de-9ae5-1de9fcb587a5"
+              type="date"
+              id="dataAproximada"
+              name="dataAproximada"
               required
             />
-            <span class="help"
-              >Insira o número do protocolo para consultar.</span
+          </div>
+
+          <div class="field">
+            <label class="label" for="descricao">Descrição completa</label>
+            <textarea
+              id="descricao"
+              name="descricao"
+              minlength="3"
+              maxlength="5000"
+              required
+              placeholder="Descreva o que aconteceu, quem estava envolvido, local, datas, etc."
+            ></textarea>
+            <div class="meta-row">
+              <span class="help" id="descricaoHint">
+                Quanto mais informações você fornecer, mais eficaz será a
+                investigação.
+              </span>
+              <span class="help" id="descricaoCount">0/5000</span>
+            </div>
+            <span class="error" id="descricaoError"
+              >A descrição deve ter entre 3 e 5000 caracteres.</span
             >
           </div>
 
-          <button class="btn" type="submit" id="btnConsultar">Consultar</button>
+          <div class="field">
+            <label class="label" for="anexos">Anexo de documentos</label>
+            <input
+              type="file"
+              id="anexos"
+              name="anexos"
+              class="is-hidden"
+              multiple
+            />
+            <button
+              type="button"
+              class="btn btn-secondary protocolo-novo-btn-anexos"
+              id="denunciaBtnAnexos"
+            >
+              Adicionar anexos
+            </button>
+            <span class="help">Máximo 5 arquivos, até 20 MB por arquivo.</span>
+            <div
+              id="anexosInfo"
+              class="protocolo-novo-anexos-info"
+              aria-live="polite"
+            ></div>
+            <span class="error" id="anexosError"
+              >Limite de anexos excedido ou arquivo acima de 20 MB.</span
+            >
+          </div>
+
+          <button class="btn" type="submit" id="btnRevisar">Enviar</button>
         </form>
 
-        <pre id="protocoloResult" class="json-box is-hidden"></pre>
-      </section>
-
-      <form id="denunciaForm" novalidate>
-        <div class="field-row">
-          <div class="field">
-            <label class="label" for="categoria">Categoria</label>
-            <select id="categoria" name="categoria" required>
-              <option value="" selected disabled>Selecione</option>
-            </select>
-            <span class="error" id="categoriaError"></span>
+        <section id="denunciaReview" class="is-hidden" aria-live="polite">
+          <h2 class="review-title">Revise sua denúncia</h2>
+          <p class="review-subtitle">Confira os dados abaixo antes do envio.</p>
+          <div class="review-grid" id="denunciaReviewGrid"></div>
+          <div class="review-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="denunciaReviewVoltar"
+            >
+              Voltar e editar
+            </button>
+            <button type="button" class="btn" id="denunciaReviewConfirmar">
+              Confirmar e enviar
+            </button>
           </div>
+          <p
+            class="error"
+            id="denunciaReviewErro"
+            role="alert"
+            aria-live="assertive"
+          ></p>
+        </section>
+      </main>
 
-          <div class="field">
-            <label class="label" for="departamento">Departamento</label>
-            <select id="departamento" name="departamento" required>
-              <option value="" selected disabled>Selecione</option>
-            </select>
-            <span class="error" id="departamentoError"></span>
+      <aside
+        id="protocoloChatAside"
+        class="protocolo-chat-aside is-hidden"
+        aria-labelledby="protocoloAcoTitulo"
+      >
+        <div class="protocolo-chat-aside-card">
+          <h3 id="protocoloAcoTitulo" class="protocolo-acompanhamentos-title">
+            Acompanhamentos
+          </h3>
+          <div
+            id="protocoloAcompanhamentosList"
+            class="protocolo-chat-root"
+          ></div>
+
+          <div class="protocolo-novo-acompanhamento">
+            <label
+              class="protocolo-novo-label"
+              for="protocoloNovoAcompanhamentoTexto"
+              >Nova Mensagem</label
+            >
+            <textarea
+              id="protocoloNovoAcompanhamentoTexto"
+              class="control protocolo-novo-textarea"
+              rows="4"
+              maxlength="2000"
+              placeholder="Digite sua mensagem…"
+              autocomplete="off"
+            ></textarea>
+            <input
+              type="file"
+              id="protocoloNovoAcompanhamentoAnexos"
+              class="is-hidden"
+              multiple
+            />
+            <button
+              type="button"
+              class="btn btn-secondary protocolo-novo-btn-anexos"
+              id="protocoloNovoAcompanhamentoBtnAnexos"
+            >
+              Adicionar anexos
+            </button>
+            <div
+              id="protocoloNovoAcompanhamentoAnexosInfo"
+              class="protocolo-novo-anexos-info"
+              aria-live="polite"
+            ></div>
+            <span
+              class="error"
+              id="protocoloNovoAcompanhamentoErro"
+              role="alert"
+              aria-live="assertive"
+            ></span>
+            <button
+              type="button"
+              class="btn protocolo-novo-btn-enviar"
+              id="protocoloNovoAcompanhamentoEnviar"
+            >
+              Enviar mensagem
+            </button>
           </div>
         </div>
+      </aside>
+    </div>
 
-        <div class="field">
-          <label class="label" for="dataAproximada"
-            >Data aproximada do ocorrido</label
+    <div
+      id="anexoModal"
+      class="modal is-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="anexoModalTitulo"
+    >
+      <div class="modal__backdrop" data-modal-close="1"></div>
+      <div class="modal__panel" role="document">
+        <div class="modal__header">
+          <h3 id="anexoModalTitulo" class="modal__title">Anexo</h3>
+          <button
+            type="button"
+            class="modal__close"
+            aria-label="Fechar"
+            data-modal-close="1"
           >
-          <input
-            class="control"
-            type="date"
-            id="dataAproximada"
-            name="dataAproximada"
-            required
-          />
+            Fechar
+          </button>
         </div>
-
-        <div class="field">
-          <label class="label" for="descricao">Descrição completa</label>
-          <textarea
-            id="descricao"
-            name="descricao"
-            minlength="3"
-            maxlength="5000"
-            required
-            placeholder="Descreva o que aconteceu, quem estava envolvido, local, datas, etc."
-          ></textarea>
-          <div class="meta-row">
-            <span class="help" id="descricaoHint">
-              Quanto mais informações você fornecer, mais eficaz será a
-              investigação.
-            </span>
-            <span class="help" id="descricaoCount">0/5000</span>
-          </div>
-          <span class="error" id="descricaoError"
-            >A descrição deve ter entre 3 e 5000 caracteres.</span
-          >
-        </div>
-
-        <div class="field">
-          <label class="label" for="anexos">Anexo de documentos</label>
-          <input
-            class="control"
-            type="file"
-            id="anexos"
-            name="anexos"
-            multiple
-          />
-          <div class="meta-row">
-            <span class="help">Máximo 5 arquivos, até 20 MB por arquivo.</span>
-            <span class="help" id="anexosInfo">0 selecionado(s)</span>
-          </div>
-          <span class="error" id="anexosError"
-            >Limite de anexos excedido ou arquivo acima de 20 MB.</span
-          >
-        </div>
-
-        <button class="btn" type="submit" id="btnRevisar">Enviar</button>
-      </form>
-    </main>
+        <div id="anexoModalBody" class="modal__body"></div>
+        <p id="anexoModalErro" class="error modal__error" role="alert"></p>
+      </div>
+    </div>
 
     <script src="./script.js" defer></script>
   </body>
