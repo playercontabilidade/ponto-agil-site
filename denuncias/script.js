@@ -1,12 +1,14 @@
-const baseUrl =
-  typeof window.PONTO_AGIL_API === 'string' && window.PONTO_AGIL_API
-    ? window.PONTO_AGIL_API.replace(/\/$/, '')
-    : 'http://localhost:8080';
+const { baseUrl, API_ENDPOINTS } = window.PONTO_AGIL_CONFIG || {};
+if (!baseUrl || !API_ENDPOINTS) {
+  throw new Error(
+    "Configuração ausente: carregue ./config.js antes de ./script.js",
+  );
+}
 
 /** UUID do protocolo após consulta bem-sucedida + token (para POST replicar). */
 const protocoloReplicarCtx = {
   protocoloUuid: null,
-  token: ''
+  token: "",
 };
 
 const MAX_ANEXOS_ACOMPANHAMENTO = 5;
@@ -14,7 +16,7 @@ const MAX_MB_ANEXO_ACOMPANHAMENTO = 20;
 
 function fillSelect(selectEl, options) {
   options.forEach((opt) => {
-    const option = document.createElement('option');
+    const option = document.createElement("option");
     option.value = opt.id;
     option.textContent = opt.nome;
     selectEl.appendChild(option);
@@ -23,13 +25,13 @@ function fillSelect(selectEl, options) {
 
 function resetSelectKeepingPlaceholder(selectEl) {
   const first = selectEl.querySelector('option[value=""]');
-  selectEl.innerHTML = '';
+  selectEl.innerHTML = "";
   if (first) {
     selectEl.appendChild(first);
   } else {
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Selecione';
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Selecione";
     placeholder.selected = true;
     placeholder.disabled = true;
     selectEl.appendChild(placeholder);
@@ -38,7 +40,7 @@ function resetSelectKeepingPlaceholder(selectEl) {
 
 function normalizeListPayload(payload) {
   if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== 'object') return [];
+  if (!payload || typeof payload !== "object") return [];
 
   const candidates = [
     payload.categorias,
@@ -47,7 +49,7 @@ function normalizeListPayload(payload) {
     payload.items,
     payload.content,
     payload.resultado,
-    payload.lista
+    payload.lista,
   ].find(Array.isArray);
 
   return Array.isArray(candidates) ? candidates : [];
@@ -61,19 +63,19 @@ function firstStringFromObject(obj, keys) {
     const str = String(val).trim();
     if (str) return str;
   }
-  return '';
+  return "";
 }
 
 function mapSelectableItem(item, idKeys, nomeKeys) {
   if (!item) return null;
 
-  if (typeof item === 'string') {
+  if (typeof item === "string") {
     const nome = item.trim();
     if (!nome) return null;
     return { id: nome, nome };
   }
 
-  if (typeof item !== 'object') return null;
+  if (typeof item !== "object") return null;
 
   const nomeStr = firstStringFromObject(item, nomeKeys);
   const idStrRaw = firstStringFromObject(item, idKeys);
@@ -85,11 +87,18 @@ function mapSelectableItem(item, idKeys, nomeKeys) {
   return { id: idStr || nomeFinal, nome: nomeFinal || idStr };
 }
 
-const CATEGORIA_ID_KEYS = ['valor', 'id', 'categoriaId', 'codigo', 'uuid', 'key'];
-const CATEGORIA_NOME_KEYS = ['descricao', 'nome', 'titulo', 'label', 'name'];
+const CATEGORIA_ID_KEYS = [
+  "valor",
+  "id",
+  "categoriaId",
+  "codigo",
+  "uuid",
+  "key",
+];
+const CATEGORIA_NOME_KEYS = ["descricao", "nome", "titulo", "label", "name"];
 
-const DEPARTAMENTO_ID_KEYS = ['id', 'departamentoId', 'codigo', 'uuid', 'key'];
-const DEPARTAMENTO_NOME_KEYS = ['nome', 'descricao', 'name', 'titulo', 'label'];
+const DEPARTAMENTO_ID_KEYS = ["id", "departamentoId", "codigo", "uuid", "key"];
+const DEPARTAMENTO_NOME_KEYS = ["nome", "descricao", "name", "titulo", "label"];
 
 function dedupeOptions(items) {
   const dedup = new Map();
@@ -101,43 +110,49 @@ function dedupeOptions(items) {
 
 function sortOptionsByNome(items) {
   return [...items].sort((a, b) =>
-    String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', {
-      sensitivity: 'base'
-    })
+    String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR", {
+      sensitivity: "base",
+    }),
   );
 }
 
 function isUuid(val) {
-  const s = String(val || '').trim();
+  const s = String(val || "").trim();
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    s
+    s,
   );
 }
 
 function normalizeUuidLike(val) {
-  const s = String(val || '').trim().replace(/^\{/, '').replace(/\}$/, '');
+  const s = String(val || "")
+    .trim()
+    .replace(/^\{/, "")
+    .replace(/\}$/, "");
 
   // Alguns lugares removem o zero à esquerda do 1º bloco (7 chars).
   // Ex.: "107d15b-..." -> "0107d15b-..."
-  const m = /^([0-9a-f]{7})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$/i.exec(s);
+  const m =
+    /^([0-9a-f]{7})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$/i.exec(
+      s,
+    );
   if (m) return `0${m[1]}-${m[2]}-${m[3]}-${m[4]}-${m[5]}`;
 
   return s;
 }
 
 async function fetchBearerJson(path, token) {
-  const url = new URL(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`);
+  const url = new URL(`${baseUrl}${path.startsWith("/") ? path : `/${path}`}`);
 
   const response = await fetch(url.toString(), {
-    method: 'GET',
+    method: "GET",
     headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`
-    }
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
+    const text = await response.text().catch(() => "");
     throw new Error(text || `Erro HTTP ${response.status}`);
   }
 
@@ -145,17 +160,17 @@ async function fetchBearerJson(path, token) {
 }
 
 async function fetchJson(path) {
-  const url = new URL(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`);
+  const url = new URL(`${baseUrl}${path.startsWith("/") ? path : `/${path}`}`);
 
   const response = await fetch(url.toString(), {
-    method: 'GET',
+    method: "GET",
     headers: {
-      Accept: 'application/json'
-    }
+      Accept: "application/json",
+    },
   });
 
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
+    const text = await response.text().catch(() => "");
     throw new Error(text || `Erro HTTP ${response.status}`);
   }
 
@@ -167,35 +182,35 @@ async function fetchJson(path) {
  * Compatível com Spring `List<MultipartFile> anexos`.
  */
 async function postEnviarDenunciaMultipart(token, fields, files) {
-  const url = new URL(`${baseUrl}/denuncia/enviar`);
+  const url = new URL(`${baseUrl}${API_ENDPOINTS.DENUNCIA_ENVIAR}`);
   const formData = new FormData();
 
   Object.entries(fields || {}).forEach(([k, v]) => {
     if (v === undefined || v === null) return;
-    if (typeof v === 'boolean') formData.append(k, v ? 'true' : 'false');
+    if (typeof v === "boolean") formData.append(k, v ? "true" : "false");
     else formData.append(k, String(v));
   });
 
   const arr = Array.isArray(files) ? files : Array.from(files || []);
   arr.forEach((f) => {
-    formData.append('anexos', f);
+    formData.append("anexos", f);
   });
 
   const response = await fetch(url.toString(), {
-    method: 'POST',
+    method: "POST",
     headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${String(token || '').trim()}`
+      Accept: "application/json",
+      Authorization: `Bearer ${String(token || "").trim()}`,
     },
-    body: formData
+    body: formData,
   });
 
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
+    const text = await response.text().catch(() => "");
     throw new Error(text || `Erro HTTP ${response.status}`);
   }
 
-  const text = await response.text().catch(() => '');
+  const text = await response.text().catch(() => "");
   if (!text) return null;
   try {
     return JSON.parse(text);
@@ -205,70 +220,81 @@ async function postEnviarDenunciaMultipart(token, fields, files) {
 }
 
 async function fetchCategoriasPorToken(token) {
-  const data = await fetchBearerJson('/denuncia/categorias', token);
+  const data = await fetchBearerJson(API_ENDPOINTS.DENUNCIA_CATEGORIAS, token);
   const rawList = normalizeListPayload(data);
   const mapped = rawList
-    .map((item) => mapSelectableItem(item, CATEGORIA_ID_KEYS, CATEGORIA_NOME_KEYS))
+    .map((item) =>
+      mapSelectableItem(item, CATEGORIA_ID_KEYS, CATEGORIA_NOME_KEYS),
+    )
     .filter(Boolean);
   return sortOptionsByNome(dedupeOptions(mapped));
 }
 
 async function fetchDepartamentosPorToken(token) {
-  const data = await fetchBearerJson('/departamento/por-token/listar', token);
+  const data = await fetchBearerJson(
+    API_ENDPOINTS.DEPARTAMENTO_POR_TOKEN_LISTAR,
+    token,
+  );
   const rawList = normalizeListPayload(data);
   const mapped = rawList
-    .map((item) => mapSelectableItem(item, DEPARTAMENTO_ID_KEYS, DEPARTAMENTO_NOME_KEYS))
+    .map((item) =>
+      mapSelectableItem(item, DEPARTAMENTO_ID_KEYS, DEPARTAMENTO_NOME_KEYS),
+    )
     .filter(Boolean);
   return sortOptionsByNome(dedupeOptions(mapped));
 }
 
 async function fetchAcompanharPorProtocolo(uuid, token) {
-  const safeUuid = encodeURIComponent(String(uuid || '').trim());
-  const rawToken = String(token || '').trim();
+  const rawToken = String(token || "").trim();
   const safeToken = encodeURIComponent(rawToken);
+  const path = API_ENDPOINTS.DENUNCIA_ACOMPANHAMENTO(uuid);
 
   if (rawToken) {
-    return fetchBearerJson(`/denuncia/acompanhamento/${safeUuid}?token=${safeToken}`, rawToken);
+    return fetchBearerJson(`${path}?token=${safeToken}`, rawToken);
   }
 
   // Fallback: permite consulta pública (se o backend suportar).
-  return fetchJson(`/denuncia/acompanhamento/${safeUuid}`);
+  return fetchJson(path);
 }
 
 /**
  * POST multipart: mensagem + anexos (parte repetida "anexos").
  * URL: /denuncia/replicar/{uuid}?token=...
  */
-async function postReplicarAcompanhamentoMultipart(uuid, token, mensagem, files) {
-  const id = String(uuid || '').trim();
-  const rawToken = String(token || '').trim();
-  const path = `/denuncia/acompanhamento/replicar/${encodeURIComponent(id)}`;
+async function postReplicarAcompanhamentoMultipart(
+  uuid,
+  token,
+  mensagem,
+  files,
+) {
+  const rawToken = String(token || "").trim();
+  const path = API_ENDPOINTS.DENUNCIA_ACOMPANHAMENTO_REPLICAR(uuid);
   const url = new URL(`${baseUrl}${path}`);
-  url.searchParams.set('token', rawToken);
+  url.searchParams.set("token", rawToken);
 
   const formData = new FormData();
-  formData.append('mensagem', mensagem);
+  formData.append("mensagem", mensagem);
 
   const arr = Array.isArray(files) ? files : Array.from(files || []);
   arr.forEach((f) => {
-    formData.append('anexos', f);
+    formData.append("anexos", f);
   });
 
-  const headers = { Accept: 'application/json' };
+  const headers = { Accept: "application/json" };
   if (rawToken) headers.Authorization = `Bearer ${rawToken}`;
 
   const response = await fetch(url.toString(), {
-    method: 'POST',
+    method: "POST",
     headers,
-    body: formData
+    body: formData,
   });
 
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
+    const text = await response.text().catch(() => "");
     throw new Error(text || `Erro HTTP ${response.status}`);
   }
 
-  const text = await response.text().catch(() => '');
+  const text = await response.text().catch(() => "");
   if (!text) return null;
   try {
     return JSON.parse(text);
@@ -279,88 +305,99 @@ async function postReplicarAcompanhamentoMultipart(uuid, token, mensagem, files)
 
 function getProtocoloConsultaUiElements() {
   return {
-    protocoloStatusBadge: document.getElementById('protocoloStatusBadge'),
-    protocoloValor: document.getElementById('protocoloValor'),
-    protocoloAnonima: document.getElementById('protocoloAnonima'),
-    protocoloCategoria: document.getElementById('protocoloCategoria'),
-    protocoloDepartamento: document.getElementById('protocoloDepartamento'),
-    protocoloDataOcorrido: document.getElementById('protocoloDataOcorrido'),
-    protocoloDataAbertura: document.getElementById('protocoloDataAbertura'),
-    protocoloDescricao: document.getElementById('protocoloDescricao'),
-    protocoloDenunciaAnexos: document.getElementById('protocoloDenunciaAnexos'),
-    protocoloAcompanhamentosList: document.getElementById('protocoloAcompanhamentosList')
+    protocoloStatusBadge: document.getElementById("protocoloStatusBadge"),
+    protocoloValor: document.getElementById("protocoloValor"),
+    protocoloAnonima: document.getElementById("protocoloAnonima"),
+    protocoloCategoria: document.getElementById("protocoloCategoria"),
+    protocoloDepartamento: document.getElementById("protocoloDepartamento"),
+    protocoloDataOcorrido: document.getElementById("protocoloDataOcorrido"),
+    protocoloDataAbertura: document.getElementById("protocoloDataAbertura"),
+    protocoloDescricao: document.getElementById("protocoloDescricao"),
+    protocoloDenunciaAnexos: document.getElementById("protocoloDenunciaAnexos"),
+    protocoloAcompanhamentosList: document.getElementById(
+      "protocoloAcompanhamentosList",
+    ),
   };
 }
 
 function extrairAnexosDenuncia(data) {
-  if (!data || typeof data !== 'object') return [];
-  const candidatos = [data.anexos, data.Anexos, data.listaAnexos, data.arquivos, data.files];
+  if (!data || typeof data !== "object") return [];
+  const candidatos = [
+    data.anexos,
+    data.Anexos,
+    data.listaAnexos,
+    data.arquivos,
+    data.files,
+  ];
   const arr = candidatos.find(Array.isArray);
   return Array.isArray(arr) ? arr : [];
 }
 
 function truncarNomeArquivo(nome, limite) {
-  const s = String(nome || '').trim();
+  const s = String(nome || "").trim();
   const n = Number(limite);
-  if (!s) return '';
+  if (!s) return "";
   if (!Number.isFinite(n) || n <= 0) return s;
   if (s.length <= n) return s;
-  if (n <= 1) return '…';
+  if (n <= 1) return "…";
   return `${s.slice(0, n - 1)}…`;
 }
 
 function getTokenParaPreview() {
-  const fromSession = (sessionStorage.getItem('denunciaToken') || '').trim();
+  const fromSession = (sessionStorage.getItem("denunciaToken") || "").trim();
   if (fromSession) return fromSession;
   const params = new URLSearchParams(window.location.search);
-  return (params.get('token') || '').trim();
+  return (params.get("token") || "").trim();
 }
 
 function initAnexoModal() {
-  const modal = document.getElementById('anexoModal');
-  const body = document.getElementById('anexoModalBody');
-  const titleEl = document.getElementById('anexoModalTitulo');
-  const errEl = document.getElementById('anexoModalErro');
+  const modal = document.getElementById("anexoModal");
+  const body = document.getElementById("anexoModalBody");
+  const titleEl = document.getElementById("anexoModalTitulo");
+  const errEl = document.getElementById("anexoModalErro");
   if (!modal || !body || !titleEl || !errEl) return null;
 
-  let currentObjectUrl = '';
+  let currentObjectUrl = "";
 
   function cleanupObjectUrl() {
     if (currentObjectUrl) {
       URL.revokeObjectURL(currentObjectUrl);
-      currentObjectUrl = '';
+      currentObjectUrl = "";
     }
   }
 
   function close() {
     cleanupObjectUrl();
     body.replaceChildren();
-    errEl.textContent = '';
-    errEl.classList.remove('is-visible');
-    modal.classList.add('is-hidden');
+    errEl.textContent = "";
+    errEl.classList.remove("is-visible");
+    modal.classList.add("is-hidden");
   }
 
-  modal.addEventListener('click', (e) => {
+  modal.addEventListener("click", (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
     if (t.closest('[data-modal-close="1"]')) close();
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !modal.classList.contains('is-hidden')) close();
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("is-hidden")) close();
   });
 
   function tipoParaPreview(fileOrBlob, nomeFallback) {
-    const t = fileOrBlob && typeof fileOrBlob.type === 'string' ? fileOrBlob.type.trim() : '';
+    const t =
+      fileOrBlob && typeof fileOrBlob.type === "string"
+        ? fileOrBlob.type.trim()
+        : "";
     if (t) return t;
-    const n = String(nomeFallback || '').toLowerCase();
-    if (n.endsWith('.pdf')) return 'application/pdf';
-    if (/\.(jpe?g|jfif)$/i.test(n)) return 'image/jpeg';
-    if (n.endsWith('.png')) return 'image/png';
-    if (n.endsWith('.gif')) return 'image/gif';
-    if (n.endsWith('.webp')) return 'image/webp';
-    if (n.endsWith('.svg')) return 'image/svg+xml';
-    return 'application/octet-stream';
+    const n = String(nomeFallback || "").toLowerCase();
+    if (n.endsWith(".pdf")) return "application/pdf";
+    if (/\.(jpe?g|jfif)$/i.test(n)) return "image/jpeg";
+    if (n.endsWith(".png")) return "image/png";
+    if (n.endsWith(".gif")) return "image/gif";
+    if (n.endsWith(".webp")) return "image/webp";
+    if (n.endsWith(".svg")) return "image/svg+xml";
+    return "application/octet-stream";
   }
 
   function renderBlobNoFetch(blobLike, displayName) {
@@ -369,19 +406,19 @@ function initAnexoModal() {
     const type = tipoParaPreview(blobLike, displayName);
     currentObjectUrl = URL.createObjectURL(blobLike);
 
-    if (type.startsWith('image/')) {
-      const img = document.createElement('img');
-      img.className = 'modal__viewer modal__viewer--img';
-      img.alt = displayName || 'Anexo';
+    if (type.startsWith("image/")) {
+      const img = document.createElement("img");
+      img.className = "modal__viewer modal__viewer--img";
+      img.alt = displayName || "Anexo";
       img.src = currentObjectUrl;
       body.appendChild(img);
       return;
     }
 
-    const iframe = document.createElement('iframe');
-    iframe.className = 'modal__viewer';
+    const iframe = document.createElement("iframe");
+    iframe.className = "modal__viewer";
     iframe.src = currentObjectUrl;
-    iframe.title = displayName || 'Anexo';
+    iframe.title = displayName || "Anexo";
     body.appendChild(iframe);
   }
 
@@ -390,63 +427,63 @@ function initAnexoModal() {
     if (!(file instanceof File)) return;
     cleanupObjectUrl();
     body.replaceChildren();
-    errEl.textContent = '';
-    errEl.classList.remove('is-visible');
+    errEl.textContent = "";
+    errEl.classList.remove("is-visible");
 
-    const name = file.name || 'Anexo';
+    const name = file.name || "Anexo";
     titleEl.textContent = name;
-    modal.classList.remove('is-hidden');
+    modal.classList.remove("is-hidden");
 
     try {
       renderBlobNoFetch(file, name);
     } catch (err) {
       body.replaceChildren();
       errEl.textContent = mensagemErroAmigavel(err);
-      errEl.classList.add('is-visible');
+      errEl.classList.add("is-visible");
     }
   }
 
   async function open(url, filename) {
     cleanupObjectUrl();
     body.replaceChildren();
-    errEl.textContent = '';
-    errEl.classList.remove('is-visible');
+    errEl.textContent = "";
+    errEl.classList.remove("is-visible");
 
-    titleEl.textContent = filename || 'Anexo';
-    modal.classList.remove('is-hidden');
+    titleEl.textContent = filename || "Anexo";
+    modal.classList.remove("is-hidden");
 
     const token = getTokenParaPreview();
-    const loading = document.createElement('p');
-    loading.textContent = 'Carregando...';
-    loading.style.margin = '0';
+    const loading = document.createElement("p");
+    loading.textContent = "Carregando...";
+    loading.style.margin = "0";
     body.appendChild(loading);
 
     try {
       const resp = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          Accept: '*/*',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
+          Accept: "*/*",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
       if (!resp.ok) {
-        const text = await resp.text().catch(() => '');
+        const text = await resp.text().catch(() => "");
         throw new Error(text || `Erro HTTP ${resp.status}`);
       }
 
       const blob = await resp.blob();
       body.replaceChildren();
-      renderBlobNoFetch(blob, filename || 'Anexo');
+      renderBlobNoFetch(blob, filename || "Anexo");
     } catch (err) {
       body.replaceChildren();
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.textContent = 'Abrir em outra aba';
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "Abrir em outra aba";
       body.appendChild(a);
       errEl.textContent = mensagemErroAmigavel(err);
-      errEl.classList.add('is-visible');
+      errEl.classList.add("is-visible");
     }
   }
 
@@ -456,11 +493,11 @@ function initAnexoModal() {
 const anexoModalApi = initAnexoModal();
 
 function getAnexoDenunciaUrl(idAnexo, protocolo) {
-  const id = String(idAnexo ?? '').trim();
-  const p = String(protocolo ?? '').trim();
-  if (!id || !p) return '';
-  const url = new URL(`${baseUrl}/denuncia/anexo/${encodeURIComponent(id)}`);
-  url.searchParams.set('protocolo', p);
+  const id = String(idAnexo ?? "").trim();
+  const p = String(protocolo ?? "").trim();
+  if (!id || !p) return "";
+  const url = new URL(`${baseUrl}${API_ENDPOINTS.DENUNCIA_ANEXO(id)}`);
+  url.searchParams.set("protocolo", p);
   return url.toString();
 }
 
@@ -470,43 +507,43 @@ function renderAnexosDenunciaBotoes(container, protocolo, anexos) {
 
   const list = Array.isArray(anexos) ? anexos : [];
   if (list.length === 0) {
-    container.textContent = '—';
+    container.textContent = "—";
     return;
   }
 
   list.forEach((a) => {
     const nome = nomeAnexoParaChat(a);
     if (!nome) return;
-    const id = a && typeof a === 'object' ? a.id : '';
+    const id = a && typeof a === "object" ? a.id : "";
     const href = getAnexoDenunciaUrl(id, protocolo);
 
     if (href) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-secondary protocolo-denuncia-anexo-btn';
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-secondary protocolo-denuncia-anexo-btn";
       btn.textContent = truncarNomeArquivo(nome, 42);
       btn.title = nome;
-      btn.addEventListener('click', () => {
+      btn.addEventListener("click", () => {
         if (anexoModalApi) anexoModalApi.open(href, nome);
-        else window.open(href, '_blank', 'noopener,noreferrer');
+        else window.open(href, "_blank", "noopener,noreferrer");
       });
       container.appendChild(btn);
       return;
     }
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-secondary protocolo-denuncia-anexo-btn';
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-secondary protocolo-denuncia-anexo-btn";
     btn.textContent = truncarNomeArquivo(nome, 42);
     btn.title = nome;
-    btn.addEventListener('click', () => {
+    btn.addEventListener("click", () => {
       alert(nome);
     });
     container.appendChild(btn);
   });
 
   if (container.childElementCount === 0) {
-    container.textContent = '—';
+    container.textContent = "—";
   }
 }
 
@@ -518,25 +555,25 @@ function refreshProtocoloConsultaViewFromApi() {
   return fetchAcompanharPorProtocolo(uuid, tok).then((data) => {
     const els = getProtocoloConsultaUiElements();
     preencherProtocoloConsultaUI(data, els);
-    const det = document.getElementById('protocoloDetalhe');
-    const result = document.getElementById('protocoloResult');
-    if (det) det.classList.remove('is-hidden');
-    if (result) result.classList.remove('is-hidden');
-    const msgEl = document.getElementById('protocoloResultMessage');
+    const det = document.getElementById("protocoloDetalhe");
+    const result = document.getElementById("protocoloResult");
+    if (det) det.classList.remove("is-hidden");
+    if (result) result.classList.remove("is-hidden");
+    const msgEl = document.getElementById("protocoloResultMessage");
     if (msgEl) {
-      msgEl.textContent = '';
-      msgEl.classList.add('is-hidden');
-      msgEl.classList.remove('is-error');
+      msgEl.textContent = "";
+      msgEl.classList.add("is-hidden");
+      msgEl.classList.remove("is-error");
     }
   });
 }
 
 function getDenunciaDraft() {
   try {
-    const raw = sessionStorage.getItem('denunciaDraft');
+    const raw = sessionStorage.getItem("denunciaDraft");
     if (!raw) return null;
     const d = JSON.parse(raw);
-    return d && typeof d === 'object' ? d : null;
+    return d && typeof d === "object" ? d : null;
   } catch (_) {
     return null;
   }
@@ -565,13 +602,13 @@ function mergeUniqueFiles(prev, incoming) {
 
 function setError(el, on) {
   if (!el) return;
-  el.classList.toggle('is-visible', Boolean(on));
+  el.classList.toggle("is-visible", Boolean(on));
 }
 
 function setTextError(el, on, message) {
   if (!el) return;
   if (!on) {
-    el.textContent = '';
+    el.textContent = "";
     setError(el, false);
     return;
   }
@@ -581,45 +618,45 @@ function setTextError(el, on, message) {
 
 /** Converte falhas técnicas em texto claro para quem está preenchendo o formulário. */
 function mensagemErroAmigavel(err) {
-  if (err instanceof TypeError && String(err.message).includes('fetch')) {
-    return 'Não conseguimos conectar. Confira sua internet e tente de novo.';
+  if (err instanceof TypeError && String(err.message).includes("fetch")) {
+    return "Não conseguimos conectar. Confira sua internet e tente de novo.";
   }
   if (!(err instanceof Error) || !err.message) {
-    return 'Algo não saiu como esperado. Tente novamente em alguns instantes.';
+    return "Algo não saiu como esperado. Tente novamente em alguns instantes.";
   }
   const m = err.message.trim();
   if (/^Erro HTTP\s*401\b/i.test(m) || /^Erro HTTP\s*403\b/i.test(m)) {
-    return 'Não foi possível validar seu acesso. O link pode estar incorreto ou expirado — peça um novo link se precisar.';
+    return "Não foi possível validar seu acesso. O link pode estar incorreto ou expirado — peça um novo link se precisar.";
   }
   if (/^Erro HTTP\s*404\b/i.test(m)) {
-    return 'Não encontramos essa informação no momento. Se o problema continuar, fale com o suporte.';
+    return "Não encontramos essa informação no momento. Se o problema continuar, fale com o suporte.";
   }
   if (/^Erro HTTP\s*5\d\d\b/i.test(m)) {
-    return 'O serviço está temporariamente indisponível. Tente de novo daqui a pouco.';
+    return "O serviço está temporariamente indisponível. Tente de novo daqui a pouco.";
   }
-  if (m.length > 0 && m.length < 160 && !/[<>]/.test(m) && !m.includes('{')) {
+  if (m.length > 0 && m.length < 160 && !/[<>]/.test(m) && !m.includes("{")) {
     return m;
   }
-  return 'Não conseguimos carregar os dados agora. Tente novamente em instantes.';
+  return "Não conseguimos carregar os dados agora. Tente novamente em instantes.";
 }
 
 function extrairDescricaoProtocolo(data) {
-  if (!data || typeof data !== 'object') return '';
+  if (!data || typeof data !== "object") return "";
   if (data.descricao != null) return String(data.descricao);
-  if (data['descrição'] != null) return String(data['descrição']);
-  return '';
+  if (data["descrição"] != null) return String(data["descrição"]);
+  return "";
 }
 
 function formatDataAberturaProtocolo(iso) {
-  if (iso == null || iso === '') return '—';
+  if (iso == null || iso === "") return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso);
-  return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
 /** LocalDate em JSON costuma vir como "yyyy-MM-dd" ou [ano, mês, dia]. */
 function formatDataOcorridoProtocolo(val) {
-  if (val == null || val === '') return '—';
+  if (val == null || val === "") return "—";
   if (Array.isArray(val) && val.length >= 3) {
     const y = Number(val[0]);
     const mo = Number(val[1]);
@@ -627,7 +664,7 @@ function formatDataOcorridoProtocolo(val) {
     if (Number.isFinite(y) && Number.isFinite(mo) && Number.isFinite(da)) {
       const dt = new Date(y, mo - 1, da);
       if (!Number.isNaN(dt.getTime())) {
-        return dt.toLocaleDateString('pt-BR', { dateStyle: 'long' });
+        return dt.toLocaleDateString("pt-BR", { dateStyle: "long" });
       }
     }
   }
@@ -639,19 +676,19 @@ function formatDataOcorridoProtocolo(val) {
     const da = Number(isoDate[3]);
     const dt = new Date(y, mo - 1, da);
     if (!Number.isNaN(dt.getTime())) {
-      return dt.toLocaleDateString('pt-BR', { dateStyle: 'long' });
+      return dt.toLocaleDateString("pt-BR", { dateStyle: "long" });
     }
   }
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) {
-    return d.toLocaleDateString('pt-BR', { dateStyle: 'long' });
+    return d.toLocaleDateString("pt-BR", { dateStyle: "long" });
   }
   return s;
 }
 
 /** ISO-8601 ou array Jackson [ano, mês, dia, hora, min, seg, nano]. */
 function parseBackendDateTime(val) {
-  if (val == null || val === '') return null;
+  if (val == null || val === "") return null;
   if (Array.isArray(val) && val.length >= 5) {
     const y = Number(val[0]);
     const mo = Number(val[1]);
@@ -676,76 +713,79 @@ function parseBackendDateTime(val) {
 
 function formatDataHoraAcompanhamento(val) {
   const d = parseBackendDateTime(val);
-  if (!d) return val != null && val !== '' ? String(val) : '—';
-  return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  if (!d) return val != null && val !== "" ? String(val) : "—";
+  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
 /** Alinha bolhas: RH/sistema à esquerda; denunciante à direita. */
 function chatRoleFromAutorDenuncia(autor) {
-  const a = String(autor || '')
+  const a = String(autor || "")
     .trim()
     .toUpperCase()
-    .replace(/\s+/g, '_');
-  if (!a) return 'outro';
+    .replace(/\s+/g, "_");
+  if (!a) return "outro";
   if (
-    a === 'RH' ||
-    a === 'SISTEMA' ||
-    a.includes('ADMIN') ||
-    a.includes('GESTOR') ||
-    a.startsWith('RH_') ||
-    a.endsWith('_RH')
+    a === "RH" ||
+    a === "SISTEMA" ||
+    a.includes("ADMIN") ||
+    a.includes("GESTOR") ||
+    a.startsWith("RH_") ||
+    a.endsWith("_RH")
   ) {
-    return 'rh';
+    return "rh";
   }
-  if (a === 'DENUNCIANTE' || a.includes('DENUNCIANTE')) return 'denunciante';
-  return 'outro';
+  if (a === "DENUNCIANTE" || a.includes("DENUNCIANTE")) return "denunciante";
+  return "outro";
 }
 
 function labelAutorAcompanhamento(autor) {
-  const a = String(autor || '').trim().toUpperCase().replace(/\s+/g, '_');
+  const a = String(autor || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_");
   const map = {
-    RH: 'Equipe (RH)',
-    DENUNCIANTE: 'Denunciante',
-    SISTEMA: 'Sistema'
+    RH: "Equipe (RH)",
+    DENUNCIANTE: "Denunciante",
+    SISTEMA: "Sistema",
   };
   if (map[a]) return map[a];
-  if (!autor) return 'Acompanhamento';
-  return String(autor).replace(/_/g, ' ');
+  if (!autor) return "Acompanhamento";
+  return String(autor).replace(/_/g, " ");
 }
 
 function safeHttpUrl(href) {
-  if (href == null || href === '') return '';
+  if (href == null || href === "") return "";
   try {
     const u = new URL(String(href).trim(), window.location.origin);
-    if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+    if (u.protocol === "http:" || u.protocol === "https:") return u.href;
   } catch (_) {
     /* ignore */
   }
-  return '';
+  return "";
 }
 
 const NOME_ANEXO_CHAT_KEYS = [
-  'nome',
-  'nomeArquivo',
-  'nomeOriginal',
-  'fileName',
-  'filename',
-  'name',
-  'titulo',
-  'descricao'
+  "nome",
+  "nomeArquivo",
+  "nomeOriginal",
+  "fileName",
+  "filename",
+  "name",
+  "titulo",
+  "descricao",
 ];
 
 /** Lista de acompanhamentos no payload da consulta ao protocolo (várias convenções de API). */
 function extrairListaAcompanhamentos(data) {
   if (Array.isArray(data)) return data;
-  if (!data || typeof data !== 'object') return [];
+  if (!data || typeof data !== "object") return [];
   const candidatos = [
     data.acompanhamentos,
     data.Acompanhamentos,
     data.acompanhamentoList,
     data.acompanhamentoDTOList,
     data.mensagens,
-    data.historico
+    data.historico,
   ];
   const arr = candidatos.find(Array.isArray);
   return Array.isArray(arr) ? arr : [];
@@ -753,13 +793,20 @@ function extrairListaAcompanhamentos(data) {
 
 /** Anexos de um item de acompanhamento (objetos `{ id, nome }` ou equivalentes). */
 function extrairAnexosDoItem(item) {
-  if (!item || typeof item !== 'object') return [];
-  const chaves = ['anexos', 'Anexos', 'listaAnexos', 'anexoList', 'arquivos', 'files'];
+  if (!item || typeof item !== "object") return [];
+  const chaves = [
+    "anexos",
+    "Anexos",
+    "listaAnexos",
+    "anexoList",
+    "arquivos",
+    "files",
+  ];
   for (const k of chaves) {
     if (!Object.prototype.hasOwnProperty.call(item, k)) continue;
     const v = item[k];
     if (v == null) continue;
-    if (typeof v === 'string') {
+    if (typeof v === "string") {
       try {
         const p = JSON.parse(v);
         if (Array.isArray(p)) return p;
@@ -774,62 +821,64 @@ function extrairAnexosDoItem(item) {
 }
 
 function nomeAnexoParaChat(arq) {
-  if (arq == null) return '';
-  if (typeof arq === 'string') {
+  if (arq == null) return "";
+  if (typeof arq === "string") {
     const s = String(arq).trim();
-    return s || '';
+    return s || "";
   }
-  if (typeof arq === 'number' && Number.isFinite(arq)) {
+  if (typeof arq === "number" && Number.isFinite(arq)) {
     return `Anexo #${arq}`;
   }
-  if (typeof arq !== 'object') return '';
+  if (typeof arq !== "object") return "";
   const nome = firstStringFromObject(arq, NOME_ANEXO_CHAT_KEYS);
   if (nome) return nome;
   if (arq.id != null) return `Arquivo (${arq.id})`;
-  return 'Arquivo';
+  return "Arquivo";
 }
 
 function hrefBrutoAnexo(arq) {
-  if (!arq || typeof arq !== 'object') return '';
+  if (!arq || typeof arq !== "object") return "";
   if (arq.url != null) return arq.url;
   if (arq.link != null) return arq.link;
   if (arq.downloadUrl != null) return arq.downloadUrl;
   if (arq.href != null) return arq.href;
   if (arq.caminho != null) return arq.caminho;
-  return '';
+  return "";
 }
 
 function getAnexoAcompanhamentoUrl(idAnexo, protocolo) {
-  const id = String(idAnexo ?? '').trim();
-  const p = String(protocolo ?? '').trim();
-  if (!id || !p) return '';
-  const url = new URL(`${baseUrl}/denuncia/acompanhamento/anexo/${encodeURIComponent(id)}`);
-  url.searchParams.set('protocolo', p);
+  const id = String(idAnexo ?? "").trim();
+  const p = String(protocolo ?? "").trim();
+  if (!id || !p) return "";
+  const url = new URL(
+    `${baseUrl}${API_ENDPOINTS.DENUNCIA_ACOMPANHAMENTO_ANEXO(id)}`,
+  );
+  url.searchParams.set("protocolo", p);
   return url.toString();
 }
 
 function appendAnexosAcompanhamento(bubbleEl, protocolo, anexos) {
   if (!Array.isArray(anexos) || anexos.length === 0) return;
-  const ul = document.createElement('ul');
-  ul.className = 'protocolo-chat-anexos-list';
+  const ul = document.createElement("ul");
+  ul.className = "protocolo-chat-anexos-list";
   anexos.forEach((arq) => {
     const nome = nomeAnexoParaChat(arq);
     if (!nome) return;
-    const id = arq && typeof arq === 'object' ? arq.id : '';
+    const id = arq && typeof arq === "object" ? arq.id : "";
     const hrefFromId = getAnexoAcompanhamentoUrl(id, protocolo);
     const hrefRaw =
-      typeof arq === 'object' && arq != null ? hrefBrutoAnexo(arq) : '';
+      typeof arq === "object" && arq != null ? hrefBrutoAnexo(arq) : "";
     const href = hrefFromId || safeHttpUrl(hrefRaw);
-    const li = document.createElement('li');
+    const li = document.createElement("li");
     if (href) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'protocolo-chat-anexo-btn';
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "protocolo-chat-anexo-btn";
       btn.textContent = nome;
       btn.title = nome;
-      btn.addEventListener('click', () => {
+      btn.addEventListener("click", () => {
         if (anexoModalApi) anexoModalApi.open(href, nome);
-        else window.open(href, '_blank', 'noopener,noreferrer');
+        else window.open(href, "_blank", "noopener,noreferrer");
       });
       li.appendChild(btn);
     } else {
@@ -839,11 +888,11 @@ function appendAnexosAcompanhamento(bubbleEl, protocolo, anexos) {
     ul.appendChild(li);
   });
   if (ul.childElementCount === 0) return;
-  const wrap = document.createElement('div');
-  wrap.className = 'protocolo-chat-anexos';
-  const title = document.createElement('span');
-  title.className = 'protocolo-chat-anexos-title';
-  title.textContent = 'Anexos';
+  const wrap = document.createElement("div");
+  wrap.className = "protocolo-chat-anexos";
+  const title = document.createElement("span");
+  title.className = "protocolo-chat-anexos-title";
+  title.textContent = "Anexos";
   wrap.appendChild(title);
   wrap.appendChild(ul);
   bubbleEl.appendChild(wrap);
@@ -871,14 +920,14 @@ function scrollChatAteFinal(container) {
 
 function renderAcompanhamentosChat(container, protocolo, list) {
   if (!container) return;
-  container.textContent = '';
-  container.classList.remove('protocolo-chat-root--empty');
+  container.textContent = "";
+  container.classList.remove("protocolo-chat-root--empty");
 
   if (!Array.isArray(list) || list.length === 0) {
-    container.classList.add('protocolo-chat-root--empty');
-    const p = document.createElement('p');
-    p.className = 'protocolo-chat-empty';
-    p.textContent = 'Nenhum acompanhamento registrado.';
+    container.classList.add("protocolo-chat-root--empty");
+    const p = document.createElement("p");
+    p.className = "protocolo-chat-empty";
+    p.textContent = "Nenhum acompanhamento registrado.";
     container.appendChild(p);
     return;
   }
@@ -886,42 +935,42 @@ function renderAcompanhamentosChat(container, protocolo, list) {
   const sorted = [...list].sort(compareAcompanhamentoPorId);
 
   sorted.forEach((item) => {
-    if (!item || typeof item !== 'object') return;
+    if (!item || typeof item !== "object") return;
     const role = chatRoleFromAutorDenuncia(item.autor);
-    const row = document.createElement('div');
+    const row = document.createElement("div");
     row.className =
-      role === 'denunciante'
-        ? 'protocolo-chat-row protocolo-chat-row--end'
-        : role === 'rh'
-          ? 'protocolo-chat-row protocolo-chat-row--start'
-          : 'protocolo-chat-row protocolo-chat-row--start';
+      role === "denunciante"
+        ? "protocolo-chat-row protocolo-chat-row--end"
+        : role === "rh"
+          ? "protocolo-chat-row protocolo-chat-row--start"
+          : "protocolo-chat-row protocolo-chat-row--start";
 
-    const bubble = document.createElement('div');
+    const bubble = document.createElement("div");
     bubble.className =
-      role === 'denunciante'
-        ? 'protocolo-chat-bubble protocolo-chat-bubble--denunciante'
-        : role === 'rh'
-          ? 'protocolo-chat-bubble protocolo-chat-bubble--rh'
-          : 'protocolo-chat-bubble protocolo-chat-bubble--outro';
+      role === "denunciante"
+        ? "protocolo-chat-bubble protocolo-chat-bubble--denunciante"
+        : role === "rh"
+          ? "protocolo-chat-bubble protocolo-chat-bubble--rh"
+          : "protocolo-chat-bubble protocolo-chat-bubble--outro";
 
-    const meta = document.createElement('div');
-    meta.className = 'protocolo-chat-meta';
-    const autorEl = document.createElement('span');
-    autorEl.className = 'protocolo-chat-autor';
+    const meta = document.createElement("div");
+    meta.className = "protocolo-chat-meta";
+    const autorEl = document.createElement("span");
+    autorEl.className = "protocolo-chat-autor";
     autorEl.textContent = labelAutorAcompanhamento(item.autor);
-    const horaEl = document.createElement('span');
-    horaEl.className = 'protocolo-chat-hora';
+    const horaEl = document.createElement("span");
+    horaEl.className = "protocolo-chat-hora";
     horaEl.textContent = formatDataHoraAcompanhamento(item.dataHoraEnvio);
     meta.appendChild(autorEl);
     meta.appendChild(horaEl);
     bubble.appendChild(meta);
 
-    const msg = document.createElement('p');
-    msg.className = 'protocolo-chat-msg';
+    const msg = document.createElement("p");
+    msg.className = "protocolo-chat-msg";
     msg.textContent =
-      item.mensagem != null && String(item.mensagem).trim() !== ''
+      item.mensagem != null && String(item.mensagem).trim() !== ""
         ? String(item.mensagem)
-        : '(Sem mensagem)';
+        : "(Sem mensagem)";
     bubble.appendChild(msg);
 
     appendAnexosAcompanhamento(bubble, protocolo, extrairAnexosDoItem(item));
@@ -934,106 +983,129 @@ function renderAcompanhamentosChat(container, protocolo, list) {
 }
 
 function labelStatusProtocolo(status) {
-  const s = String(status || '').trim();
-  if (!s) return '—';
-  const u = s.toUpperCase().replace(/\s+/g, '_');
+  const s = String(status || "").trim();
+  if (!s) return "—";
+  const u = s.toUpperCase().replace(/\s+/g, "_");
   const map = {
-    RECEBIDA: 'Recebida',
-    REGISTRADA: 'Registrada',
-    EM_ANALISE: 'Em análise',
-    DEFERIDA: 'Deferida',
-    INDEFERIDA: 'Indeferida',
-    ENCERRADA: 'Encerrada',
-    ARQUIVADA: 'Arquivada',
-    CANCELADA: 'Cancelada'
+    RECEBIDA: "Recebida",
+    REGISTRADA: "Registrada",
+    EM_ANALISE: "Em análise",
+    DEFERIDA: "Deferida",
+    INDEFERIDA: "Indeferida",
+    ENCERRADA: "Encerrada",
+    ARQUIVADA: "Arquivada",
+    CANCELADA: "Cancelada",
   };
   return map[u] || s;
 }
 
 /** @returns {'' | 'neutral' | 'warning' | 'danger'} */
 function toneStatusProtocolo(status) {
-  const u = String(status || '')
+  const u = String(status || "")
     .trim()
     .toUpperCase()
-    .replace(/\s+/g, '_');
-  if (['ENCERRADA', 'ARQUIVADA', 'CANCELADA', 'FINALIZADA'].includes(u)) return 'neutral';
-  if (['REJEITADA', 'INDEFERIDA'].includes(u)) return 'danger';
-  if (['EM_ANALISE', 'PENDENTE', 'EM_ANDAMENTO'].includes(u)) return 'warning';
-  return '';
+    .replace(/\s+/g, "_");
+  if (["ENCERRADA", "ARQUIVADA", "CANCELADA", "FINALIZADA"].includes(u))
+    return "neutral";
+  if (["REJEITADA", "INDEFERIDA"].includes(u)) return "danger";
+  if (["EM_ANALISE", "PENDENTE", "EM_ANDAMENTO"].includes(u)) return "warning";
+  return "";
 }
 
 function preencherProtocoloConsultaUI(data, els) {
   const desc = extrairDescricaoProtocolo(data);
-  const statusRaw = data.status != null ? String(data.status) : '';
+  const statusRaw = data.status != null ? String(data.status) : "";
   const tone = toneStatusProtocolo(statusRaw);
 
   if (els.protocoloStatusBadge) {
     els.protocoloStatusBadge.textContent = labelStatusProtocolo(statusRaw);
-    if (tone) els.protocoloStatusBadge.setAttribute('data-tone', tone);
-    else els.protocoloStatusBadge.removeAttribute('data-tone');
+    if (tone) els.protocoloStatusBadge.setAttribute("data-tone", tone);
+    else els.protocoloStatusBadge.removeAttribute("data-tone");
   }
   if (els.protocoloValor) {
-    els.protocoloValor.textContent = data.protocolo != null ? String(data.protocolo) : '—';
+    els.protocoloValor.textContent =
+      data.protocolo != null ? String(data.protocolo) : "—";
   }
   if (els.protocoloAnonima) {
     els.protocoloAnonima.textContent =
-      data.anonima === true ? 'Sim' : data.anonima === false ? 'Não' : '—';
+      data.anonima === true ? "Sim" : data.anonima === false ? "Não" : "—";
   }
   if (els.protocoloCategoria) {
-    els.protocoloCategoria.textContent = data.categoria != null ? String(data.categoria) : '—';
+    els.protocoloCategoria.textContent =
+      data.categoria != null ? String(data.categoria) : "—";
   }
   if (els.protocoloDepartamento) {
     els.protocoloDepartamento.textContent =
-      data.departamento != null ? String(data.departamento) : '—';
+      data.departamento != null ? String(data.departamento) : "—";
   }
   if (els.protocoloDataOcorrido) {
-    els.protocoloDataOcorrido.textContent = formatDataOcorridoProtocolo(data.dataOcorrido);
+    els.protocoloDataOcorrido.textContent = formatDataOcorridoProtocolo(
+      data.dataOcorrido,
+    );
   }
   if (els.protocoloDataAbertura) {
-    els.protocoloDataAbertura.textContent = formatDataAberturaProtocolo(data.dataAbertura);
+    els.protocoloDataAbertura.textContent = formatDataAberturaProtocolo(
+      data.dataAbertura,
+    );
   }
   if (els.protocoloDescricao) {
-    els.protocoloDescricao.textContent = desc || '—';
+    els.protocoloDescricao.textContent = desc || "—";
   }
 
   renderAnexosDenunciaBotoes(
     els.protocoloDenunciaAnexos,
-    data && typeof data === 'object' ? data.protocolo : '',
-    extrairAnexosDenuncia(data)
+    data && typeof data === "object" ? data.protocolo : "",
+    extrairAnexosDenuncia(data),
   );
 
   const list = extrairListaAcompanhamentos(data);
   renderAcompanhamentosChat(
     els.protocoloAcompanhamentosList,
-    data && typeof data === 'object' ? data.protocolo : '',
-    list
+    data && typeof data === "object" ? data.protocolo : "",
+    list,
   );
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const pageTitleEl = document.querySelector('main.card h1');
-  const messageEl = document.getElementById('message');
-  const btnNovaDenuncia = document.getElementById('btnNovaDenuncia');
-  const btnConsultarProtocolo = document.getElementById('btnConsultarProtocolo');
-  const protocoloBox = document.getElementById('protocoloBox');
-  const protocoloChatAside = document.getElementById('protocoloChatAside');
-  const denunciasShell = document.querySelector('.denuncias-shell');
-  const protocoloForm = document.getElementById('protocoloForm');
-  const protocoloNumeroEl = document.getElementById('protocoloNumero');
-  const protocoloResultEl = document.getElementById('protocoloResult');
-  const protocoloResultMessageEl = document.getElementById('protocoloResultMessage');
-  const protocoloDetalheEl = document.getElementById('protocoloDetalhe');
-  const protocoloStatusBadgeEl = document.getElementById('protocoloStatusBadge');
-  const protocoloValorEl = document.getElementById('protocoloValor');
-  const protocoloAnonimaEl = document.getElementById('protocoloAnonima');
-  const protocoloCategoriaEl = document.getElementById('protocoloCategoria');
-  const protocoloDepartamentoEl = document.getElementById('protocoloDepartamento');
-  const protocoloDataOcorridoEl = document.getElementById('protocoloDataOcorrido');
-  const protocoloDataAberturaEl = document.getElementById('protocoloDataAbertura');
-  const protocoloDescricaoEl = document.getElementById('protocoloDescricao');
-  const protocoloDenunciaAnexosEl = document.getElementById('protocoloDenunciaAnexos');
-  const protocoloAcompanhamentosListEl = document.getElementById('protocoloAcompanhamentosList');
-  const btnConsultar = document.getElementById('btnConsultar');
+document.addEventListener("DOMContentLoaded", () => {
+  const pageTitleEl = document.querySelector("main.card h1");
+  const messageEl = document.getElementById("message");
+  const btnNovaDenuncia = document.getElementById("btnNovaDenuncia");
+  const btnConsultarProtocolo = document.getElementById(
+    "btnConsultarProtocolo",
+  );
+  const protocoloBox = document.getElementById("protocoloBox");
+  const protocoloChatAside = document.getElementById("protocoloChatAside");
+  const denunciasShell = document.querySelector(".denuncias-shell");
+  const protocoloForm = document.getElementById("protocoloForm");
+  const protocoloNumeroEl = document.getElementById("protocoloNumero");
+  const protocoloResultEl = document.getElementById("protocoloResult");
+  const protocoloResultMessageEl = document.getElementById(
+    "protocoloResultMessage",
+  );
+  const protocoloDetalheEl = document.getElementById("protocoloDetalhe");
+  const protocoloStatusBadgeEl = document.getElementById(
+    "protocoloStatusBadge",
+  );
+  const protocoloValorEl = document.getElementById("protocoloValor");
+  const protocoloAnonimaEl = document.getElementById("protocoloAnonima");
+  const protocoloCategoriaEl = document.getElementById("protocoloCategoria");
+  const protocoloDepartamentoEl = document.getElementById(
+    "protocoloDepartamento",
+  );
+  const protocoloDataOcorridoEl = document.getElementById(
+    "protocoloDataOcorrido",
+  );
+  const protocoloDataAberturaEl = document.getElementById(
+    "protocoloDataAbertura",
+  );
+  const protocoloDescricaoEl = document.getElementById("protocoloDescricao");
+  const protocoloDenunciaAnexosEl = document.getElementById(
+    "protocoloDenunciaAnexos",
+  );
+  const protocoloAcompanhamentosListEl = document.getElementById(
+    "protocoloAcompanhamentosList",
+  );
+  const btnConsultar = document.getElementById("btnConsultar");
 
   const protocoloUiEls = {
     protocoloStatusBadge: protocoloStatusBadgeEl,
@@ -1045,75 +1117,79 @@ document.addEventListener('DOMContentLoaded', () => {
     protocoloDataAbertura: protocoloDataAberturaEl,
     protocoloDescricao: protocoloDescricaoEl,
     protocoloDenunciaAnexos: protocoloDenunciaAnexosEl,
-    protocoloAcompanhamentosList: protocoloAcompanhamentosListEl
+    protocoloAcompanhamentosList: protocoloAcompanhamentosListEl,
   };
 
   function showProtocoloFeedback(message, isError) {
-    if (protocoloDetalheEl) protocoloDetalheEl.classList.add('is-hidden');
+    if (protocoloDetalheEl) protocoloDetalheEl.classList.add("is-hidden");
     if (protocoloResultMessageEl) {
       protocoloResultMessageEl.textContent = message;
-      protocoloResultMessageEl.classList.toggle('is-error', Boolean(isError));
-      protocoloResultMessageEl.classList.remove('is-hidden');
+      protocoloResultMessageEl.classList.toggle("is-error", Boolean(isError));
+      protocoloResultMessageEl.classList.remove("is-hidden");
     }
   }
 
   function hideProtocoloFeedback() {
     if (protocoloResultMessageEl) {
-      protocoloResultMessageEl.textContent = '';
-      protocoloResultMessageEl.classList.add('is-hidden');
-      protocoloResultMessageEl.classList.remove('is-error');
+      protocoloResultMessageEl.textContent = "";
+      protocoloResultMessageEl.classList.add("is-hidden");
+      protocoloResultMessageEl.classList.remove("is-error");
     }
   }
 
   function showProtocoloDetalhe(data) {
     hideProtocoloFeedback();
     preencherProtocoloConsultaUI(data, protocoloUiEls);
-    if (protocoloDetalheEl) protocoloDetalheEl.classList.remove('is-hidden');
+    if (protocoloDetalheEl) protocoloDetalheEl.classList.remove("is-hidden");
   }
 
   const params = new URLSearchParams(window.location.search);
   const draftPeek = getDenunciaDraft();
 
   let token =
-    (params.get('token') || '').trim() ||
-    (sessionStorage.getItem('denunciaToken') || '').trim() ||
+    (params.get("token") || "").trim() ||
+    (sessionStorage.getItem("denunciaToken") || "").trim() ||
     (draftPeek && draftPeek.token != null && String(draftPeek.token).trim()) ||
-    '';
+    "";
 
   protocoloReplicarCtx.token = token;
 
   let cpf =
-    (params.get('cpf') || '').trim() ||
-    (draftPeek && draftPeek.cpf != null ? String(draftPeek.cpf).trim() : '') ||
-    '';
+    (params.get("cpf") || "").trim() ||
+    (draftPeek && draftPeek.cpf != null ? String(draftPeek.cpf).trim() : "") ||
+    "";
 
-  const tokenValue = document.getElementById('tokenValue');
-  const cpfValue = document.getElementById('cpfValue');
+  const tokenValue = document.getElementById("tokenValue");
+  const cpfValue = document.getElementById("cpfValue");
 
   if (token && tokenValue) tokenValue.textContent = token;
   if (cpf && cpfValue) cpfValue.textContent = cpf;
 
-  if (token) sessionStorage.setItem('denunciaToken', token);
+  if (token) sessionStorage.setItem("denunciaToken", token);
 
-  const categoriaEl = document.getElementById('categoria');
-  const departamentoEl = document.getElementById('departamento');
-  const categoriaErrorEl = document.getElementById('categoriaError');
-  const departamentoErrorEl = document.getElementById('departamentoError');
-  const form = document.getElementById('denunciaForm');
-  const descricaoEl = document.getElementById('descricao');
-  const descricaoCountEl = document.getElementById('descricaoCount');
-  const descricaoErrorEl = document.getElementById('descricaoError');
-  const anexosEl = document.getElementById('anexos');
-  const anexosInfoEl = document.getElementById('anexosInfo');
-  const anexosErrorEl = document.getElementById('anexosError');
-  const btnAnexosDenuncia = document.getElementById('denunciaBtnAnexos');
-  const btnRevisar = document.getElementById('btnRevisar');
-  const dataEl = document.getElementById('dataAproximada');
-  const denunciaReviewEl = document.getElementById('denunciaReview');
-  const denunciaReviewGridEl = document.getElementById('denunciaReviewGrid');
-  const denunciaReviewVoltarEl = document.getElementById('denunciaReviewVoltar');
-  const denunciaReviewConfirmarEl = document.getElementById('denunciaReviewConfirmar');
-  const denunciaReviewErroEl = document.getElementById('denunciaReviewErro');
+  const categoriaEl = document.getElementById("categoria");
+  const departamentoEl = document.getElementById("departamento");
+  const categoriaErrorEl = document.getElementById("categoriaError");
+  const departamentoErrorEl = document.getElementById("departamentoError");
+  const form = document.getElementById("denunciaForm");
+  const descricaoEl = document.getElementById("descricao");
+  const descricaoCountEl = document.getElementById("descricaoCount");
+  const descricaoErrorEl = document.getElementById("descricaoError");
+  const anexosEl = document.getElementById("anexos");
+  const anexosInfoEl = document.getElementById("anexosInfo");
+  const anexosErrorEl = document.getElementById("anexosError");
+  const btnAnexosDenuncia = document.getElementById("denunciaBtnAnexos");
+  const btnRevisar = document.getElementById("btnRevisar");
+  const dataEl = document.getElementById("dataAproximada");
+  const denunciaReviewEl = document.getElementById("denunciaReview");
+  const denunciaReviewGridEl = document.getElementById("denunciaReviewGrid");
+  const denunciaReviewVoltarEl = document.getElementById(
+    "denunciaReviewVoltar",
+  );
+  const denunciaReviewConfirmarEl = document.getElementById(
+    "denunciaReviewConfirmar",
+  );
+  const denunciaReviewErroEl = document.getElementById("denunciaReviewErro");
 
   if (
     !categoriaEl ||
@@ -1137,8 +1213,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   resetSelectKeepingPlaceholder(categoriaEl);
   resetSelectKeepingPlaceholder(departamentoEl);
-  setTextError(categoriaErrorEl, false, '');
-  setTextError(departamentoErrorEl, false, '');
+  setTextError(categoriaErrorEl, false, "");
+  setTextError(departamentoErrorEl, false, "");
 
   categoriaEl.disabled = true;
   departamentoEl.disabled = true;
@@ -1162,7 +1238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resetSelectKeepingPlaceholder(categoriaEl);
         resetSelectKeepingPlaceholder(departamentoEl);
         const semToken =
-          'Abra este formulário pelo link completo que você recebeu — ele precisa incluir o código de acesso (?token=...) no endereço.';
+          "Abra este formulário pelo link completo que você recebeu — ele precisa incluir o código de acesso (?token=...) no endereço.";
         setTextError(categoriaErrorEl, true, semToken);
         setTextError(departamentoErrorEl, true, semToken);
         categoriaEl.disabled = true;
@@ -1181,21 +1257,21 @@ document.addEventListener('DOMContentLoaded', () => {
             setTextError(
               categoriaErrorEl,
               true,
-              'Não há categorias disponíveis no momento. Atualize a página ou tente de novo mais tarde.'
+              "Não há categorias disponíveis no momento. Atualize a página ou tente de novo mais tarde.",
             );
             categoriasOk = false;
             return;
           }
 
           fillSelect(categoriaEl, categorias);
-          setTextError(categoriaErrorEl, false, '');
+          setTextError(categoriaErrorEl, false, "");
           categoriasOk = true;
         } catch (err) {
           resetSelectKeepingPlaceholder(categoriaEl);
           setTextError(
             categoriaErrorEl,
             true,
-            `Não foi possível carregar as categorias. ${mensagemErroAmigavel(err)}`
+            `Não foi possível carregar as categorias. ${mensagemErroAmigavel(err)}`,
           );
           categoriasOk = false;
         }
@@ -1210,21 +1286,21 @@ document.addEventListener('DOMContentLoaded', () => {
             setTextError(
               departamentoErrorEl,
               true,
-              'Não há departamentos disponíveis no momento. Atualize a página ou tente de novo mais tarde.'
+              "Não há departamentos disponíveis no momento. Atualize a página ou tente de novo mais tarde.",
             );
             departamentosOk = false;
             return;
           }
 
           fillSelect(departamentoEl, departamentos);
-          setTextError(departamentoErrorEl, false, '');
+          setTextError(departamentoErrorEl, false, "");
           departamentosOk = true;
         } catch (err) {
           resetSelectKeepingPlaceholder(departamentoEl);
           setTextError(
             departamentoErrorEl,
             true,
-            `Não foi possível carregar os departamentos. ${mensagemErroAmigavel(err)}`
+            `Não foi possível carregar os departamentos. ${mensagemErroAmigavel(err)}`,
           );
           departamentosOk = false;
         }
@@ -1232,10 +1308,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       await Promise.all([loadCategorias(), loadDepartamentos()]);
 
-      listsLoadedOk = categoriasOk && departamentosOk && hasSelectableOptions(categoriaEl) && hasSelectableOptions(departamentoEl);
+      listsLoadedOk =
+        categoriasOk &&
+        departamentosOk &&
+        hasSelectableOptions(categoriaEl) &&
+        hasSelectableOptions(departamentoEl);
 
-      categoriaEl.disabled = !categoriasOk || !hasSelectableOptions(categoriaEl);
-      departamentoEl.disabled = !departamentosOk || !hasSelectableOptions(departamentoEl);
+      categoriaEl.disabled =
+        !categoriasOk || !hasSelectableOptions(categoriaEl);
+      departamentoEl.disabled =
+        !departamentosOk || !hasSelectableOptions(departamentoEl);
       btnRevisar.disabled = !listsLoadedOk;
 
       if (listsLoadedOk) {
@@ -1253,10 +1335,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const draft = getDenunciaDraft();
     if (!draft) return;
 
-    if (draft.categoria != null && String(draft.categoria) !== '') {
+    if (draft.categoria != null && String(draft.categoria) !== "") {
       categoriaEl.value = String(draft.categoria);
     }
-    if (draft.departamento != null && String(draft.departamento) !== '') {
+    if (draft.departamento != null && String(draft.departamento) !== "") {
       departamentoEl.value = String(draft.departamento);
     }
     if (draft.dataAproximada) {
@@ -1271,17 +1353,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateDescricaoUi() {
-    const len = (descricaoEl.value || '').length;
+    const len = (descricaoEl.value || "").length;
     descricaoCountEl.textContent = `${len}/5000`;
     const isValid = len >= 3 && len <= 5000;
-    let msg = '';
+    let msg = "";
     if (!isValid) {
       if (len === 0) {
-        msg = 'Conte com calma o que aconteceu aqui — é o principal para entendermos sua denúncia (mínimo de 3 caracteres).';
+        msg =
+          "Conte com calma o que aconteceu aqui — é o principal para entendermos sua denúncia (mínimo de 3 caracteres).";
       } else if (len < 3) {
-        msg = 'Quase lá: escreva pelo menos 3 caracteres para podermos seguir.';
+        msg = "Quase lá: escreva pelo menos 3 caracteres para podermos seguir.";
       } else {
-        msg = 'O texto passou do limite de 5.000 caracteres. Você pode resumir mantendo o que for mais importante.';
+        msg =
+          "O texto passou do limite de 5.000 caracteres. Você pode resumir mantendo o que for mais importante.";
       }
     }
     setTextError(descricaoErrorEl, !isValid, msg);
@@ -1296,11 +1380,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const tooLarge = files.some((f) => bytesToMb(f.size) > maxMb);
     const isValid = !tooMany && !tooLarge;
     anexosInfoEl.replaceChildren();
-    let msg = '';
+    let msg = "";
     if (tooMany) {
-      msg = 'Você pode enviar no máximo 5 arquivos. Remova alguns e selecione de novo.';
+      msg =
+        "Você pode enviar no máximo 5 arquivos. Remova alguns e selecione de novo.";
     } else if (tooLarge) {
-      msg = 'Cada arquivo pode ter até 20 MB. Escolha versões menores ou comprimidas e tente outra vez.';
+      msg =
+        "Cada arquivo pode ter até 20 MB. Escolha versões menores ou comprimidas e tente outra vez.";
     }
     setTextError(anexosErrorEl, !isValid, msg);
 
@@ -1309,30 +1395,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     files.forEach((f, index) => {
-      const row = document.createElement('div');
-      row.className = 'protocolo-novo-anexo-item';
+      const row = document.createElement("div");
+      row.className = "protocolo-novo-anexo-item";
 
-      const nome = document.createElement('span');
-      nome.className = 'protocolo-novo-anexo-nome';
+      const nome = document.createElement("span");
+      nome.className = "protocolo-novo-anexo-nome";
       nome.textContent = f.name;
 
-      const btnVer = document.createElement('button');
-      btnVer.type = 'button';
-      btnVer.className = 'protocolo-novo-anexo-ver';
-      btnVer.setAttribute('aria-label', `Visualizar ${f.name}`);
-      btnVer.textContent = 'Ver';
-      btnVer.addEventListener('click', () => {
-        if (anexoModalApi && typeof anexoModalApi.openFile === 'function') {
+      const btnVer = document.createElement("button");
+      btnVer.type = "button";
+      btnVer.className = "protocolo-novo-anexo-ver";
+      btnVer.setAttribute("aria-label", `Visualizar ${f.name}`);
+      btnVer.textContent = "Ver";
+      btnVer.addEventListener("click", () => {
+        if (anexoModalApi && typeof anexoModalApi.openFile === "function") {
           anexoModalApi.openFile(f);
         }
       });
 
-      const btnRemover = document.createElement('button');
-      btnRemover.type = 'button';
-      btnRemover.className = 'protocolo-novo-anexo-remover';
-      btnRemover.setAttribute('aria-label', `Remover ${f.name}`);
-      btnRemover.textContent = 'Remover';
-      btnRemover.addEventListener('click', () => {
+      const btnRemover = document.createElement("button");
+      btnRemover.type = "button";
+      btnRemover.className = "protocolo-novo-anexo-remover";
+      btnRemover.setAttribute("aria-label", `Remover ${f.name}`);
+      btnRemover.textContent = "Remover";
+      btnRemover.addEventListener("click", () => {
         const list = Array.from(anexosEl.files || []);
         list.splice(index, 1);
         arquivosAcumuladosDenuncia = list;
@@ -1347,17 +1433,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return isValid;
   }
 
-  descricaoEl.addEventListener('input', updateDescricaoUi);
+  descricaoEl.addEventListener("input", updateDescricaoUi);
   /** Lista acumulada: cada abertura do seletor substitui `input.files`; mesclamos aqui. */
   let arquivosAcumuladosDenuncia = [];
 
-  btnAnexosDenuncia.addEventListener('click', () => {
+  btnAnexosDenuncia.addEventListener("click", () => {
     anexosEl.click();
   });
 
-  anexosEl.addEventListener('change', () => {
+  anexosEl.addEventListener("change", () => {
     const incoming = Array.from(anexosEl.files || []);
-    arquivosAcumuladosDenuncia = mergeUniqueFiles(arquivosAcumuladosDenuncia, incoming);
+    arquivosAcumuladosDenuncia = mergeUniqueFiles(
+      arquivosAcumuladosDenuncia,
+      incoming,
+    );
     setInputFileList(anexosEl, arquivosAcumuladosDenuncia);
     validateAnexos();
   });
@@ -1366,120 +1455,124 @@ document.addEventListener('DOMContentLoaded', () => {
   validateAnexos();
 
   function addReviewRow(key, valueNodeOrText) {
-    const row = document.createElement('div');
-    row.className = 'review-row';
-    const k = document.createElement('div');
-    k.className = 'review-k';
+    const row = document.createElement("div");
+    row.className = "review-row";
+    const k = document.createElement("div");
+    k.className = "review-k";
     k.textContent = key;
-    const v = document.createElement('div');
-    v.className = 'review-v';
+    const v = document.createElement("div");
+    v.className = "review-v";
     if (valueNodeOrText instanceof Node) v.appendChild(valueNodeOrText);
-    else v.textContent = String(valueNodeOrText ?? '');
+    else v.textContent = String(valueNodeOrText ?? "");
     row.append(k, v);
     denunciaReviewGridEl.appendChild(row);
   }
 
   function buildDenunciaFields() {
-    const cpfTrim = String(cpf || '').trim();
+    const cpfTrim = String(cpf || "").trim();
     const desejaIdentificar = cpfTrim.length > 0;
     const fields = {
       categoriaEnum: categoriaEl.value,
-      departamentoId: departamentoEl.value ? String(departamentoEl.value) : undefined,
+      departamentoId: departamentoEl.value
+        ? String(departamentoEl.value)
+        : undefined,
       dataOcorrido: dataEl.value,
-      descricao: String(descricaoEl.value || '').trim(),
-      desejaIdentificar
+      descricao: String(descricaoEl.value || "").trim(),
+      desejaIdentificar,
     };
     if (cpfTrim) fields.cpf = cpfTrim;
     return fields;
   }
 
   function showReview() {
-    denunciaReviewErroEl.textContent = '';
-    denunciaReviewErroEl.classList.remove('is-visible');
+    denunciaReviewErroEl.textContent = "";
+    denunciaReviewErroEl.classList.remove("is-visible");
     denunciaReviewGridEl.replaceChildren();
 
     const departamentoNome =
       departamentoEl.selectedOptions && departamentoEl.selectedOptions[0]
         ? departamentoEl.selectedOptions[0].textContent
-        : '';
+        : "";
     const categoriaNome =
       categoriaEl.selectedOptions && categoriaEl.selectedOptions[0]
         ? categoriaEl.selectedOptions[0].textContent
-        : '';
+        : "";
 
-    addReviewRow('CPF', String(cpf || '').trim() || '—');
-    addReviewRow('Categoria', categoriaNome || categoriaEl.value || '—');
+    addReviewRow("CPF", String(cpf || "").trim() || "—");
+    addReviewRow("Categoria", categoriaNome || categoriaEl.value || "—");
     addReviewRow(
-      'Departamento',
-      departamentoNome ? `${departamentoNome} (${departamentoEl.value})` : departamentoEl.value || '—'
+      "Departamento",
+      departamentoNome
+        ? `${departamentoNome} (${departamentoEl.value})`
+        : departamentoEl.value || "—",
     );
-    addReviewRow('Data do ocorrido', dataEl.value || '—');
-    addReviewRow('Descrição', String(descricaoEl.value || '').trim() || '—');
+    addReviewRow("Data do ocorrido", dataEl.value || "—");
+    addReviewRow("Descrição", String(descricaoEl.value || "").trim() || "—");
 
     const files = Array.from(anexosEl.files || []);
     if (files.length > 0) {
-      const ul = document.createElement('ul');
-      ul.style.margin = '0';
-      ul.style.paddingLeft = '18px';
-      ul.style.fontSize = '13px';
-      ul.style.color = '#374151';
+      const ul = document.createElement("ul");
+      ul.style.margin = "0";
+      ul.style.paddingLeft = "18px";
+      ul.style.fontSize = "13px";
+      ul.style.color = "#374151";
       files.forEach((f) => {
-        const li = document.createElement('li');
-        li.style.display = 'flex';
-        li.style.alignItems = 'center';
-        li.style.gap = '8px';
-        li.style.flexWrap = 'wrap';
-        const span = document.createElement('span');
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.alignItems = "center";
+        li.style.gap = "8px";
+        li.style.flexWrap = "wrap";
+        const span = document.createElement("span");
         span.textContent = f.name;
-        const btnVer = document.createElement('button');
-        btnVer.type = 'button';
-        btnVer.className = 'protocolo-novo-anexo-ver';
-        btnVer.setAttribute('aria-label', `Visualizar ${f.name}`);
-        btnVer.textContent = 'Ver';
-        btnVer.addEventListener('click', () => {
-          if (anexoModalApi && typeof anexoModalApi.openFile === 'function') {
+        const btnVer = document.createElement("button");
+        btnVer.type = "button";
+        btnVer.className = "protocolo-novo-anexo-ver";
+        btnVer.setAttribute("aria-label", `Visualizar ${f.name}`);
+        btnVer.textContent = "Ver";
+        btnVer.addEventListener("click", () => {
+          if (anexoModalApi && typeof anexoModalApi.openFile === "function") {
             anexoModalApi.openFile(f);
           }
         });
         li.append(span, btnVer);
         ul.appendChild(li);
       });
-      addReviewRow('Anexos', ul);
+      addReviewRow("Anexos", ul);
     } else {
-      addReviewRow('Anexos', '—');
+      addReviewRow("Anexos", "—");
     }
 
-    form.classList.add('is-hidden');
-    denunciaReviewEl.classList.remove('is-hidden');
+    form.classList.add("is-hidden");
+    denunciaReviewEl.classList.remove("is-hidden");
     denunciaReviewConfirmarEl.focus({ preventScroll: true });
   }
 
   function hideReview() {
-    denunciaReviewErroEl.textContent = '';
-    denunciaReviewErroEl.classList.remove('is-visible');
-    denunciaReviewEl.classList.add('is-hidden');
-    form.classList.remove('is-hidden');
+    denunciaReviewErroEl.textContent = "";
+    denunciaReviewErroEl.classList.remove("is-visible");
+    denunciaReviewEl.classList.add("is-hidden");
+    form.classList.remove("is-hidden");
     btnRevisar.focus({ preventScroll: true });
   }
 
-  denunciaReviewVoltarEl.addEventListener('click', () => hideReview());
+  denunciaReviewVoltarEl.addEventListener("click", () => hideReview());
 
-  denunciaReviewConfirmarEl.addEventListener('click', async () => {
-    denunciaReviewErroEl.textContent = '';
-    denunciaReviewErroEl.classList.remove('is-visible');
+  denunciaReviewConfirmarEl.addEventListener("click", async () => {
+    denunciaReviewErroEl.textContent = "";
+    denunciaReviewErroEl.classList.remove("is-visible");
 
-    const tok = String(token || '').trim();
+    const tok = String(token || "").trim();
     if (!tok) {
       denunciaReviewErroEl.textContent =
-        'Token de acesso não encontrado. Abra o formulário pelo link com ?token=...';
-      denunciaReviewErroEl.classList.add('is-visible');
+        "Token de acesso não encontrado. Abra o formulário pelo link com ?token=...";
+      denunciaReviewErroEl.classList.add("is-visible");
       return;
     }
 
     const fields = buildDenunciaFields();
     const files = Array.from(anexosEl.files || []);
 
-    const labelEnviando = 'Enviando…';
+    const labelEnviando = "Enviando…";
     const labelOriginal = denunciaReviewConfirmarEl.textContent;
     denunciaReviewConfirmarEl.disabled = true;
     denunciaReviewVoltarEl.disabled = true;
@@ -1490,8 +1583,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await postEnviarDenunciaMultipart(tok, fields, files);
 
-      sessionStorage.removeItem('denunciaDraft');
-      sessionStorage.removeItem('denunciaToken');
+      sessionStorage.removeItem("denunciaDraft");
+      sessionStorage.removeItem("denunciaToken");
 
       setInputFileList(anexosEl, []);
       arquivosAcumuladosDenuncia = [];
@@ -1501,11 +1594,11 @@ document.addEventListener('DOMContentLoaded', () => {
       updateDescricaoUi();
 
       hideReview();
-      if (messageEl) messageEl.textContent = 'Denúncia enviada com sucesso.';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (messageEl) messageEl.textContent = "Denúncia enviada com sucesso.";
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       denunciaReviewErroEl.textContent = mensagemErroAmigavel(err);
-      denunciaReviewErroEl.classList.add('is-visible');
+      denunciaReviewErroEl.classList.add("is-visible");
     } finally {
       denunciaReviewConfirmarEl.disabled = false;
       denunciaReviewVoltarEl.disabled = false;
@@ -1515,7 +1608,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
 
     if (!listsLoadedOk || categoriaEl.disabled || departamentoEl.disabled) {
@@ -1528,55 +1621,73 @@ document.addEventListener('DOMContentLoaded', () => {
     const departamentoOk = Boolean(departamentoEl.value);
     const dataOk = Boolean(dataEl.value);
 
-    if (!categoriaOk || !departamentoOk || !dataOk || !descricaoOk || !anexosOk) {
+    if (
+      !categoriaOk ||
+      !departamentoOk ||
+      !dataOk ||
+      !descricaoOk ||
+      !anexosOk
+    ) {
       if (listsLoadedOk) {
         setTextError(
           categoriaErrorEl,
           !categoriaOk,
-          !categoriaOk ? 'Escolha a categoria que melhor descreve o caso.' : ''
+          !categoriaOk ? "Escolha a categoria que melhor descreve o caso." : "",
         );
         setTextError(
           departamentoErrorEl,
           !departamentoOk,
-          !departamentoOk ? 'Escolha o departamento relacionado ao ocorrido.' : ''
+          !departamentoOk
+            ? "Escolha o departamento relacionado ao ocorrido."
+            : "",
         );
       }
       if (!dataOk) {
-        dataEl.setCustomValidity('Informe a data aproximada em que isso aconteceu.');
+        dataEl.setCustomValidity(
+          "Informe a data aproximada em que isso aconteceu.",
+        );
         dataEl.reportValidity();
       } else {
-        dataEl.setCustomValidity('');
+        dataEl.setCustomValidity("");
       }
       btnRevisar.disabled = false;
       return;
     }
 
-    dataEl.setCustomValidity('');
+    dataEl.setCustomValidity("");
     showReview();
   });
 
   function setMode(mode) {
-    const isDenuncia = mode === 'denuncia';
+    const isDenuncia = mode === "denuncia";
     if (isDenuncia) protocoloReplicarCtx.protocoloUuid = null;
     if (!isDenuncia) {
-      denunciaReviewEl.classList.add('is-hidden');
+      denunciaReviewEl.classList.add("is-hidden");
     }
-    if (form) form.classList.toggle('is-hidden', !isDenuncia);
-    if (protocoloBox) protocoloBox.classList.toggle('is-hidden', isDenuncia);
-    if (protocoloChatAside) protocoloChatAside.classList.toggle('is-hidden', isDenuncia);
-    if (denunciasShell) denunciasShell.classList.toggle('denuncias-shell--protocolo', !isDenuncia);
-    if (protocoloResultEl) protocoloResultEl.classList.toggle('is-hidden', true);
+    if (form) form.classList.toggle("is-hidden", !isDenuncia);
+    if (protocoloBox) protocoloBox.classList.toggle("is-hidden", isDenuncia);
+    if (protocoloChatAside)
+      protocoloChatAside.classList.toggle("is-hidden", isDenuncia);
+    if (denunciasShell)
+      denunciasShell.classList.toggle(
+        "denuncias-shell--protocolo",
+        !isDenuncia,
+      );
+    if (protocoloResultEl)
+      protocoloResultEl.classList.toggle("is-hidden", true);
 
     if (btnNovaDenuncia) btnNovaDenuncia.disabled = isDenuncia;
     if (btnConsultarProtocolo) btnConsultarProtocolo.disabled = !isDenuncia;
 
     if (pageTitleEl) {
-      pageTitleEl.textContent = isDenuncia ? 'Registrar denúncia' : 'Consultar protocolo';
+      pageTitleEl.textContent = isDenuncia
+        ? "Registrar denúncia"
+        : "Consultar protocolo";
     }
     if (messageEl) {
       messageEl.textContent = isDenuncia
-        ? 'Preencha o formulário abaixo. Você poderá revisar antes do envio.'
-        : 'Digite o número do protocolo para consultar o status.';
+        ? "Preencha o formulário abaixo. Você poderá revisar antes do envio."
+        : "Digite o número do protocolo para consultar o status.";
     }
 
     if (!isDenuncia && protocoloNumeroEl) {
@@ -1584,34 +1695,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  setMode('denuncia');
+  setMode("denuncia");
 
   if (btnConsultarProtocolo) {
-    btnConsultarProtocolo.addEventListener('click', () => setMode('protocolo'));
+    btnConsultarProtocolo.addEventListener("click", () => setMode("protocolo"));
   }
   if (btnNovaDenuncia) {
-    btnNovaDenuncia.addEventListener('click', () => setMode('denuncia'));
+    btnNovaDenuncia.addEventListener("click", () => setMode("denuncia"));
   }
 
   async function consultarProtocolo() {
-    const rawVal = protocoloNumeroEl ? String(protocoloNumeroEl.value || '').trim() : '';
+    const rawVal = protocoloNumeroEl
+      ? String(protocoloNumeroEl.value || "").trim()
+      : "";
     const val = normalizeUuidLike(rawVal);
 
     if (!val || !isUuid(val)) {
       if (protocoloNumeroEl) {
         protocoloNumeroEl.setCustomValidity(
-          rawVal ? 'Informe um UUID válido de protocolo.' : 'Informe o número do protocolo.'
+          rawVal
+            ? "Informe um UUID válido de protocolo."
+            : "Informe o número do protocolo.",
         );
         protocoloNumeroEl.reportValidity();
-        protocoloNumeroEl.setCustomValidity('');
+        protocoloNumeroEl.setCustomValidity("");
       }
       if (protocoloResultEl) {
-        protocoloResultEl.classList.toggle('is-hidden', false);
+        protocoloResultEl.classList.toggle("is-hidden", false);
         showProtocoloFeedback(
           rawVal
-            ? 'UUID inválido. Use o formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-            : 'Informe o número do protocolo para consultar.',
-          true
+            ? "UUID inválido. Use o formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            : "Informe o número do protocolo para consultar.",
+          true,
         );
       }
       return;
@@ -1620,23 +1735,28 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       if (btnConsultar) btnConsultar.disabled = true;
       if (protocoloResultEl) {
-        protocoloResultEl.classList.toggle('is-hidden', false);
-        showProtocoloFeedback('Consultando...', false);
+        protocoloResultEl.classList.toggle("is-hidden", false);
+        showProtocoloFeedback("Consultando...", false);
       }
 
       const data = await fetchAcompanharPorProtocolo(val, token);
       protocoloReplicarCtx.protocoloUuid =
-        data.protocolo != null ? normalizeUuidLike(String(data.protocolo)) : val;
+        data.protocolo != null
+          ? normalizeUuidLike(String(data.protocolo))
+          : val;
       protocoloReplicarCtx.token = token;
       if (protocoloResultEl) {
         showProtocoloDetalhe(data);
-        protocoloResultEl.classList.toggle('is-hidden', false);
+        protocoloResultEl.classList.toggle("is-hidden", false);
       }
     } catch (err) {
       if (protocoloResultEl) {
-        protocoloResultEl.classList.toggle('is-hidden', false);
-        if (protocoloDetalheEl) protocoloDetalheEl.classList.add('is-hidden');
-        showProtocoloFeedback(`Erro ao consultar: ${mensagemErroAmigavel(err)}`, true);
+        protocoloResultEl.classList.toggle("is-hidden", false);
+        if (protocoloDetalheEl) protocoloDetalheEl.classList.add("is-hidden");
+        showProtocoloFeedback(
+          `Erro ao consultar: ${mensagemErroAmigavel(err)}`,
+          true,
+        );
       } else {
         alert(mensagemErroAmigavel(err));
       }
@@ -1646,14 +1766,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (protocoloForm) {
-    protocoloForm.addEventListener('submit', async (e) => {
+    protocoloForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       await consultarProtocolo();
     });
   }
 
   if (btnConsultar) {
-    btnConsultar.addEventListener('click', async (e) => {
+    btnConsultar.addEventListener("click", async (e) => {
       e.preventDefault();
       await consultarProtocolo();
     });
@@ -1665,44 +1785,56 @@ function validarAnexosNovoAcompanhamento(files) {
   if (list.length > MAX_ANEXOS_ACOMPANHAMENTO) {
     return {
       ok: false,
-      msg: `Você pode enviar no máximo ${MAX_ANEXOS_ACOMPANHAMENTO} arquivos.`
+      msg: `Você pode enviar no máximo ${MAX_ANEXOS_ACOMPANHAMENTO} arquivos.`,
     };
   }
-  const tooLarge = list.some((f) => bytesToMb(f.size) > MAX_MB_ANEXO_ACOMPANHAMENTO);
+  const tooLarge = list.some(
+    (f) => bytesToMb(f.size) > MAX_MB_ANEXO_ACOMPANHAMENTO,
+  );
   if (tooLarge) {
     return {
       ok: false,
-      msg: `Cada arquivo pode ter até ${MAX_MB_ANEXO_ACOMPANHAMENTO} MB.`
+      msg: `Cada arquivo pode ter até ${MAX_MB_ANEXO_ACOMPANHAMENTO} MB.`,
     };
   }
-  return { ok: true, msg: '' };
+  return { ok: true, msg: "" };
 }
 
 function setNovoAcompanhamentoErro(el, on, message) {
   if (!el) return;
   if (!on) {
-    el.textContent = '';
-    el.classList.remove('is-visible');
+    el.textContent = "";
+    el.classList.remove("is-visible");
     return;
   }
-  el.textContent = message || '';
-  el.classList.add('is-visible');
+  el.textContent = message || "";
+  el.classList.add("is-visible");
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const inputAnexosNovo = document.getElementById('protocoloNovoAcompanhamentoAnexos');
-  const btnAnexosNovo = document.getElementById('protocoloNovoAcompanhamentoBtnAnexos');
-  const btnEnviarNovo = document.getElementById('protocoloNovoAcompanhamentoEnviar');
-  const textareaNovo = document.getElementById('protocoloNovoAcompanhamentoTexto');
-  const anexosNovoInfo = document.getElementById('protocoloNovoAcompanhamentoAnexosInfo');
-  const erroNovo = document.getElementById('protocoloNovoAcompanhamentoErro');
+document.addEventListener("DOMContentLoaded", () => {
+  const inputAnexosNovo = document.getElementById(
+    "protocoloNovoAcompanhamentoAnexos",
+  );
+  const btnAnexosNovo = document.getElementById(
+    "protocoloNovoAcompanhamentoBtnAnexos",
+  );
+  const btnEnviarNovo = document.getElementById(
+    "protocoloNovoAcompanhamentoEnviar",
+  );
+  const textareaNovo = document.getElementById(
+    "protocoloNovoAcompanhamentoTexto",
+  );
+  const anexosNovoInfo = document.getElementById(
+    "protocoloNovoAcompanhamentoAnexosInfo",
+  );
+  const erroNovo = document.getElementById("protocoloNovoAcompanhamentoErro");
 
   if (!inputAnexosNovo || !btnAnexosNovo) return;
 
   /** Lista acumulada: cada abertura do seletor substitui `input.files`; mesclamos aqui. */
   let arquivosAcumuladosNovo = [];
 
-  btnAnexosNovo.addEventListener('click', () => {
+  btnAnexosNovo.addEventListener("click", () => {
     inputAnexosNovo.click();
   });
 
@@ -1711,35 +1843,35 @@ document.addEventListener('DOMContentLoaded', () => {
     anexosNovoInfo.replaceChildren();
     const files = inputAnexosNovo.files;
     if (!files || files.length === 0) {
-      setNovoAcompanhamentoErro(erroNovo, false, '');
+      setNovoAcompanhamentoErro(erroNovo, false, "");
       return;
     }
     const v = validarAnexosNovoAcompanhamento(files);
     setNovoAcompanhamentoErro(erroNovo, !v.ok, v.msg);
     Array.from(files).forEach((f, index) => {
-      const row = document.createElement('div');
-      row.className = 'protocolo-novo-anexo-item';
-      const nome = document.createElement('span');
-      nome.className = 'protocolo-novo-anexo-nome';
+      const row = document.createElement("div");
+      row.className = "protocolo-novo-anexo-item";
+      const nome = document.createElement("span");
+      nome.className = "protocolo-novo-anexo-nome";
       nome.textContent = f.name;
 
-      const btnVer = document.createElement('button');
-      btnVer.type = 'button';
-      btnVer.className = 'protocolo-novo-anexo-ver';
-      btnVer.setAttribute('aria-label', `Visualizar ${f.name}`);
-      btnVer.textContent = 'Ver';
-      btnVer.addEventListener('click', () => {
-        if (anexoModalApi && typeof anexoModalApi.openFile === 'function') {
+      const btnVer = document.createElement("button");
+      btnVer.type = "button";
+      btnVer.className = "protocolo-novo-anexo-ver";
+      btnVer.setAttribute("aria-label", `Visualizar ${f.name}`);
+      btnVer.textContent = "Ver";
+      btnVer.addEventListener("click", () => {
+        if (anexoModalApi && typeof anexoModalApi.openFile === "function") {
           anexoModalApi.openFile(f);
         }
       });
 
-      const btnRemover = document.createElement('button');
-      btnRemover.type = 'button';
-      btnRemover.className = 'protocolo-novo-anexo-remover';
-      btnRemover.setAttribute('aria-label', `Remover ${f.name}`);
-      btnRemover.textContent = 'Remover';
-      btnRemover.addEventListener('click', () => {
+      const btnRemover = document.createElement("button");
+      btnRemover.type = "button";
+      btnRemover.className = "protocolo-novo-anexo-remover";
+      btnRemover.setAttribute("aria-label", `Remover ${f.name}`);
+      btnRemover.textContent = "Remover";
+      btnRemover.addEventListener("click", () => {
         const list = Array.from(inputAnexosNovo.files || []);
         list.splice(index, 1);
         arquivosAcumuladosNovo = list;
@@ -1751,7 +1883,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  inputAnexosNovo.addEventListener('change', () => {
+  inputAnexosNovo.addEventListener("change", () => {
     const incoming = Array.from(inputAnexosNovo.files || []);
     arquivosAcumuladosNovo = mergeUniqueFiles(arquivosAcumuladosNovo, incoming);
     setInputFileList(inputAnexosNovo, arquivosAcumuladosNovo);
@@ -1759,27 +1891,29 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   if (btnEnviarNovo && textareaNovo) {
-    btnEnviarNovo.addEventListener('click', async () => {
+    btnEnviarNovo.addEventListener("click", async () => {
       const params = new URLSearchParams(window.location.search);
       const draftPeek = getDenunciaDraft();
       const token =
-        (params.get('token') || '').trim() ||
-        (sessionStorage.getItem('denunciaToken') || '').trim() ||
-        (draftPeek && draftPeek.token != null && String(draftPeek.token).trim()) ||
-        '';
+        (params.get("token") || "").trim() ||
+        (sessionStorage.getItem("denunciaToken") || "").trim() ||
+        (draftPeek &&
+          draftPeek.token != null &&
+          String(draftPeek.token).trim()) ||
+        "";
       protocoloReplicarCtx.token = token;
 
       const uuid = protocoloReplicarCtx.protocoloUuid;
-      const mensagem = String(textareaNovo.value || '').trim();
+      const mensagem = String(textareaNovo.value || "").trim();
       const files = Array.from(inputAnexosNovo.files || []);
 
-      setNovoAcompanhamentoErro(erroNovo, false, '');
+      setNovoAcompanhamentoErro(erroNovo, false, "");
 
       if (!token) {
         setNovoAcompanhamentoErro(
           erroNovo,
           true,
-          'Abra a página pelo link com o código de acesso (?token=...) para enviar.'
+          "Abra a página pelo link com o código de acesso (?token=...) para enviar.",
         );
         return;
       }
@@ -1787,7 +1921,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setNovoAcompanhamentoErro(
           erroNovo,
           true,
-          'Consulte o protocolo antes de enviar um acompanhamento.'
+          "Consulte o protocolo antes de enviar um acompanhamento.",
         );
         return;
       }
@@ -1795,12 +1929,16 @@ document.addEventListener('DOMContentLoaded', () => {
         setNovoAcompanhamentoErro(
           erroNovo,
           true,
-          'A mensagem deve ter entre 3 e 2000 caracteres.'
+          "A mensagem deve ter entre 3 e 2000 caracteres.",
         );
         return;
       }
       if (mensagem.length > 2000) {
-        setNovoAcompanhamentoErro(erroNovo, true, 'A mensagem não pode passar de 2000 caracteres.');
+        setNovoAcompanhamentoErro(
+          erroNovo,
+          true,
+          "A mensagem não pode passar de 2000 caracteres.",
+        );
         return;
       }
 
@@ -1810,7 +1948,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const labelEnviando = 'Enviando…';
+      const labelEnviando = "Enviando…";
       const labelOriginal = btnEnviarNovo.textContent;
       btnEnviarNovo.disabled = true;
       btnAnexosNovo.disabled = true;
@@ -1818,7 +1956,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         await postReplicarAcompanhamentoMultipart(uuid, token, mensagem, files);
-        textareaNovo.value = '';
+        textareaNovo.value = "";
         arquivosAcumuladosNovo = [];
         setInputFileList(inputAnexosNovo, []);
         atualizarInfoAnexosNovo();
@@ -1833,4 +1971,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-
