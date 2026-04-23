@@ -238,6 +238,11 @@ form {
   gap: 14px;
 }
 
+/* Sobrescreve display:flex acima quando combinado com .is-hidden */
+.protocolo-result.is-hidden {
+  display: none;
+}
+
 .protocolo-result-msg {
   margin: 0;
   padding: 14px 16px;
@@ -253,6 +258,30 @@ form {
   color: #991b1b;
   background: #fef2f2;
   border-color: #fecaca;
+}
+
+.protocolo-envio-protocolo {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.protocolo-envio-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 8px;
+  border-radius: 999px;
+  background: rgba(15, 45, 90, 0.1);
+  color: #0f2d5a;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: help;
+  user-select: none;
+  vertical-align: middle;
 }
 
 .protocolo-detalhe {

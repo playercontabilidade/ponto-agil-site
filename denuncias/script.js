@@ -579,6 +579,27 @@ function getDenunciaDraft() {
   }
 }
 
+function formatarDataHoraEnvioBR(valor) {
+  if (valor == null || valor === "") return "—";
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) return String(valor);
+  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+/** Resposta plana do POST de envio ou objeto aninhado (`data`, etc.). */
+function extrairCorpoRespostaEnvio(resp) {
+  if (!resp || typeof resp !== "object") return {};
+  if (
+    Object.prototype.hasOwnProperty.call(resp, "protocolo") ||
+    Object.prototype.hasOwnProperty.call(resp, "mensagem") ||
+    Object.prototype.hasOwnProperty.call(resp, "status")
+  ) {
+    return resp;
+  }
+  if (resp.data && typeof resp.data === "object") return resp.data;
+  return resp;
+}
+
 function bytesToMb(bytes) {
   return bytes / (1024 * 1024);
 }
@@ -1190,6 +1211,31 @@ document.addEventListener("DOMContentLoaded", () => {
     "denunciaReviewConfirmar",
   );
   const denunciaReviewErroEl = document.getElementById("denunciaReviewErro");
+  const denunciaEnvioResultEl = document.getElementById("denunciaEnvioResult");
+  const denunciaEnvioResultMensagemEl = document.getElementById(
+    "denunciaEnvioResultMensagem",
+  );
+  const denunciaEnvioResultProtocoloEl = document.getElementById(
+    "denunciaEnvioResultProtocolo",
+  );
+  const denunciaEnvioResultStatusEl = document.getElementById(
+    "denunciaEnvioResultStatus",
+  );
+  const denunciaEnvioResultDataEnvioEl = document.getElementById(
+    "denunciaEnvioResultDataEnvio",
+  );
+  const denunciaEnvioResultImportanteEl = document.getElementById(
+    "denunciaEnvioResultImportante",
+  );
+  const denunciaEnvioResultFecharEl = document.getElementById(
+    "denunciaEnvioResultFechar",
+  );
+  const denunciaInfoNoteEl = document.getElementById("denunciaInfoNote");
+
+  function esconderResultadoEnvioDenuncia() {
+    if (denunciaEnvioResultEl)
+      denunciaEnvioResultEl.classList.add("is-hidden");
+  }
 
   if (
     !categoriaEl ||
@@ -1206,7 +1252,13 @@ document.addEventListener("DOMContentLoaded", () => {
     !denunciaReviewGridEl ||
     !denunciaReviewVoltarEl ||
     !denunciaReviewConfirmarEl ||
-    !denunciaReviewErroEl
+    !denunciaReviewErroEl ||
+    !denunciaEnvioResultEl ||
+    !denunciaEnvioResultMensagemEl ||
+    !denunciaEnvioResultProtocoloEl ||
+    !denunciaEnvioResultStatusEl ||
+    !denunciaEnvioResultDataEnvioEl ||
+    !denunciaEnvioResultImportanteEl
   ) {
     return;
   }
@@ -1355,14 +1407,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateDescricaoUi() {
     const len = (descricaoEl.value || "").length;
     descricaoCountEl.textContent = `${len}/5000`;
-    const isValid = len >= 3 && len <= 5000;
+    const isValid = len >= 10 && len <= 5000;
     let msg = "";
     if (!isValid) {
       if (len === 0) {
         msg =
-          "Conte com calma o que aconteceu aqui — é o principal para entendermos sua denúncia (mínimo de 3 caracteres).";
-      } else if (len < 3) {
-        msg = "Quase lá: escreva pelo menos 3 caracteres para podermos seguir.";
+          "Conte com calma o que aconteceu aqui — é o principal para entendermos sua denúncia (mínimo de 10 caracteres).";
+      } else if (len < 10) {
+        msg =
+          "Quase lá: escreva pelo menos 10 caracteres para podermos seguir.";
       } else {
         msg =
           "O texto passou do limite de 5.000 caracteres. Você pode resumir mantendo o que for mais importante.";
@@ -1485,6 +1538,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showReview() {
+    esconderResultadoEnvioDenuncia();
     denunciaReviewErroEl.textContent = "";
     denunciaReviewErroEl.classList.remove("is-visible");
     denunciaReviewGridEl.replaceChildren();
@@ -1548,11 +1602,57 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function hideReview() {
+    esconderResultadoEnvioDenuncia();
     denunciaReviewErroEl.textContent = "";
     denunciaReviewErroEl.classList.remove("is-visible");
     denunciaReviewEl.classList.add("is-hidden");
     form.classList.remove("is-hidden");
     btnRevisar.focus({ preventScroll: true });
+  }
+
+  function mostrarResultadoEnvioDenuncia(resp) {
+    const data = extrairCorpoRespostaEnvio(resp);
+    denunciaReviewErroEl.textContent = "";
+    denunciaReviewErroEl.classList.remove("is-visible");
+    denunciaReviewEl.classList.add("is-hidden");
+    form.classList.add("is-hidden");
+    if (denunciaInfoNoteEl) denunciaInfoNoteEl.classList.add("is-hidden");
+
+    denunciaEnvioResultMensagemEl.textContent =
+      String(data.mensagem ?? "").trim() || "Denúncia enviada com sucesso!";
+    denunciaEnvioResultProtocoloEl.textContent =
+      String(data.protocolo ?? "").trim() || "—";
+    denunciaEnvioResultStatusEl.textContent =
+      String(data.status ?? "").trim() || "—";
+    denunciaEnvioResultDataEnvioEl.textContent = formatarDataHoraEnvioBR(
+      data.dataEnvio,
+    );
+    denunciaEnvioResultImportanteEl.textContent =
+      String(data.mensagemImportante ?? "").trim() ||
+      "Guarde este protocolo. Ele é a única forma de acompanhar sua denúncia.";
+
+    denunciaEnvioResultEl.classList.remove("is-hidden");
+    if (pageTitleEl) pageTitleEl.textContent = "Resultado do envio";
+    if (messageEl) messageEl.textContent = "";
+    if (btnNovaDenuncia) btnNovaDenuncia.disabled = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function fecharResultadoEnvioDenuncia() {
+    esconderResultadoEnvioDenuncia();
+    form.reset();
+    setInputFileList(anexosEl, []);
+    arquivosAcumuladosDenuncia = [];
+    validateAnexos();
+    updateDescricaoUi();
+    form.classList.remove("is-hidden");
+    if (denunciaInfoNoteEl) denunciaInfoNoteEl.classList.remove("is-hidden");
+    if (pageTitleEl) pageTitleEl.textContent = "Registrar denúncia";
+    if (messageEl) {
+      messageEl.textContent =
+        "Preencha o formulário abaixo. Você poderá revisar antes do envio.";
+    }
+    if (btnNovaDenuncia) btnNovaDenuncia.disabled = true;
   }
 
   denunciaReviewVoltarEl.addEventListener("click", () => hideReview());
@@ -1581,21 +1681,16 @@ document.addEventListener("DOMContentLoaded", () => {
     denunciaReviewConfirmarEl.textContent = labelEnviando;
 
     try {
-      await postEnviarDenunciaMultipart(tok, fields, files);
+      const resp = await postEnviarDenunciaMultipart(tok, fields, files);
 
       sessionStorage.removeItem("denunciaDraft");
-      sessionStorage.removeItem("denunciaToken");
+      sessionStorage.setItem("denunciaToken", tok);
 
       setInputFileList(anexosEl, []);
       arquivosAcumuladosDenuncia = [];
       validateAnexos();
 
-      form.reset();
-      updateDescricaoUi();
-
-      hideReview();
-      if (messageEl) messageEl.textContent = "Denúncia enviada com sucesso.";
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      mostrarResultadoEnvioDenuncia(resp);
     } catch (err) {
       denunciaReviewErroEl.textContent = mensagemErroAmigavel(err);
       denunciaReviewErroEl.classList.add("is-visible");
@@ -1660,6 +1755,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setMode(mode) {
     const isDenuncia = mode === "denuncia";
+    esconderResultadoEnvioDenuncia();
+    if (denunciaInfoNoteEl)
+      denunciaInfoNoteEl.classList.remove("is-hidden");
     if (isDenuncia) protocoloReplicarCtx.protocoloUuid = null;
     if (!isDenuncia) {
       denunciaReviewEl.classList.add("is-hidden");
@@ -1698,11 +1796,28 @@ document.addEventListener("DOMContentLoaded", () => {
   setMode("denuncia");
 
   if (btnConsultarProtocolo) {
-    btnConsultarProtocolo.addEventListener("click", () => setMode("protocolo"));
+    btnConsultarProtocolo.addEventListener("click", () => {
+      esconderResultadoEnvioDenuncia();
+      setMode("protocolo");
+    });
   }
   if (btnNovaDenuncia) {
-    btnNovaDenuncia.addEventListener("click", () => setMode("denuncia"));
+    btnNovaDenuncia.addEventListener("click", () => {
+      if (
+        denunciaEnvioResultEl &&
+        !denunciaEnvioResultEl.classList.contains("is-hidden")
+      ) {
+        fecharResultadoEnvioDenuncia();
+        return;
+      }
+      esconderResultadoEnvioDenuncia();
+      setMode("denuncia");
+    });
   }
+
+  denunciaEnvioResultFecharEl?.addEventListener("click", () => {
+    fecharResultadoEnvioDenuncia();
+  });
 
   async function consultarProtocolo() {
     const rawVal = protocoloNumeroEl

@@ -32,7 +32,7 @@
           Preencha o formulário abaixo. Você poderá revisar antes do envio.
         </p>
 
-        <p class="info-note" role="note">
+        <p id="denunciaInfoNote" class="info-note" role="note">
           Este canal de denúncias respeita a
           <a
             href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm"
@@ -166,7 +166,7 @@
             <textarea
               id="descricao"
               name="descricao"
-              minlength="3"
+              minlength="10"
               maxlength="5000"
               required
               placeholder="Descreva o que aconteceu, quem estava envolvido, local, datas, etc."
@@ -179,7 +179,7 @@
               <span class="help" id="descricaoCount">0/5000</span>
             </div>
             <span class="error" id="descricaoError"
-              >A descrição deve ter entre 3 e 5000 caracteres.</span
+              >A descrição deve ter entre 10 e 5000 caracteres.</span
             >
           </div>
 
@@ -235,6 +235,42 @@
             role="alert"
             aria-live="assertive"
           ></p>
+        </section>
+
+        <section
+          id="denunciaEnvioResult"
+          class="protocolo-result is-hidden"
+          aria-live="polite"
+        >
+          <p id="denunciaEnvioResultMensagem" class="protocolo-result-msg"></p>
+          <dl class="protocolo-dl">
+            <div class="protocolo-dl-row">
+              <dt>Protocolo para consulta</dt>
+              <dd>
+                <span
+                  id="denunciaEnvioResultProtocolo"
+                  class="protocolo-envio-protocolo"
+                ></span>
+                <span
+                  class="protocolo-envio-help"
+                  title="Você pode registrar uma ou mais denúncias enquanto o token estiver válido. Após expirar, será necessário solicitar ou renovar um novo token."
+                  >(?)</span
+                >
+              </dd>
+            </div>
+            <div class="protocolo-dl-row">
+              <dt>Status</dt>
+              <dd id="denunciaEnvioResultStatus"></dd>
+            </div>
+            <div class="protocolo-dl-row">
+              <dt>Data do envio</dt>
+              <dd id="denunciaEnvioResultDataEnvio"></dd>
+            </div>
+            <div class="protocolo-dl-row protocolo-dl-full">
+              <dt>Importante</dt>
+              <dd id="denunciaEnvioResultImportante"></dd>
+            </div>
+          </dl>
         </section>
       </main>
 
