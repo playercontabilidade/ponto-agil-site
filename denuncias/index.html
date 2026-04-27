@@ -191,6 +191,7 @@
               name="anexos"
               class="is-hidden"
               multiple
+              accept="*/*"
             />
             <button
               type="button"
@@ -199,14 +200,14 @@
             >
               Adicionar anexos
             </button>
-            <span class="help">Máximo 5 arquivos, até 20 MB por arquivo.</span>
+            <span class="help">Máximo 5 arquivos, até 20 MB por arquivo. Aceitos: JPG, JPEG, PNG e PDF.</span>
             <div
               id="anexosInfo"
               class="protocolo-novo-anexos-info"
               aria-live="polite"
             ></div>
             <span class="error" id="anexosError"
-              >Limite de anexos excedido ou arquivo acima de 20 MB.</span
+              >Limite de anexos excedido, arquivo acima de 20 MB ou tipo de arquivo não permitido.</span
             >
           </div>
 
@@ -307,6 +308,7 @@
               id="protocoloNovoAcompanhamentoAnexos"
               class="is-hidden"
               multiple
+              accept="*/*"
             />
             <button
               type="button"

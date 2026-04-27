@@ -20,8 +20,23 @@
       `/denuncia/public/acompanhamento/anexo/${encodeURIComponent(String(id ?? "").trim())}`,
   };
 
+  const ALLOWED_MIME_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'application/pdf',
+  ];
+
+  const ALLOWED_FILE_EXTENSIONS = [
+    '.jpg',
+    '.jpeg',
+    '.png',
+    '.pdf',
+  ];
+
   window.PONTO_AGIL_CONFIG = Object.freeze({
     baseUrl,
     API_ENDPOINTS,
+    ALLOWED_MIME_TYPES,
+    ALLOWED_FILE_EXTENSIONS,
   });
 })();

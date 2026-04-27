@@ -1,4 +1,4 @@
-const { baseUrl, API_ENDPOINTS } = window.PONTO_AGIL_CONFIG || {};
+const { baseUrl, API_ENDPOINTS, ALLOWED_MIME_TYPES, ALLOWED_FILE_EXTENSIONS } = window.PONTO_AGIL_CONFIG || {};
 if (!baseUrl || !API_ENDPOINTS) {
   throw new Error(
     "Configuração ausente: carregue ./config.js antes de ./script.js",
@@ -1175,16 +1175,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   protocoloReplicarCtx.token = token;
 
-  let cpf =
-    (params.get("cpf") || "").trim() ||
-    (draftPeek && draftPeek.cpf != null ? String(draftPeek.cpf).trim() : "") ||
-    "";
-
   const tokenValue = document.getElementById("tokenValue");
-  const cpfValue = document.getElementById("cpfValue");
 
   if (token && tokenValue) tokenValue.textContent = token;
-  if (cpf && cpfValue) cpfValue.textContent = cpf;
 
   if (token) sessionStorage.setItem("denunciaToken", token);
 
@@ -1425,13 +1418,38 @@ document.addEventListener("DOMContentLoaded", () => {
     return isValid;
   }
 
+  function isFileBlocked(file) {
+    if (!(file instanceof File)) return false;
+
+    const mimeType = (file.type || "").toLowerCase().trim();
+    const fileName = (file.name || "").toLowerCase();
+
+    // Verificar se MIME type é permitido
+    if (
+      mimeType &&
+      !ALLOWED_MIME_TYPES.some((allowed) => mimeType === allowed)
+    ) {
+      return true;
+    }
+
+    // Se não tem MIME type, verificar extensão permitida
+    if (!mimeType) {
+      return !ALLOWED_FILE_EXTENSIONS.some((ext) =>
+        fileName.endsWith(ext.toLowerCase())
+      );
+    }
+
+    return false;
+  }
+
   function validateAnexos() {
     const files = Array.from(anexosEl.files || []);
     const maxFiles = 5;
     const maxMb = 20;
     const tooMany = files.length > maxFiles;
     const tooLarge = files.some((f) => bytesToMb(f.size) > maxMb);
-    const isValid = !tooMany && !tooLarge;
+    const hasBlockedFile = files.some((f) => isFileBlocked(f));
+    const isValid = !tooMany && !tooLarge && !hasBlockedFile;
     anexosInfoEl.replaceChildren();
     let msg = "";
     if (tooMany) {
@@ -1440,6 +1458,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (tooLarge) {
       msg =
         "Cada arquivo pode ter até 20 MB. Escolha versões menores ou comprimidas e tente outra vez.";
+    } else if (hasBlockedFile) {
+      const blockedFile = files.find((f) => isFileBlocked(f));
+      msg = `O arquivo "${blockedFile.name}" não é permitido. São aceitos apenas: JPG, JPEG, PNG e PDF.`;
     }
     setTextError(anexosErrorEl, !isValid, msg);
 
@@ -1522,8 +1543,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildDenunciaFields() {
-    const cpfTrim = String(cpf || "").trim();
-    const desejaIdentificar = cpfTrim.length > 0;
     const fields = {
       categoriaEnum: categoriaEl.value,
       departamentoId: departamentoEl.value
@@ -1531,9 +1550,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : undefined,
       dataOcorrido: dataEl.value,
       descricao: String(descricaoEl.value || "").trim(),
-      desejaIdentificar,
     };
-    if (cpfTrim) fields.cpf = cpfTrim;
     return fields;
   }
 
@@ -1552,7 +1569,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ? categoriaEl.selectedOptions[0].textContent
         : "";
 
-    addReviewRow("CPF", String(cpf || "").trim() || "—");
     addReviewRow("Categoria", categoriaNome || categoriaEl.value || "—");
     addReviewRow(
       "Departamento",
@@ -1910,6 +1926,14 @@ function validarAnexosNovoAcompanhamento(files) {
     return {
       ok: false,
       msg: `Cada arquivo pode ter até ${MAX_MB_ANEXO_ACOMPANHAMENTO} MB.`,
+    };
+  }
+  const hasBlockedFile = list.some((f) => isFileBlocked(f));
+  if (hasBlockedFile) {
+    const blockedFile = list.find((f) => isFileBlocked(f));
+    return {
+      ok: false,
+      msg: `O arquivo "${blockedFile.name}" não é permitido. São aceitos apenas: JPG, JPEG, PNG e PDF.`,
     };
   }
   return { ok: true, msg: "" };
