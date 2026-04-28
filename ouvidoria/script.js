@@ -181,8 +181,8 @@ async function fetchJson(path) {
  * POST multipart: campos simples + anexos (parte repetida "anexos").
  * Compatível com Spring `List<MultipartFile> anexos`.
  */
-async function postEnviarDenunciaMultipart(token, fields, files) {
-  const url = new URL(`${baseUrl}${API_ENDPOINTS.DENUNCIA_ENVIAR}`);
+async function postEnviarOuvidoriaMultipart(token, fields, files) {
+  const url = new URL(`${baseUrl}${API_ENDPOINTS.OUVIDORIA_ENVIAR}`);
   const formData = new FormData();
 
   Object.entries(fields || {}).forEach(([k, v]) => {
@@ -220,7 +220,7 @@ async function postEnviarDenunciaMultipart(token, fields, files) {
 }
 
 async function fetchCategoriasPorToken(token) {
-  const data = await fetchBearerJson(API_ENDPOINTS.DENUNCIA_CATEGORIAS, token);
+  const data = await fetchBearerJson(API_ENDPOINTS.OUVIDORIA_CATEGORIAS, token);
   const rawList = normalizeListPayload(data);
   const mapped = rawList
     .map((item) =>
@@ -247,7 +247,7 @@ async function fetchDepartamentosPorToken(token) {
 async function fetchAcompanharPorProtocolo(uuid, token) {
   const rawToken = String(token || "").trim();
   const safeToken = encodeURIComponent(rawToken);
-  const path = API_ENDPOINTS.DENUNCIA_ACOMPANHAMENTO(uuid);
+  const path = API_ENDPOINTS.OUVIDORIA_ACOMPANHAMENTO(uuid);
 
   if (rawToken) {
     return fetchBearerJson(`${path}?token=${safeToken}`, rawToken);
@@ -259,7 +259,7 @@ async function fetchAcompanharPorProtocolo(uuid, token) {
 
 /**
  * POST multipart: mensagem + anexos (parte repetida "anexos").
- * URL: /denuncia/replicar/{uuid}?token=...
+ * URL: /ouvidoria/replicar/{uuid}?token=...
  */
 async function postReplicarAcompanhamentoMultipart(
   uuid,
@@ -268,7 +268,7 @@ async function postReplicarAcompanhamentoMultipart(
   files,
 ) {
   const rawToken = String(token || "").trim();
-  const path = API_ENDPOINTS.DENUNCIA_ACOMPANHAMENTO_REPLICAR(uuid);
+  const path = API_ENDPOINTS.OUVIDORIA_ACOMPANHAMENTO_REPLICAR(uuid);
   const url = new URL(`${baseUrl}${path}`);
   url.searchParams.set("token", rawToken);
 
@@ -313,14 +313,14 @@ function getProtocoloConsultaUiElements() {
     protocoloDataOcorrido: document.getElementById("protocoloDataOcorrido"),
     protocoloDataAbertura: document.getElementById("protocoloDataAbertura"),
     protocoloDescricao: document.getElementById("protocoloDescricao"),
-    protocoloDenunciaAnexos: document.getElementById("protocoloDenunciaAnexos"),
+    protocoloOuvidoriaAnexos: document.getElementById("protocoloOuvidoriaAnexos"),
     protocoloAcompanhamentosList: document.getElementById(
       "protocoloAcompanhamentosList",
     ),
   };
 }
 
-function extrairAnexosDenuncia(data) {
+function extrairAnexosOuvidoria(data) {
   if (!data || typeof data !== "object") return [];
   const candidatos = [
     data.anexos,
@@ -344,7 +344,7 @@ function truncarNomeArquivo(nome, limite) {
 }
 
 function getTokenParaPreview() {
-  const fromSession = (sessionStorage.getItem("denunciaToken") || "").trim();
+  const fromSession = (sessionStorage.getItem("ouvidoriaToken") || "").trim();
   if (fromSession) return fromSession;
   const params = new URLSearchParams(window.location.search);
   return (params.get("token") || "").trim();
@@ -454,7 +454,7 @@ function initAnexoModal() {
 
     const token = getTokenParaPreview();
     const loading = document.createElement("p");
-    loading.textContent = "Carregando...";
+    loading.textContent = "Carregando…";
     loading.style.margin = "0";
     body.appendChild(loading);
 
@@ -492,16 +492,16 @@ function initAnexoModal() {
 
 const anexoModalApi = initAnexoModal();
 
-function getAnexoDenunciaUrl(idAnexo, protocolo) {
+function getAnexoOuvidoriaUrl(idAnexo, protocolo) {
   const id = String(idAnexo ?? "").trim();
   const p = String(protocolo ?? "").trim();
   if (!id || !p) return "";
-  const url = new URL(`${baseUrl}${API_ENDPOINTS.DENUNCIA_ANEXO(id)}`);
+  const url = new URL(`${baseUrl}${API_ENDPOINTS.OUVIDORIA_ANEXO(id)}`);
   url.searchParams.set("protocolo", p);
   return url.toString();
 }
 
-function renderAnexosDenunciaBotoes(container, protocolo, anexos) {
+function renderAnexosOuvidoriaBotoes(container, protocolo, anexos) {
   if (!container) return;
   container.replaceChildren();
 
@@ -515,12 +515,12 @@ function renderAnexosDenunciaBotoes(container, protocolo, anexos) {
     const nome = nomeAnexoParaChat(a);
     if (!nome) return;
     const id = a && typeof a === "object" ? a.id : "";
-    const href = getAnexoDenunciaUrl(id, protocolo);
+    const href = getAnexoOuvidoriaUrl(id, protocolo);
 
     if (href) {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "btn btn-secondary protocolo-denuncia-anexo-btn";
+      btn.className = "btn btn-secondary protocolo-ouvidoria-anexo-btn";
       btn.textContent = truncarNomeArquivo(nome, 42);
       btn.title = nome;
       btn.addEventListener("click", () => {
@@ -533,7 +533,7 @@ function renderAnexosDenunciaBotoes(container, protocolo, anexos) {
 
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "btn btn-secondary protocolo-denuncia-anexo-btn";
+    btn.className = "btn btn-secondary protocolo-ouvidoria-anexo-btn";
     btn.textContent = truncarNomeArquivo(nome, 42);
     btn.title = nome;
     btn.addEventListener("click", () => {
@@ -568,9 +568,9 @@ function refreshProtocoloConsultaViewFromApi() {
   });
 }
 
-function getDenunciaDraft() {
+function getOuvidoriaDraft() {
   try {
-    const raw = sessionStorage.getItem("denunciaDraft");
+    const raw = sessionStorage.getItem("ouvidoriaDraft");
     if (!raw) return null;
     const d = JSON.parse(raw);
     return d && typeof d === "object" ? d : null;
@@ -738,8 +738,8 @@ function formatDataHoraAcompanhamento(val) {
   return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
-/** Alinha bolhas: RH/sistema à esquerda; denunciante à direita. */
-function chatRoleFromAutorDenuncia(autor) {
+/** Alinha bolhas: RH/sistema à esquerda; ouvinte à direita. */
+function chatRoleFromAutorOuvidoria(autor) {
   const a = String(autor || "")
     .trim()
     .toUpperCase()
@@ -755,7 +755,13 @@ function chatRoleFromAutorDenuncia(autor) {
   ) {
     return "rh";
   }
-  if (a === "DENUNCIANTE" || a.includes("DENUNCIANTE")) return "denunciante";
+  if (
+    a === "OUVINTE" ||
+    a === "DENUNCIANTE" ||
+    a.includes("OUVINTE") ||
+    a.includes("DENUNCIANTE")
+  )
+    return "ouvinte";
   return "outro";
 }
 
@@ -766,7 +772,8 @@ function labelAutorAcompanhamento(autor) {
     .replace(/\s+/g, "_");
   const map = {
     RH: "Equipe (RH)",
-    DENUNCIANTE: "Denunciante",
+    OUVINTE: "Ouvinte",
+    DENUNCIANTE: "Ouvinte",
     SISTEMA: "Sistema",
   };
   if (map[a]) return map[a];
@@ -872,7 +879,7 @@ function getAnexoAcompanhamentoUrl(idAnexo, protocolo) {
   const p = String(protocolo ?? "").trim();
   if (!id || !p) return "";
   const url = new URL(
-    `${baseUrl}${API_ENDPOINTS.DENUNCIA_ACOMPANHAMENTO_ANEXO(id)}`,
+    `${baseUrl}${API_ENDPOINTS.OUVIDORIA_ACOMPANHAMENTO_ANEXO(id)}`,
   );
   url.searchParams.set("protocolo", p);
   return url.toString();
@@ -957,10 +964,10 @@ function renderAcompanhamentosChat(container, protocolo, list) {
 
   sorted.forEach((item) => {
     if (!item || typeof item !== "object") return;
-    const role = chatRoleFromAutorDenuncia(item.autor);
+    const role = chatRoleFromAutorOuvidoria(item.autor);
     const row = document.createElement("div");
     row.className =
-      role === "denunciante"
+      role === "ouvinte"
         ? "protocolo-chat-row protocolo-chat-row--end"
         : role === "rh"
           ? "protocolo-chat-row protocolo-chat-row--start"
@@ -968,8 +975,8 @@ function renderAcompanhamentosChat(container, protocolo, list) {
 
     const bubble = document.createElement("div");
     bubble.className =
-      role === "denunciante"
-        ? "protocolo-chat-bubble protocolo-chat-bubble--denunciante"
+      role === "ouvinte"
+        ? "protocolo-chat-bubble protocolo-chat-bubble--ouvinte"
         : role === "rh"
           ? "protocolo-chat-bubble protocolo-chat-bubble--rh"
           : "protocolo-chat-bubble protocolo-chat-bubble--outro";
@@ -1073,10 +1080,10 @@ function preencherProtocoloConsultaUI(data, els) {
     els.protocoloDescricao.textContent = desc || "—";
   }
 
-  renderAnexosDenunciaBotoes(
-    els.protocoloDenunciaAnexos,
+  renderAnexosOuvidoriaBotoes(
+    els.protocoloOuvidoriaAnexos,
     data && typeof data === "object" ? data.protocolo : "",
-    extrairAnexosDenuncia(data),
+    extrairAnexosOuvidoria(data),
   );
 
   const list = extrairListaAcompanhamentos(data);
@@ -1087,16 +1094,44 @@ function preencherProtocoloConsultaUI(data, els) {
   );
 }
 
+/**
+ * Valida se um arquivo é permitido baseado no MIME type ou extensão.
+ * Usa ALLOWED_MIME_TYPES e ALLOWED_FILE_EXTENSIONS da config.
+ */
+function isFileBlocked(file) {
+  if (!(file instanceof File)) return false;
+
+  const mimeType = (file.type || "").toLowerCase().trim();
+  const fileName = (file.name || "").toLowerCase();
+
+  // Verificar se MIME type é permitido
+  if (
+    mimeType &&
+    !ALLOWED_MIME_TYPES.some((allowed) => mimeType === allowed)
+  ) {
+    return true;
+  }
+
+  // Se não tem MIME type, verificar extensão permitida
+  if (!mimeType) {
+    return !ALLOWED_FILE_EXTENSIONS.some((ext) =>
+      fileName.endsWith(ext.toLowerCase())
+    );
+  }
+
+  return false;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const pageTitleEl = document.querySelector("main.card h1");
   const messageEl = document.getElementById("message");
-  const btnNovaDenuncia = document.getElementById("btnNovaDenuncia");
+  const btnNovaOuvidoria = document.getElementById("btnNovaOuvidoria");
   const btnConsultarProtocolo = document.getElementById(
     "btnConsultarProtocolo",
   );
   const protocoloBox = document.getElementById("protocoloBox");
   const protocoloChatAside = document.getElementById("protocoloChatAside");
-  const denunciasShell = document.querySelector(".denuncias-shell");
+  const ouvidoriaShell = document.querySelector(".ouvidoria-shell");
   const protocoloForm = document.getElementById("protocoloForm");
   const protocoloNumeroEl = document.getElementById("protocoloNumero");
   const protocoloResultEl = document.getElementById("protocoloResult");
@@ -1120,8 +1155,8 @@ document.addEventListener("DOMContentLoaded", () => {
     "protocoloDataAbertura",
   );
   const protocoloDescricaoEl = document.getElementById("protocoloDescricao");
-  const protocoloDenunciaAnexosEl = document.getElementById(
-    "protocoloDenunciaAnexos",
+  const protocoloOuvidoriaAnexosEl = document.getElementById(
+    "protocoloOuvidoriaAnexos",
   );
   const protocoloAcompanhamentosListEl = document.getElementById(
     "protocoloAcompanhamentosList",
@@ -1137,7 +1172,7 @@ document.addEventListener("DOMContentLoaded", () => {
     protocoloDataOcorrido: protocoloDataOcorridoEl,
     protocoloDataAbertura: protocoloDataAberturaEl,
     protocoloDescricao: protocoloDescricaoEl,
-    protocoloDenunciaAnexos: protocoloDenunciaAnexosEl,
+    protocoloOuvidoriaAnexos: protocoloOuvidoriaAnexosEl,
     protocoloAcompanhamentosList: protocoloAcompanhamentosListEl,
   };
 
@@ -1165,11 +1200,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const params = new URLSearchParams(window.location.search);
-  const draftPeek = getDenunciaDraft();
+  const draftPeek = getOuvidoriaDraft();
 
   let token =
     (params.get("token") || "").trim() ||
-    (sessionStorage.getItem("denunciaToken") || "").trim() ||
+    (sessionStorage.getItem("ouvidoriaToken") || "").trim() ||
     (draftPeek && draftPeek.token != null && String(draftPeek.token).trim()) ||
     "";
 
@@ -1179,55 +1214,55 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (token && tokenValue) tokenValue.textContent = token;
 
-  if (token) sessionStorage.setItem("denunciaToken", token);
+  if (token) sessionStorage.setItem("ouvidoriaToken", token);
 
   const categoriaEl = document.getElementById("categoria");
   const departamentoEl = document.getElementById("departamento");
   const categoriaErrorEl = document.getElementById("categoriaError");
   const departamentoErrorEl = document.getElementById("departamentoError");
-  const form = document.getElementById("denunciaForm");
+  const form = document.getElementById("ouvidoriaForm");
   const descricaoEl = document.getElementById("descricao");
   const descricaoCountEl = document.getElementById("descricaoCount");
   const descricaoErrorEl = document.getElementById("descricaoError");
   const anexosEl = document.getElementById("anexos");
   const anexosInfoEl = document.getElementById("anexosInfo");
   const anexosErrorEl = document.getElementById("anexosError");
-  const btnAnexosDenuncia = document.getElementById("denunciaBtnAnexos");
+  const btnAnexosOuvidoria = document.getElementById("ouvidoriaBtnAnexos");
   const btnRevisar = document.getElementById("btnRevisar");
   const dataEl = document.getElementById("dataAproximada");
-  const denunciaReviewEl = document.getElementById("denunciaReview");
-  const denunciaReviewGridEl = document.getElementById("denunciaReviewGrid");
-  const denunciaReviewVoltarEl = document.getElementById(
-    "denunciaReviewVoltar",
+  const ouvidoriaReviewEl = document.getElementById("ouvidoriaReview");
+  const ouvidoriaReviewGridEl = document.getElementById("ouvidoriaReviewGrid");
+  const ouvidoriaReviewVoltarEl = document.getElementById(
+    "ouvidoriaReviewVoltar",
   );
-  const denunciaReviewConfirmarEl = document.getElementById(
-    "denunciaReviewConfirmar",
+  const ouvidoriaReviewConfirmarEl = document.getElementById(
+    "ouvidoriaReviewConfirmar",
   );
-  const denunciaReviewErroEl = document.getElementById("denunciaReviewErro");
-  const denunciaEnvioResultEl = document.getElementById("denunciaEnvioResult");
-  const denunciaEnvioResultMensagemEl = document.getElementById(
-    "denunciaEnvioResultMensagem",
+  const ouvidoriaReviewErroEl = document.getElementById("ouvidoriaReviewErro");
+  const ouvidoriaEnvioResultEl = document.getElementById("ouvidoriaEnvioResult");
+  const ouvidoriaEnvioResultMensagemEl = document.getElementById(
+    "ouvidoriaEnvioResultMensagem",
   );
-  const denunciaEnvioResultProtocoloEl = document.getElementById(
-    "denunciaEnvioResultProtocolo",
+  const ouvidoriaEnvioResultProtocoloEl = document.getElementById(
+    "ouvidoriaEnvioResultProtocolo",
   );
-  const denunciaEnvioResultStatusEl = document.getElementById(
-    "denunciaEnvioResultStatus",
+  const ouvidoriaEnvioResultStatusEl = document.getElementById(
+    "ouvidoriaEnvioResultStatus",
   );
-  const denunciaEnvioResultDataEnvioEl = document.getElementById(
-    "denunciaEnvioResultDataEnvio",
+  const ouvidoriaEnvioResultDataEnvioEl = document.getElementById(
+    "ouvidoriaEnvioResultDataEnvio",
   );
-  const denunciaEnvioResultImportanteEl = document.getElementById(
-    "denunciaEnvioResultImportante",
+  const ouvidoriaEnvioResultImportanteEl = document.getElementById(
+    "ouvidoriaEnvioResultImportante",
   );
-  const denunciaEnvioResultFecharEl = document.getElementById(
-    "denunciaEnvioResultFechar",
+  const ouvidoriaEnvioResultFecharEl = document.getElementById(
+    "ouvidoriaEnvioResultFechar",
   );
-  const denunciaInfoNoteEl = document.getElementById("denunciaInfoNote");
+  const ouvidoriaInfoNoteEl = document.getElementById("ouvidoriaInfoNote");
 
-  function esconderResultadoEnvioDenuncia() {
-    if (denunciaEnvioResultEl)
-      denunciaEnvioResultEl.classList.add("is-hidden");
+  function esconderResultadoEnvioOuvidoria() {
+    if (ouvidoriaEnvioResultEl)
+      ouvidoriaEnvioResultEl.classList.add("is-hidden");
   }
 
   if (
@@ -1238,20 +1273,20 @@ document.addEventListener("DOMContentLoaded", () => {
     !descricaoCountEl ||
     !anexosEl ||
     !anexosInfoEl ||
-    !btnAnexosDenuncia ||
+    !btnAnexosOuvidoria ||
     !btnRevisar ||
     !dataEl ||
-    !denunciaReviewEl ||
-    !denunciaReviewGridEl ||
-    !denunciaReviewVoltarEl ||
-    !denunciaReviewConfirmarEl ||
-    !denunciaReviewErroEl ||
-    !denunciaEnvioResultEl ||
-    !denunciaEnvioResultMensagemEl ||
-    !denunciaEnvioResultProtocoloEl ||
-    !denunciaEnvioResultStatusEl ||
-    !denunciaEnvioResultDataEnvioEl ||
-    !denunciaEnvioResultImportanteEl
+    !ouvidoriaReviewEl ||
+    !ouvidoriaReviewGridEl ||
+    !ouvidoriaReviewVoltarEl ||
+    !ouvidoriaReviewConfirmarEl ||
+    !ouvidoriaReviewErroEl ||
+    !ouvidoriaEnvioResultEl ||
+    !ouvidoriaEnvioResultMensagemEl ||
+    !ouvidoriaEnvioResultProtocoloEl ||
+    !ouvidoriaEnvioResultStatusEl ||
+    !ouvidoriaEnvioResultDataEnvioEl ||
+    !ouvidoriaEnvioResultImportanteEl
   ) {
     return;
   }
@@ -1353,16 +1388,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await Promise.all([loadCategorias(), loadDepartamentos()]);
 
-      listsLoadedOk =
-        categoriasOk &&
-        departamentosOk &&
-        hasSelectableOptions(categoriaEl) &&
-        hasSelectableOptions(departamentoEl);
+      // Departamento é opcional ("Nenhum" = vazio). Então, a carga mínima
+      // para permitir revisão/envio é apenas a lista de categorias.
+      listsLoadedOk = categoriasOk && hasSelectableOptions(categoriaEl);
 
       categoriaEl.disabled =
         !categoriasOk || !hasSelectableOptions(categoriaEl);
-      departamentoEl.disabled =
-        !departamentosOk || !hasSelectableOptions(departamentoEl);
+      departamentoEl.disabled = !departamentosOk || !hasSelectableOptions(departamentoEl);
       btnRevisar.disabled = !listsLoadedOk;
 
       if (listsLoadedOk) {
@@ -1377,7 +1409,7 @@ document.addEventListener("DOMContentLoaded", () => {
   })();
 
   function aplicarRascunhoSalvo() {
-    const draft = getDenunciaDraft();
+    const draft = getOuvidoriaDraft();
     if (!draft) return;
 
     if (draft.categoria != null && String(draft.categoria) !== "") {
@@ -1405,7 +1437,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isValid) {
       if (len === 0) {
         msg =
-          "Conte com calma o que aconteceu aqui — é o principal para entendermos sua denúncia (mínimo de 10 caracteres).";
+          "Conte com calma o que aconteceu aqui — é o principal para entendermos sua manifestação na ouvidoria (mínimo de 10 caracteres).";
       } else if (len < 10) {
         msg =
           "Quase lá: escreva pelo menos 10 caracteres para podermos seguir.";
@@ -1416,30 +1448,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     setTextError(descricaoErrorEl, !isValid, msg);
     return isValid;
-  }
-
-  function isFileBlocked(file) {
-    if (!(file instanceof File)) return false;
-
-    const mimeType = (file.type || "").toLowerCase().trim();
-    const fileName = (file.name || "").toLowerCase();
-
-    // Verificar se MIME type é permitido
-    if (
-      mimeType &&
-      !ALLOWED_MIME_TYPES.some((allowed) => mimeType === allowed)
-    ) {
-      return true;
-    }
-
-    // Se não tem MIME type, verificar extensão permitida
-    if (!mimeType) {
-      return !ALLOWED_FILE_EXTENSIONS.some((ext) =>
-        fileName.endsWith(ext.toLowerCase())
-      );
-    }
-
-    return false;
   }
 
   function validateAnexos() {
@@ -1495,7 +1503,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btnRemover.addEventListener("click", () => {
         const list = Array.from(anexosEl.files || []);
         list.splice(index, 1);
-        arquivosAcumuladosDenuncia = list;
+        arquivosAcumuladosOuvidoria = list;
         setInputFileList(anexosEl, list);
         validateAnexos();
       });
@@ -1509,19 +1517,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   descricaoEl.addEventListener("input", updateDescricaoUi);
   /** Lista acumulada: cada abertura do seletor substitui `input.files`; mesclamos aqui. */
-  let arquivosAcumuladosDenuncia = [];
+  let arquivosAcumuladosOuvidoria = [];
 
-  btnAnexosDenuncia.addEventListener("click", () => {
+  btnAnexosOuvidoria.addEventListener("click", () => {
     anexosEl.click();
   });
 
   anexosEl.addEventListener("change", () => {
     const incoming = Array.from(anexosEl.files || []);
-    arquivosAcumuladosDenuncia = mergeUniqueFiles(
-      arquivosAcumuladosDenuncia,
+    arquivosAcumuladosOuvidoria = mergeUniqueFiles(
+      arquivosAcumuladosOuvidoria,
       incoming,
     );
-    setInputFileList(anexosEl, arquivosAcumuladosDenuncia);
+    setInputFileList(anexosEl, arquivosAcumuladosOuvidoria);
     validateAnexos();
   });
 
@@ -1539,10 +1547,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (valueNodeOrText instanceof Node) v.appendChild(valueNodeOrText);
     else v.textContent = String(valueNodeOrText ?? "");
     row.append(k, v);
-    denunciaReviewGridEl.appendChild(row);
+    ouvidoriaReviewGridEl.appendChild(row);
   }
 
-  function buildDenunciaFields() {
+  function buildOuvidoriaFields() {
     const fields = {
       categoriaEnum: categoriaEl.value,
       departamentoId: departamentoEl.value
@@ -1555,10 +1563,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showReview() {
-    esconderResultadoEnvioDenuncia();
-    denunciaReviewErroEl.textContent = "";
-    denunciaReviewErroEl.classList.remove("is-visible");
-    denunciaReviewGridEl.replaceChildren();
+    esconderResultadoEnvioOuvidoria();
+    ouvidoriaReviewErroEl.textContent = "";
+    ouvidoriaReviewErroEl.classList.remove("is-visible");
+    ouvidoriaReviewGridEl.replaceChildren();
 
     const departamentoNome =
       departamentoEl.selectedOptions && departamentoEl.selectedOptions[0]
@@ -1572,9 +1580,11 @@ document.addEventListener("DOMContentLoaded", () => {
     addReviewRow("Categoria", categoriaNome || categoriaEl.value || "—");
     addReviewRow(
       "Departamento",
-      departamentoNome
-        ? `${departamentoNome} (${departamentoEl.value})`
-        : departamentoEl.value || "—",
+      departamentoEl.value
+        ? (departamentoNome
+            ? `${departamentoNome} (${departamentoEl.value})`
+            : departamentoEl.value)
+        : "Nenhum",
     );
     addReviewRow("Data do ocorrido", dataEl.value || "—");
     addReviewRow("Descrição", String(descricaoEl.value || "").trim() || "—");
@@ -1613,109 +1623,109 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     form.classList.add("is-hidden");
-    denunciaReviewEl.classList.remove("is-hidden");
-    denunciaReviewConfirmarEl.focus({ preventScroll: true });
+    ouvidoriaReviewEl.classList.remove("is-hidden");
+    ouvidoriaReviewConfirmarEl.focus({ preventScroll: true });
   }
 
   function hideReview() {
-    esconderResultadoEnvioDenuncia();
-    denunciaReviewErroEl.textContent = "";
-    denunciaReviewErroEl.classList.remove("is-visible");
-    denunciaReviewEl.classList.add("is-hidden");
+    esconderResultadoEnvioOuvidoria();
+    ouvidoriaReviewErroEl.textContent = "";
+    ouvidoriaReviewErroEl.classList.remove("is-visible");
+    ouvidoriaReviewEl.classList.add("is-hidden");
     form.classList.remove("is-hidden");
     btnRevisar.focus({ preventScroll: true });
   }
 
-  function mostrarResultadoEnvioDenuncia(resp) {
+  function mostrarResultadoEnvioOuvidoria(resp) {
     const data = extrairCorpoRespostaEnvio(resp);
-    denunciaReviewErroEl.textContent = "";
-    denunciaReviewErroEl.classList.remove("is-visible");
-    denunciaReviewEl.classList.add("is-hidden");
+    ouvidoriaReviewErroEl.textContent = "";
+    ouvidoriaReviewErroEl.classList.remove("is-visible");
+    ouvidoriaReviewEl.classList.add("is-hidden");
     form.classList.add("is-hidden");
-    if (denunciaInfoNoteEl) denunciaInfoNoteEl.classList.add("is-hidden");
+    if (ouvidoriaInfoNoteEl) ouvidoriaInfoNoteEl.classList.add("is-hidden");
 
-    denunciaEnvioResultMensagemEl.textContent =
-      String(data.mensagem ?? "").trim() || "Denúncia enviada com sucesso!";
-    denunciaEnvioResultProtocoloEl.textContent =
+    ouvidoriaEnvioResultMensagemEl.textContent =
+      String(data.mensagem ?? "").trim() || "Manifestação na ouvidoria enviada com sucesso!";
+    ouvidoriaEnvioResultProtocoloEl.textContent =
       String(data.protocolo ?? "").trim() || "—";
-    denunciaEnvioResultStatusEl.textContent =
+    ouvidoriaEnvioResultStatusEl.textContent =
       String(data.status ?? "").trim() || "—";
-    denunciaEnvioResultDataEnvioEl.textContent = formatarDataHoraEnvioBR(
+    ouvidoriaEnvioResultDataEnvioEl.textContent = formatarDataHoraEnvioBR(
       data.dataEnvio,
     );
-    denunciaEnvioResultImportanteEl.textContent =
+    ouvidoriaEnvioResultImportanteEl.textContent =
       String(data.mensagemImportante ?? "").trim() ||
-      "Guarde este protocolo. Ele é a única forma de acompanhar sua denúncia.";
+      "Guarde este protocolo. Ele é a única forma de acompanhar sua manifestação na ouvidoria.";
 
-    denunciaEnvioResultEl.classList.remove("is-hidden");
+    ouvidoriaEnvioResultEl.classList.remove("is-hidden");
     if (pageTitleEl) pageTitleEl.textContent = "Resultado do envio";
     if (messageEl) messageEl.textContent = "";
-    if (btnNovaDenuncia) btnNovaDenuncia.disabled = false;
+    if (btnNovaOuvidoria) btnNovaOuvidoria.disabled = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function fecharResultadoEnvioDenuncia() {
-    esconderResultadoEnvioDenuncia();
+  function fecharResultadoEnvioOuvidoria() {
+    esconderResultadoEnvioOuvidoria();
     form.reset();
     setInputFileList(anexosEl, []);
-    arquivosAcumuladosDenuncia = [];
+    arquivosAcumuladosOuvidoria = [];
     validateAnexos();
     updateDescricaoUi();
     form.classList.remove("is-hidden");
-    if (denunciaInfoNoteEl) denunciaInfoNoteEl.classList.remove("is-hidden");
-    if (pageTitleEl) pageTitleEl.textContent = "Registrar denúncia";
+    if (ouvidoriaInfoNoteEl) ouvidoriaInfoNoteEl.classList.remove("is-hidden");
+    if (pageTitleEl) pageTitleEl.textContent = "Registrar na ouvidoria";
     if (messageEl) {
       messageEl.textContent =
         "Preencha o formulário abaixo. Você poderá revisar antes do envio.";
     }
-    if (btnNovaDenuncia) btnNovaDenuncia.disabled = true;
+    if (btnNovaOuvidoria) btnNovaOuvidoria.disabled = true;
   }
 
-  denunciaReviewVoltarEl.addEventListener("click", () => hideReview());
+  ouvidoriaReviewVoltarEl.addEventListener("click", () => hideReview());
 
-  denunciaReviewConfirmarEl.addEventListener("click", async () => {
-    denunciaReviewErroEl.textContent = "";
-    denunciaReviewErroEl.classList.remove("is-visible");
+  ouvidoriaReviewConfirmarEl.addEventListener("click", async () => {
+    ouvidoriaReviewErroEl.textContent = "";
+    ouvidoriaReviewErroEl.classList.remove("is-visible");
 
     const tok = String(token || "").trim();
     if (!tok) {
-      denunciaReviewErroEl.textContent =
+      ouvidoriaReviewErroEl.textContent =
         "Token de acesso não encontrado. Abra o formulário pelo link com ?token=...";
-      denunciaReviewErroEl.classList.add("is-visible");
+      ouvidoriaReviewErroEl.classList.add("is-visible");
       return;
     }
 
-    const fields = buildDenunciaFields();
+    const fields = buildOuvidoriaFields();
     const files = Array.from(anexosEl.files || []);
 
     const labelEnviando = "Enviando…";
-    const labelOriginal = denunciaReviewConfirmarEl.textContent;
-    denunciaReviewConfirmarEl.disabled = true;
-    denunciaReviewVoltarEl.disabled = true;
+    const labelOriginal = ouvidoriaReviewConfirmarEl.textContent;
+    ouvidoriaReviewConfirmarEl.disabled = true;
+    ouvidoriaReviewVoltarEl.disabled = true;
     btnRevisar.disabled = true;
-    btnAnexosDenuncia.disabled = true;
-    denunciaReviewConfirmarEl.textContent = labelEnviando;
+    btnAnexosOuvidoria.disabled = true;
+    ouvidoriaReviewConfirmarEl.textContent = labelEnviando;
 
     try {
-      const resp = await postEnviarDenunciaMultipart(tok, fields, files);
+      const resp = await postEnviarOuvidoriaMultipart(tok, fields, files);
 
-      sessionStorage.removeItem("denunciaDraft");
-      sessionStorage.setItem("denunciaToken", tok);
+      sessionStorage.removeItem("ouvidoriaDraft");
+      sessionStorage.setItem("ouvidoriaToken", tok);
 
       setInputFileList(anexosEl, []);
-      arquivosAcumuladosDenuncia = [];
+      arquivosAcumuladosOuvidoria = [];
       validateAnexos();
 
-      mostrarResultadoEnvioDenuncia(resp);
+      mostrarResultadoEnvioOuvidoria(resp);
     } catch (err) {
-      denunciaReviewErroEl.textContent = mensagemErroAmigavel(err);
-      denunciaReviewErroEl.classList.add("is-visible");
+      ouvidoriaReviewErroEl.textContent = mensagemErroAmigavel(err);
+      ouvidoriaReviewErroEl.classList.add("is-visible");
     } finally {
-      denunciaReviewConfirmarEl.disabled = false;
-      denunciaReviewVoltarEl.disabled = false;
+      ouvidoriaReviewConfirmarEl.disabled = false;
+      ouvidoriaReviewVoltarEl.disabled = false;
       btnRevisar.disabled = false;
-      btnAnexosDenuncia.disabled = false;
-      denunciaReviewConfirmarEl.textContent = labelOriginal;
+      btnAnexosOuvidoria.disabled = false;
+      ouvidoriaReviewConfirmarEl.textContent = labelOriginal;
     }
   });
 
@@ -1729,12 +1739,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const descricaoOk = updateDescricaoUi();
     const anexosOk = validateAnexos();
     const categoriaOk = Boolean(categoriaEl.value);
-    const departamentoOk = Boolean(departamentoEl.value);
     const dataOk = Boolean(dataEl.value);
 
     if (
       !categoriaOk ||
-      !departamentoOk ||
       !dataOk ||
       !descricaoOk ||
       !anexosOk
@@ -1744,13 +1752,6 @@ document.addEventListener("DOMContentLoaded", () => {
           categoriaErrorEl,
           !categoriaOk,
           !categoriaOk ? "Escolha a categoria que melhor descreve o caso." : "",
-        );
-        setTextError(
-          departamentoErrorEl,
-          !departamentoOk,
-          !departamentoOk
-            ? "Escolha o departamento relacionado ao ocorrido."
-            : "",
         );
       }
       if (!dataOk) {
@@ -1770,69 +1771,69 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function setMode(mode) {
-    const isDenuncia = mode === "denuncia";
-    esconderResultadoEnvioDenuncia();
-    if (denunciaInfoNoteEl)
-      denunciaInfoNoteEl.classList.remove("is-hidden");
-    if (isDenuncia) protocoloReplicarCtx.protocoloUuid = null;
-    if (!isDenuncia) {
-      denunciaReviewEl.classList.add("is-hidden");
+    const isOuvidoria = mode === "ouvidoria";
+    esconderResultadoEnvioOuvidoria();
+    if (ouvidoriaInfoNoteEl)
+      ouvidoriaInfoNoteEl.classList.remove("is-hidden");
+    if (isOuvidoria) protocoloReplicarCtx.protocoloUuid = null;
+    if (!isOuvidoria) {
+      ouvidoriaReviewEl.classList.add("is-hidden");
     }
-    if (form) form.classList.toggle("is-hidden", !isDenuncia);
-    if (protocoloBox) protocoloBox.classList.toggle("is-hidden", isDenuncia);
+    if (form) form.classList.toggle("is-hidden", !isOuvidoria);
+    if (protocoloBox) protocoloBox.classList.toggle("is-hidden", isOuvidoria);
     if (protocoloChatAside)
-      protocoloChatAside.classList.toggle("is-hidden", isDenuncia);
-    if (denunciasShell)
-      denunciasShell.classList.toggle(
-        "denuncias-shell--protocolo",
-        !isDenuncia,
+      protocoloChatAside.classList.toggle("is-hidden", isOuvidoria);
+    if (ouvidoriaShell)
+      ouvidoriaShell.classList.toggle(
+        "ouvidoria-shell--protocolo",
+        !isOuvidoria,
       );
     if (protocoloResultEl)
       protocoloResultEl.classList.toggle("is-hidden", true);
 
-    if (btnNovaDenuncia) btnNovaDenuncia.disabled = isDenuncia;
-    if (btnConsultarProtocolo) btnConsultarProtocolo.disabled = !isDenuncia;
+    if (btnNovaOuvidoria) btnNovaOuvidoria.disabled = isOuvidoria;
+    if (btnConsultarProtocolo) btnConsultarProtocolo.disabled = !isOuvidoria;
 
     if (pageTitleEl) {
-      pageTitleEl.textContent = isDenuncia
-        ? "Registrar denúncia"
+      pageTitleEl.textContent = isOuvidoria
+        ? "Registrar na ouvidoria"
         : "Consultar protocolo";
     }
     if (messageEl) {
-      messageEl.textContent = isDenuncia
+      messageEl.textContent = isOuvidoria
         ? "Preencha o formulário abaixo. Você poderá revisar antes do envio."
         : "Digite o número do protocolo para consultar o status.";
     }
 
-    if (!isDenuncia && protocoloNumeroEl) {
+    if (!isOuvidoria && protocoloNumeroEl) {
       protocoloNumeroEl.focus({ preventScroll: true });
     }
   }
 
-  setMode("denuncia");
+  setMode("ouvidoria");
 
   if (btnConsultarProtocolo) {
     btnConsultarProtocolo.addEventListener("click", () => {
-      esconderResultadoEnvioDenuncia();
+      esconderResultadoEnvioOuvidoria();
       setMode("protocolo");
     });
   }
-  if (btnNovaDenuncia) {
-    btnNovaDenuncia.addEventListener("click", () => {
+  if (btnNovaOuvidoria) {
+    btnNovaOuvidoria.addEventListener("click", () => {
       if (
-        denunciaEnvioResultEl &&
-        !denunciaEnvioResultEl.classList.contains("is-hidden")
+        ouvidoriaEnvioResultEl &&
+        !ouvidoriaEnvioResultEl.classList.contains("is-hidden")
       ) {
-        fecharResultadoEnvioDenuncia();
+        fecharResultadoEnvioOuvidoria();
         return;
       }
-      esconderResultadoEnvioDenuncia();
-      setMode("denuncia");
+      esconderResultadoEnvioOuvidoria();
+      setMode("ouvidoria");
     });
   }
 
-  denunciaEnvioResultFecharEl?.addEventListener("click", () => {
-    fecharResultadoEnvioDenuncia();
+  ouvidoriaEnvioResultFecharEl?.addEventListener("click", () => {
+    fecharResultadoEnvioOuvidoria();
   });
 
   async function consultarProtocolo() {
@@ -1867,7 +1868,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btnConsultar) btnConsultar.disabled = true;
       if (protocoloResultEl) {
         protocoloResultEl.classList.toggle("is-hidden", false);
-        showProtocoloFeedback("Consultando...", false);
+        showProtocoloFeedback("Consultando…", false);
       }
 
       const data = await fetchAcompanharPorProtocolo(val, token);
@@ -2032,10 +2033,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnEnviarNovo && textareaNovo) {
     btnEnviarNovo.addEventListener("click", async () => {
       const params = new URLSearchParams(window.location.search);
-      const draftPeek = getDenunciaDraft();
+      const draftPeek = getOuvidoriaDraft();
       const token =
         (params.get("token") || "").trim() ||
-        (sessionStorage.getItem("denunciaToken") || "").trim() ||
+        (sessionStorage.getItem("ouvidoriaToken") || "").trim() ||
         (draftPeek &&
           draftPeek.token != null &&
           String(draftPeek.token).trim()) ||

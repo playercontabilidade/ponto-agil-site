@@ -3,22 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Denúncias - Ponto Ágil</title>
+    <title>Ouvidoria - Ponto Ágil</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="denuncias-shell">
+    <div class="ouvidoria-shell">
       <main class="card">
-        <span class="badge">Canal de denúncias</span>
-        <h1>Registrar denúncia</h1>
+        <span class="badge">Canal de ouvidoria</span>
+        <h1>Registrar na ouvidoria</h1>
         <div class="top-actions" role="group" aria-label="Ações">
           <button
             class="btn btn-secondary"
             type="button"
-            id="btnNovaDenuncia"
+            id="btnNovaOuvidoria"
             disabled
           >
-            Nova denúncia
+            Nova manifestação
           </button>
           <button
             class="btn btn-secondary"
@@ -32,8 +32,8 @@
           Preencha o formulário abaixo. Você poderá revisar antes do envio.
         </p>
 
-        <p id="denunciaInfoNote" class="info-note" role="note">
-          Este canal de denúncias respeita a
+        <p id="ouvidoriaInfoNote" class="info-note" role="note">
+          Este canal de ouvidoria respeita a
           <a
             href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm"
             target="_blank"
@@ -91,7 +91,7 @@
                   <dd id="protocoloValor"></dd>
                 </div>
                 <div class="protocolo-dl-row">
-                  <dt>Denúncia anônima</dt>
+                  <dt>Manifestação anônima</dt>
                   <dd id="protocoloAnonima"></dd>
                 </div>
                 <div class="protocolo-dl-row">
@@ -118,8 +118,8 @@
                   <dt>Anexos</dt>
                   <dd>
                     <div
-                      id="protocoloDenunciaAnexos"
-                      class="protocolo-denuncia-anexos"
+                      id="protocoloOuvidoriaAnexos"
+                      class="protocolo-ouvidoria-anexos"
                       aria-live="polite"
                     ></div>
                   </dd>
@@ -129,7 +129,7 @@
           </div>
         </section>
 
-        <form id="denunciaForm" novalidate>
+        <form id="ouvidoriaForm" novalidate>
           <div class="field-row">
             <div class="field">
               <label class="label" for="categoria">Categoria</label>
@@ -141,8 +141,8 @@
 
             <div class="field">
               <label class="label" for="departamento">Departamento</label>
-              <select id="departamento" name="departamento" required>
-                <option value="" selected disabled>Selecione</option>
+              <select id="departamento" name="departamento">
+                <option value="" selected>Nenhum</option>
               </select>
               <span class="error" id="departamentoError"></span>
             </div>
@@ -174,7 +174,7 @@
             <div class="meta-row">
               <span class="help" id="descricaoHint">
                 Quanto mais informações você fornecer, mais eficaz será a
-                investigação.
+                resolução desta solicitação.
               </span>
               <span class="help" id="descricaoCount">0/5000</span>
             </div>
@@ -196,80 +196,84 @@
             <button
               type="button"
               class="btn btn-secondary protocolo-novo-btn-anexos"
-              id="denunciaBtnAnexos"
+              id="ouvidoriaBtnAnexos"
             >
               Adicionar anexos
             </button>
-            <span class="help">Máximo 5 arquivos, até 20 MB por arquivo. Aceitos: JPG, JPEG, PNG e PDF.</span>
+            <span class="help"
+              >Máximo de 5 arquivos, até 20 MB por arquivo. Aceitos: JPG, JPEG,
+              PNG e PDF.</span
+            >
             <div
               id="anexosInfo"
               class="protocolo-novo-anexos-info"
               aria-live="polite"
             ></div>
             <span class="error" id="anexosError"
-              >Limite de anexos excedido, arquivo acima de 20 MB ou tipo de arquivo não permitido.</span
+              >Limite de anexos excedido, arquivo acima de 20 MB ou tipo de
+              arquivo não permitido.</span
             >
           </div>
 
           <button class="btn" type="submit" id="btnRevisar">Enviar</button>
         </form>
 
-        <section id="denunciaReview" class="is-hidden" aria-live="polite">
-          <h2 class="review-title">Revise sua denúncia</h2>
+        <section id="ouvidoriaReview" class="is-hidden" aria-live="polite">
+          <h2 class="review-title">Revise sua manifestação</h2>
           <p class="review-subtitle">Confira os dados abaixo antes do envio.</p>
-          <div class="review-grid" id="denunciaReviewGrid"></div>
+          <div class="review-grid" id="ouvidoriaReviewGrid"></div>
           <div class="review-actions">
             <button
               type="button"
               class="btn btn-secondary"
-              id="denunciaReviewVoltar"
+              id="ouvidoriaReviewVoltar"
             >
               Voltar e editar
             </button>
-            <button type="button" class="btn" id="denunciaReviewConfirmar">
+            <button type="button" class="btn" id="ouvidoriaReviewConfirmar">
               Confirmar e enviar
             </button>
           </div>
           <p
             class="error"
-            id="denunciaReviewErro"
+            id="ouvidoriaReviewErro"
             role="alert"
             aria-live="assertive"
           ></p>
         </section>
 
         <section
-          id="denunciaEnvioResult"
+          id="ouvidoriaEnvioResult"
           class="protocolo-result is-hidden"
           aria-live="polite"
         >
-          <p id="denunciaEnvioResultMensagem" class="protocolo-result-msg"></p>
+          <p id="ouvidoriaEnvioResultMensagem" class="protocolo-result-msg"></p>
           <dl class="protocolo-dl">
             <div class="protocolo-dl-row">
               <dt>Protocolo para consulta</dt>
               <dd>
                 <span
-                  id="denunciaEnvioResultProtocolo"
+                  id="ouvidoriaEnvioResultProtocolo"
                   class="protocolo-envio-protocolo"
                 ></span>
                 <span
                   class="protocolo-envio-help"
-                  title="Você pode registrar uma ou mais denúncias enquanto o token estiver válido. Após expirar, será necessário solicitar ou renovar um novo token."
+                  title="Você pode registrar uma ou mais manifestações enquanto o token estiver válido. Após expirar, será necessário solicitar ou renovar um novo token."
                   >(?)</span
                 >
               </dd>
             </div>
             <div class="protocolo-dl-row">
               <dt>Status</dt>
-              <dd id="denunciaEnvioResultStatus"></dd>
+              <dd id="ouvidoriaEnvioResultStatus"></dd>
             </div>
             <div class="protocolo-dl-row">
               <dt>Data do envio</dt>
-              <dd id="denunciaEnvioResultDataEnvio"></dd>
+              <dd id="ouvidoriaEnvioResultDataEnvio"></dd>
             </div>
             <div class="protocolo-dl-row protocolo-dl-full">
               <dt>Importante</dt>
-              <dd id="denunciaEnvioResultImportante"></dd>
+              <dd id="ouvidoriaEnvioResultImportante"></dd>
             </div>
           </dl>
         </section>
@@ -293,7 +297,7 @@
             <label
               class="protocolo-novo-label"
               for="protocoloNovoAcompanhamentoTexto"
-              >Nova Mensagem</label
+              >Nova mensagem</label
             >
             <textarea
               id="protocoloNovoAcompanhamentoTexto"
