@@ -78,7 +78,7 @@
                         </p>
                         <div class="hero-bottom">
                             <div class="hero-buttons fade-in" data-scroll-reveal>
-                                <a href="#contato" class="btn btn-primary">Ver demonstração grátis</a>
+                                <a href="#planos" class="btn btn-primary">Ver planos</a>
                                 <a href="#recursos" class="btn btn-secondary">Ver como funciona</a>
                             </div>
                         </div>
@@ -271,273 +271,107 @@
             <h2 class="section-title" data-scroll-reveal>Planos feitos para o seu porte</h2>
             <p class="section-subtitle" data-scroll-reveal>Compare opções e encontre o nível de gestão ideal para sua
                 equipe. Valores divulgados apenas para referência.</p>
-            <div class="pricing-summary-grid">
-                <article class="plan-card plan-card--summary" data-scroll-reveal>
-                    <h3 class="plan-name">Essencial</h3>
-                    <p class="plan-tagline">Jornada com reconhecimento facial, conformidade com a Portaria 671 e
-                        relatórios de absenteísmo.</p>
-                    <p class="plan-from">A partir de <strong>R$&nbsp;103,39</strong> <span
-                            class="plan-period">/mês</span></p>
-                    <p class="plan-footnote">Faixa 1–10 colaboradores. Pagamento anual pode incluir condições especiais.
-                    </p>
-                    <a href="#contato" class="btn btn-secondary-light">Falar com a equipe</a>
-                </article>
-                <article class="plan-card plan-card--summary plan-card--featured" data-scroll-reveal>
-                    <span class="plan-badge">Mais equilibrado</span>
-                    <h3 class="plan-name">Profissional</h3>
-                    <p class="plan-tagline">Tudo do Essencial mais documentos assinados e relatórios de turnover e clima
-                        organizacional.</p>
-                    <p class="plan-from">A partir de <strong>R$&nbsp;160,89</strong> <span
-                            class="plan-period">/mês</span></p>
-                    <p class="plan-footnote">Faixa 1–10 colaboradores. Ideal para times em crescimento.</p>
-                    <a href="#contato" class="btn btn-primary">Falar com a equipe</a>
-                </article>
-                <article class="plan-card plan-card--summary" data-scroll-reveal>
-                    <h3 class="plan-name">Completo</h3>
-                    <p class="plan-tagline">People analytics completo (ponto, turnover, clima e absenteísmo), integrações
-                        e suporte prioritário.</p>
-                    <p class="plan-from">A partir de <strong>R$&nbsp;229,89</strong> <span
-                            class="plan-period">/mês</span></p>
-                    <p class="plan-footnote">Faixa 1–10 colaboradores. Para operações que precisam de escala.</p>
-                    <a href="#contato" class="btn btn-secondary-light">Falar com a equipe</a>
-                </article>
-            </div>
+            <div class="pricing-summary-grid" id="pricing-summary-grid"></div>
             <div class="pricing-compare-intro">
                 <h3 class="pricing-compare-title">Compare por número de colaboradores</h3>
                 <p class="pricing-compare-lead">Selecione a faixa abaixo para ver valores indicativos e o que cada
                     plano inclui.</p>
             </div>
             <div class="pricing-compare">
-                <input type="radio" name="pricing-band" id="pricing-band-1" class="pricing-sr-input" checked>
-                <input type="radio" name="pricing-band" id="pricing-band-2" class="pricing-sr-input">
-                <input type="radio" name="pricing-band" id="pricing-band-3" class="pricing-sr-input">
-                <input type="radio" name="pricing-band" id="pricing-band-4" class="pricing-sr-input">
-                <input type="radio" name="pricing-band" id="pricing-band-5" class="pricing-sr-input">
-                <div class="pricing-toggle" role="tablist" aria-label="Faixa de colaboradores">
-                    <label for="pricing-band-1" class="pricing-toggle-btn" role="tab">1–10</label>
-                    <label for="pricing-band-2" class="pricing-toggle-btn" role="tab">11–25</label>
-                    <label for="pricing-band-3" class="pricing-toggle-btn" role="tab">26–50</label>
-                    <label for="pricing-band-4" class="pricing-toggle-btn" role="tab">51–100</label>
-                    <label for="pricing-band-5" class="pricing-toggle-btn" role="tab">+100</label>
-                </div>
-                <div class="pricing-panel-wrap">
-                    <div id="pricing-panel-1" class="pricing-panel pricing-panel-grid">
-                        <article class="plan-detail-card">
-                            <h4 class="plan-detail-name">Essencial</h4>
-                            <p class="plan-detail-audience">Até 10 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>103,39</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Marcação com reconhecimento facial, web e mobile</li>
-                                <li>Geolocalização e trilha de auditoria</li>
-                                <li>Relatórios de jornada e absenteísmo</li>
-                                <li>Suporte por e-mail em horário comercial</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta">Quero detalhes</a>
-                        </article>
-                        <article class="plan-detail-card plan-detail-card--highlight">
-                            <h4 class="plan-detail-name">Profissional</h4>
-                            <p class="plan-detail-audience">Até 10 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>160,89</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Tudo do Essencial</li>
-                                <li>Documentos com assinatura digital</li>
-                                <li>Exportações AFD e AEJ</li>
-                                <li>Relatórios de turnover, clima organizacional e absenteísmo</li>
-                                <li>Suporte estendido</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta plan-detail-cta--primary">Quero detalhes</a>
-                        </article>
-                        <article class="plan-detail-card">
-                            <h4 class="plan-detail-name">Completo</h4>
-                            <p class="plan-detail-audience">Até 10 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>229,89</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Tudo do Profissional</li>
-                                <li>RH ampliado: férias e visão integrada de ponto, turnover e clima</li>
-                                <li>Integrações sob demanda</li>
-                                <li>Onboarding assistido</li>
-                                <li>Suporte prioritário</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta">Quero detalhes</a>
-                        </article>
-                    </div>
-                    <div id="pricing-panel-2" class="pricing-panel pricing-panel-grid">
-                        <article class="plan-detail-card">
-                            <h4 class="plan-detail-name">Essencial</h4>
-                            <p class="plan-detail-audience">11 a 25 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>149,39</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Marcação com reconhecimento facial, web e mobile</li>
-                                <li>Geolocalização e trilha de auditoria</li>
-                                <li>Relatórios de jornada e absenteísmo</li>
-                                <li>Suporte por e-mail em horário comercial</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta">Quero detalhes</a>
-                        </article>
-                        <article class="plan-detail-card plan-detail-card--highlight">
-                            <h4 class="plan-detail-name">Profissional</h4>
-                            <p class="plan-detail-audience">11 a 25 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>229,89</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Tudo do Essencial</li>
-                                <li>Documentos com assinatura digital</li>
-                                <li>Exportações AFD e AEJ</li>
-                                <li>Relatórios de turnover, clima organizacional e absenteísmo</li>
-                                <li>Suporte estendido</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta plan-detail-cta--primary">Quero detalhes</a>
-                        </article>
-                        <article class="plan-detail-card">
-                            <h4 class="plan-detail-name">Completo</h4>
-                            <p class="plan-detail-audience">11 a 25 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>333,39</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Tudo do Profissional</li>
-                                <li>RH ampliado: férias e visão integrada de ponto, turnover e clima</li>
-                                <li>Integrações sob demanda</li>
-                                <li>Onboarding assistido</li>
-                                <li>Suporte prioritário</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta">Quero detalhes</a>
-                        </article>
-                    </div>
-                    <div id="pricing-panel-3" class="pricing-panel pricing-panel-grid">
-                        <article class="plan-detail-card">
-                            <h4 class="plan-detail-name">Essencial</h4>
-                            <p class="plan-detail-audience">26 a 50 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>218,39</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Marcação com reconhecimento facial, web e mobile</li>
-                                <li>Geolocalização e trilha de auditoria</li>
-                                <li>Relatórios de jornada e absenteísmo</li>
-                                <li>Suporte por e-mail em horário comercial</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta">Quero detalhes</a>
-                        </article>
-                        <article class="plan-detail-card plan-detail-card--highlight">
-                            <h4 class="plan-detail-name">Profissional</h4>
-                            <p class="plan-detail-audience">26 a 50 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>321,89</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Tudo do Essencial</li>
-                                <li>Documentos com assinatura digital</li>
-                                <li>Exportações AFD e AEJ</li>
-                                <li>Relatórios de turnover, clima organizacional e absenteísmo</li>
-                                <li>Suporte estendido</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta plan-detail-cta--primary">Quero detalhes</a>
-                        </article>
-                        <article class="plan-detail-card">
-                            <h4 class="plan-detail-name">Completo</h4>
-                            <p class="plan-detail-audience">26 a 50 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>471,39</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Tudo do Profissional</li>
-                                <li>RH ampliado: férias e visão integrada de ponto, turnover e clima</li>
-                                <li>Integrações sob demanda</li>
-                                <li>Onboarding assistido</li>
-                                <li>Suporte prioritário</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta">Quero detalhes</a>
-                        </article>
-                    </div>
-                    <div id="pricing-panel-4" class="pricing-panel pricing-panel-grid">
-                        <article class="plan-detail-card">
-                            <h4 class="plan-detail-name">Essencial</h4>
-                            <p class="plan-detail-audience">51 a 100 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>298,89</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Marcação com reconhecimento facial, web e mobile</li>
-                                <li>Geolocalização e trilha de auditoria</li>
-                                <li>Relatórios de jornada e absenteísmo</li>
-                                <li>Suporte por e-mail em horário comercial</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta">Quero detalhes</a>
-                        </article>
-                        <article class="plan-detail-card plan-detail-card--highlight">
-                            <h4 class="plan-detail-name">Profissional</h4>
-                            <p class="plan-detail-audience">51 a 100 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>436,89</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Tudo do Essencial</li>
-                                <li>Documentos com assinatura digital</li>
-                                <li>Exportações AFD e AEJ</li>
-                                <li>Relatórios de turnover, clima organizacional e absenteísmo</li>
-                                <li>Suporte estendido</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta plan-detail-cta--primary">Quero detalhes</a>
-                        </article>
-                        <article class="plan-detail-card">
-                            <h4 class="plan-detail-name">Completo</h4>
-                            <p class="plan-detail-audience">51 a 100 colaboradores</p>
-                            <p class="plan-detail-price">R$&nbsp;<span>632,39</span><small>/mês</small></p>
-                            <ul class="plan-detail-list">
-                                <li>Tudo do Profissional</li>
-                                <li>RH ampliado: férias e visão integrada de ponto, turnover e clima</li>
-                                <li>Integrações sob demanda</li>
-                                <li>Onboarding assistido</li>
-                                <li>Suporte prioritário</li>
-                            </ul>
-                            <a href="#contato" class="plan-detail-cta">Quero detalhes</a>
-                        </article>
-                    </div>
-                    <div id="pricing-panel-5" class="pricing-panel pricing-panel--large">
-                        <div class="plan-enterprise-card">
-                            <h4 class="plan-enterprise-title">Mais de 100 colaboradores</h4>
-                            <p class="plan-enterprise-text">Proposta sob medida com reconhecimento facial, relatórios de
-                                turnover, clima e absenteísmo em escala, implantação dedicada, SLA combinado e ambientes
-                                múltiplos.</p>
-                            <a href="#contato" class="btn btn-primary btn-large">Solicitar proposta</a>
-                        </div>
-                    </div>
-                </div>
+                <div class="pricing-toggle" id="pricing-toggle" role="tablist" aria-label="Faixa de colaboradores"></div>
+                <div class="pricing-panel-wrap" id="pricing-panel-wrap"></div>
             </div>
-            <p class="pricing-disclaimer">Valores meramente informativos e sujeitos a alteração.
-                Contratação e faturamento serão confirmados na proposta formal. Nenhuma compra é realizada por este
-                site.</p>
+            <p class="pricing-disclaimer">Valores meramente informativos e sujeitos a alteração. O pagamento da primeira
+                mensalidade é feito em ambiente seguro do provedor de pagamentos (checkout), após você preencher seus
+                dados no formulário (aberto ao clicar em Assinar ou em Contato).</p>
         </div>
     </section>
 
-    <!-- Captura de Lead -->
-    <section class="lead-capture" id="contato">
-        <div class="container">
-            <div class="lead-content">
-                <h2 class="lead-title">Veja o sistema funcionando na prática</h2>
-                <p class="lead-subtitle">Preencha seus dados e agende uma demonstração personalizada. Sem compromisso,
-                    sem pressão de venda.</p>
-                <div class="form-modal">
-                    <form class="lead-form" id="leadForm" action="https://formspree.io/f/mgvrvrbr" method="POST">
-                        <div class="form-group">
-                            <input type="text" id="name" name="name" class="form-input" placeholder="Seu nome" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" id="email" name="email" class="form-input"
-                                placeholder="Seu e-mail corporativo" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" id="company" name="company" class="form-input"
-                                placeholder="Nome da empresa" required>
-                        </div>
-                        <div id="form-message" class="form-message" style="display: none;"></div>
-                        <button type="submit" class="btn btn-primary btn-full btn-submit">
-                            <span class="btn-text">Solicitar demonstração gratuita</span>
-                            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </button>
-                    </form>
-                </div>
+    <!-- Contato / atalho para assinatura (formulário no modal) -->
+    <section class="contact-strip" id="contato">
+        <div class="container contact-strip__inner">
+            <div class="contact-strip__text">
+                <h2 class="contact-strip__title">Contato e assinatura</h2>
+                <p class="contact-strip__lead">Escolha um plano acima em <strong>Assinar</strong> ou abra o formulário
+                    aqui para informar os dados da empresa e seguir para o pagamento.</p>
             </div>
+            <button type="button" class="btn btn-primary contact-strip__btn" id="openLeadModalBtn">
+                Preencher dados e pagar
+            </button>
         </div>
     </section>
+
+    <!-- Modal: dados do lead + checkout -->
+    <div class="checkout-modal" id="checkoutModal" hidden aria-hidden="true">
+        <div class="checkout-modal__backdrop" id="checkoutModalBackdrop" tabindex="-1"></div>
+        <div class="checkout-modal__panel" role="dialog" aria-modal="true" aria-labelledby="checkoutModalTitle">
+            <button type="button" class="checkout-modal__close" id="checkoutModalClose" aria-label="Fechar formulário">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h2 class="checkout-modal__title" id="checkoutModalTitle">Assinatura Ponto Ágil</h2>
+            <p class="checkout-modal__subtitle">Seus dados são usados para gerar a cobrança e criar sua empresa após a
+                confirmação do pagamento.</p>
+            <p class="lead-selection-hint" id="lead-selection-hint">Nenhum plano selecionado. Feche este formulário e
+                clique em <strong>Assinar</strong> em um dos planos, ou escolha um plano antes de continuar.</p>
+            <div class="form-modal checkout-modal__form-card">
+                <form class="lead-form" id="leadForm" action="#" method="post">
+                    <input type="hidden" name="plano_id" id="field_plano_id" value="">
+                    <input type="hidden" name="faixa_id" id="field_faixa_id" value="">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="email">E-mail</label>
+                            <input type="email" id="email" name="email" class="form-input"
+                                placeholder="contato@empresa.com.br" required autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="razao_social">Razão social</label>
+                            <input type="text" id="razao_social" name="razao_social" class="form-input"
+                                placeholder="Nome legal da empresa" required maxlength="160" autocomplete="organization">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="cnpj">CNPJ</label>
+                            <input type="text" id="cnpj" name="cnpj" class="form-input" placeholder="00.000.000/0001-00"
+                                required maxlength="20" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cep">CEP</label>
+                            <input type="text" id="cep" name="cep" class="form-input" placeholder="00000-000" required
+                                maxlength="12" autocomplete="postal-code">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="cpf_proprietario">CPF do responsável legal</label>
+                            <input type="text" id="cpf_proprietario" name="cpf_proprietario" class="form-input"
+                                placeholder="000.000.000-00" required maxlength="14" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="telefone">Telefone (opcional)</label>
+                            <input type="tel" id="telefone" name="telefone" class="form-input"
+                                placeholder="(00) 00000-0000" maxlength="20" autocomplete="tel">
+                        </div>
+                    </div>
+                    <div id="form-message" class="form-message" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary btn-full btn-submit">
+                        <span class="btn-text">Ir para pagamento</span>
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Chamada Final -->
     <section class="cta">
         <div class="container">
             <div class="cta-content">
                 <h2 class="cta-title">Pronto para transformar seu controle de ponto?</h2>
-                <a href="#contato" class="btn btn-primary btn-large">Solicitar demonstração gratuita</a>
+                <a href="#planos" class="btn btn-primary btn-large">Ver planos e assinar</a>
             </div>
         </div>
     </section>
