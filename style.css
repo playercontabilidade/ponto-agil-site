@@ -973,11 +973,7 @@ html {
     color: var(--gray-900);
 }
 
-.pricing-compare:has(#pricing-band-1:checked) label[for="pricing-band-1"],
-.pricing-compare:has(#pricing-band-2:checked) label[for="pricing-band-2"],
-.pricing-compare:has(#pricing-band-3:checked) label[for="pricing-band-3"],
-.pricing-compare:has(#pricing-band-4:checked) label[for="pricing-band-4"],
-.pricing-compare:has(#pricing-band-5:checked) label[for="pricing-band-5"] {
+.pricing-toggle-btn.active {
     background: var(--primary-blue);
     color: var(--white);
     border-color: var(--primary-blue);
@@ -993,11 +989,7 @@ html {
     display: none;
 }
 
-.pricing-compare:has(#pricing-band-1:checked) #pricing-panel-1,
-.pricing-compare:has(#pricing-band-2:checked) #pricing-panel-2,
-.pricing-compare:has(#pricing-band-3:checked) #pricing-panel-3,
-.pricing-compare:has(#pricing-band-4:checked) #pricing-panel-4,
-.pricing-compare:has(#pricing-band-5:checked) #pricing-panel-5 {
+.pricing-panel.active {
     display: grid;
 }
 
@@ -1119,6 +1111,13 @@ html {
 .plan-detail-cta--primary:hover {
     background: var(--secondary-light);
     border-color: var(--secondary-light);
+}
+
+button.plan-detail-cta {
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .pricing-panel--large {
@@ -1585,17 +1584,158 @@ html {
     color: var(--gray-500);
 }
 
-/* Lead Capture Section */
-.lead-capture {
-    padding: 100px 20px;
+/* Faixa contato / atalho assinatura */
+.contact-strip {
+    padding: 72px 20px;
     background: var(--gray-50);
     position: relative;
+    border-top: 1px solid var(--gray-200);
 }
 
-.lead-content {
-    max-width: 600px;
+.contact-strip__inner {
+    max-width: 920px;
     margin: 0 auto;
-    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem 2rem;
+}
+
+.contact-strip__text {
+    flex: 1 1 280px;
+    text-align: left;
+}
+
+.contact-strip__title {
+    font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0 0 0.5rem;
+}
+
+.contact-strip__lead {
+    font-size: 1rem;
+    color: var(--gray-600);
+    line-height: 1.55;
+    margin: 0;
+    max-width: 520px;
+}
+
+.contact-strip__btn {
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .contact-strip__inner {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .contact-strip__text {
+        text-align: center;
+    }
+
+    .contact-strip__btn {
+        width: 100%;
+    }
+}
+
+/* Modal checkout / lead */
+.checkout-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(16px, env(safe-area-inset-top)) 1rem 1rem;
+    box-sizing: border-box;
+}
+
+.checkout-modal[hidden] {
+    display: none;
+}
+
+.checkout-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 25, 41, 0.55);
+    backdrop-filter: blur(4px);
+}
+
+.checkout-modal__panel {
+    position: relative;
+    z-index: 1;
+    width: min(640px, 100%);
+    max-height: min(92vh, 900px);
+    overflow-y: auto;
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(10, 25, 41, 0.25);
+    padding: 1.75rem 1.5rem 2rem;
+    box-sizing: border-box;
+    animation: checkoutModalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes checkoutModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.checkout-modal__close {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    border-radius: 10px;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.checkout-modal__close:hover {
+    background: var(--gray-200);
+    color: var(--gray-900);
+}
+
+.checkout-modal__title {
+    font-size: clamp(1.35rem, 3vw, 1.65rem);
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0 2.5rem 0.5rem 0;
+    padding-right: 0.5rem;
+}
+
+.checkout-modal__subtitle {
+    font-size: 0.9375rem;
+    color: var(--gray-600);
+    line-height: 1.5;
+    margin: 0 0 1rem;
+}
+
+.checkout-modal .lead-selection-hint {
+    margin: 0 0 1.25rem;
+    text-align: left;
+}
+
+.checkout-modal__form-card.form-modal {
+    margin-top: 0;
 }
 
 .form-modal {
@@ -1635,17 +1775,21 @@ html {
     }
 }
 
-.lead-title {
-    font-size: clamp(1.75rem, 3vw, 2.5rem);
-    font-weight: 700;
-    color: var(--gray-900);
-    margin-bottom: 1rem;
+.lead-selection-hint {
+    font-size: 0.95rem;
+    color: var(--gray-700);
+    background: rgba(25, 74, 146, 0.06);
+    border: 1px solid rgba(25, 74, 146, 0.12);
+    border-radius: 12px;
+    padding: 0.85rem 1.15rem;
+    margin: -1rem 0 1.5rem;
+    line-height: 1.5;
 }
 
-.lead-subtitle {
-    font-size: 1.125rem;
-    color: var(--gray-600);
-    margin-bottom: 2.5rem;
+.lead-selection-hint.is-ok {
+    background: rgba(113, 198, 58, 0.1);
+    border-color: rgba(113, 198, 58, 0.25);
+    color: var(--gray-800);
 }
 
 .lead-form {
@@ -1974,13 +2118,13 @@ html {
     transform: translateY(0) scale(1);
 }
 
-.lead-content {
+.contact-strip__inner {
     opacity: 0;
-    transform: translateY(40px);
+    transform: translateY(24px);
     transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.lead-content.animate-in {
+.contact-strip__inner.animate-in {
     opacity: 1;
     transform: translateY(0);
 }
@@ -2246,7 +2390,7 @@ html {
         height: 28px;
     }
 
-    .lead-capture,
+    .contact-strip,
     .cta,
     .features,
     .benefits,
@@ -2406,7 +2550,7 @@ section,
         padding: 80px 12px 40px;
     }
     
-    .lead-capture,
+    .contact-strip,
     .cta,
     .features,
     .benefits,
