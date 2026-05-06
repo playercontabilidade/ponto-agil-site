@@ -3,7 +3,7 @@ const menuToggle = document.getElementById('menuToggle');
 const nav = document.querySelector('.nav');
 const baseUrl = typeof window.PONTO_AGIL_API === 'string' && window.PONTO_AGIL_API
     ? window.PONTO_AGIL_API.replace(/\/$/, '')
-    : 'http://localhost:8080';
+    : 'https://pontoagil.playercontabilidade.com';
 
 /** Planos retornados por GET /plano/publico (para rótulo do plano selecionado). */
 let pricingPlansCache = [];
