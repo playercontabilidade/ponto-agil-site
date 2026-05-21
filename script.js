@@ -79,29 +79,6 @@ function getPlanWeight(name) {
     return 99;
 }
 
-function createSummaryCard(plan, index, featuredIndex) {
-    const firstBand = Array.isArray(plan.faixas) && plan.faixas.length > 0 ? plan.faixas[0] : null;
-    const card = document.createElement('article');
-    card.className = `plan-card plan-card--summary${index === featuredIndex ? ' plan-card--featured' : ''}`;
-    card.setAttribute('data-scroll-reveal', '');
-    const badge = index === featuredIndex ? '<span class="plan-badge">Mais equilibrado</span>' : '';
-    const ctaClass = index === featuredIndex ? 'btn btn-primary' : 'btn btn-secondary-light';
-    const fromPrice = firstBand ? formatCurrencyBRL(firstBand.preco) : '--';
-    const footnote = firstBand ? `Faixa ${firstBand.nome}.` : 'Consulte valores com nossa equipe.';
-    const ctaHtml = firstBand && plan.id != null && firstBand.id != null
-        ? `<button type="button" class="${ctaClass} plan-checkout-btn" data-plan-id="${plan.id}" data-faixa-id="${firstBand.id}" aria-label="Assinar ${plan.nome || 'plano'}">Assinar este plano</button>`
-        : `<a href="#planos" class="${ctaClass}">Ver planos</a>`;
-    card.innerHTML = `
-        ${badge}
-        <h3 class="plan-name">${plan.nome || ''}</h3>
-        <p class="plan-tagline">${plan.descricao || ''}</p>
-        <p class="plan-from">A partir de <strong>R$&nbsp;${fromPrice}</strong> <span class="plan-period">/mês</span></p>
-        <p class="plan-footnote">${footnote}</p>
-        ${ctaHtml}
-    `;
-    return card;
-}
-
 function createDetailCard(plan, faixa, isFeatured) {
     const card = document.createElement('article');
     card.className = `plan-detail-card${isFeatured ? ' plan-detail-card--highlight' : ''}`;
@@ -243,10 +220,9 @@ async function parseApiError(response) {
 }
 
 async function initPricingPlans() {
-    const summaryGrid = document.getElementById('pricing-summary-grid');
     const toggle = document.getElementById('pricing-toggle');
     const panelWrap = document.getElementById('pricing-panel-wrap');
-    if (!summaryGrid || !toggle || !panelWrap) return;
+    if (!toggle || !panelWrap) return;
 
     try {
         const response = await fetch(`${baseUrl}/plano/publico`);
@@ -258,11 +234,6 @@ async function initPricingPlans() {
         pricingPlansCache = plans;
         const featuredIndex = plans.findIndex((plan) => String(plan.nome || '').toLowerCase().includes('profissional'));
         const effectiveFeaturedIndex = featuredIndex >= 0 ? featuredIndex : Math.min(1, plans.length - 1);
-
-        summaryGrid.innerHTML = '';
-        plans.forEach((plan, index) => {
-            summaryGrid.appendChild(createSummaryCard(plan, index, effectiveFeaturedIndex));
-        });
 
         const bandMap = new Map();
         plans.forEach((plan) => {
@@ -706,7 +677,7 @@ function initScrollReveal() {
         rootMargin: '0px 0px -50px 0px'
     });
     
-    const cards = document.querySelectorAll('.feature-card[data-scroll-reveal], .benefit-item[data-scroll-reveal], .plan-card[data-scroll-reveal]');
+    const cards = document.querySelectorAll('.feature-card[data-scroll-reveal], .benefit-item[data-scroll-reveal]');
     cards.forEach(card => cardObserver.observe(card));
 }
 
@@ -773,7 +744,7 @@ function initHeroSlider() {
 
 // Adicionar cursor smooth para melhor UX
 document.addEventListener('mousemove', (e) => {
-    const cards = document.querySelectorAll('.feature-card, .benefit-item, .plan-card');
+    const cards = document.querySelectorAll('.feature-card, .benefit-item');
     cards.forEach(card => {
         const rect = card.getBoundingClientRect();
         const x = e.clientX - rect.left;
