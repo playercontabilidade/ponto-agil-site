@@ -30,6 +30,47 @@ function sanitizeBandName(name) {
     return String(name || '').trim().toLowerCase();
 }
 
+const WHATSAPP_URL = 'https://wa.me/5563993124723';
+const ENTERPRISE_BAND = 'Acima de 100 colaboradores';
+
+function isBandAbove100(bandName) {
+    const name = String(bandName || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+    const aboveMatch = name.match(/(?:acima|mais)\s+de\s+(\d+)/);
+    if (aboveMatch) return Number(aboveMatch[1]) >= 100;
+
+    const plusMatch = name.match(/(\d+)\s*\+/);
+    if (plusMatch) return Number(plusMatch[1]) >= 100;
+
+    const rangeMatch = name.match(/(\d+)\s*(?:a|ate|-)\s*(\d+)/);
+    if (rangeMatch) return Number(rangeMatch[1]) > 100;
+
+    const numbers = (name.match(/\d+/g) || []).map(Number);
+    if (numbers.length === 0) return false;
+    return Math.min(...numbers) > 100;
+}
+
+function createEnterprisePanel(bandName, isActive) {
+    const panel = document.createElement('div');
+    panel.className = `pricing-panel pricing-panel--large${isActive ? ' active' : ''}`;
+    panel.setAttribute('data-band', sanitizeBandName(bandName));
+    const waText = encodeURIComponent(
+        `Olá! Tenho interesse em uma proposta especial para a faixa ${bandName}.`
+    );
+    panel.innerHTML = `
+        <article class="plan-enterprise-card">
+            <h4 class="plan-enterprise-title">Proposta especial</h4>
+            <p class="plan-enterprise-text">Para empresas com <strong>${bandName}</strong>, elaboramos um plano sob medida.
+                Entre em contato pelo WhatsApp e nossa equipe prepara a melhor proposta para você.</p>
+            <a href="${WHATSAPP_URL}?text=${waText}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>
+        </article>
+    `;
+    return panel;
+}
+
 function getPlanWeight(name) {
     const normalized = String(name || '').toLowerCase();
     if (normalized.includes('essencial')) return 1;
@@ -234,6 +275,9 @@ async function initPricingPlans() {
         });
 
         const bands = Array.from(bandMap.values());
+        if (!bands.some((name) => sanitizeBandName(name) === sanitizeBandName(ENTERPRISE_BAND))) {
+            bands.push(ENTERPRISE_BAND);
+        }
         if (bands.length === 0) return;
 
         toggle.innerHTML = '';
@@ -247,17 +291,21 @@ async function initPricingPlans() {
             button.setAttribute('role', 'tab');
             toggle.appendChild(button);
 
-            const panel = document.createElement('div');
-            panel.className = `pricing-panel pricing-panel-grid${bandIndex === 0 ? ' active' : ''}`;
-            panel.setAttribute('data-band', sanitizeBandName(bandName));
+            let panel;
+            if (isBandAbove100(bandName)) {
+                panel = createEnterprisePanel(bandName, bandIndex === 0);
+            } else {
+                panel = document.createElement('div');
+                panel.className = `pricing-panel pricing-panel-grid${bandIndex === 0 ? ' active' : ''}`;
+                panel.setAttribute('data-band', sanitizeBandName(bandName));
 
-            plans.forEach((plan, planIndex) => {
-                const faixa = (Array.isArray(plan.faixas) ? plan.faixas : []).find((item) => sanitizeBandName(item.nome) === sanitizeBandName(bandName));
-                if (faixa) {
-                    panel.appendChild(createDetailCard(plan, faixa, planIndex === effectiveFeaturedIndex));
-                }
-            });
-
+                plans.forEach((plan, planIndex) => {
+                    const faixa = (Array.isArray(plan.faixas) ? plan.faixas : []).find((item) => sanitizeBandName(item.nome) === sanitizeBandName(bandName));
+                    if (faixa) {
+                        panel.appendChild(createDetailCard(plan, faixa, planIndex === effectiveFeaturedIndex));
+                    }
+                });
+            }
             panelWrap.appendChild(panel);
 
             button.addEventListener('click', () => {
