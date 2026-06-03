@@ -7,20 +7,21 @@ const baseUrl = typeof window.PONTO_AGIL_API === 'string' && window.PONTO_AGIL_A
 
 /** Planos retornados por GET /plano/publico (para rótulo do plano selecionado). */
 let pricingPlansCache = [];
+function onLoad() {
+    const hash = window.location.hash;
 
-if (menuToggle) {
-    menuToggle.addEventListener('click', () => {
-        nav.classList.toggle('active');
-    });
-
-    // Fechar menu ao clicar em um link
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            nav.classList.remove('active');
-        });
-    });
+    if (hash.includes('?')) {
+        const queryPart = hash.split('?')[1];
+        const params = new URLSearchParams(queryPart);
+        const partner = params.get('partner');
+        if (partner) {
+            console.log('Partner detectado:', partner);
+            localStorage.setItem('partner', partner);
+        }
+    }
 }
+
+window.addEventListener('load', onLoad);
 
 function formatCurrencyBRL(value) {
     return Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -355,9 +356,9 @@ const observer = new IntersectionObserver((entries) => {
         if (entry.isIntersecting) {
             // Adicionar delay escalonado para elementos em sequência
             const delay = entry.target.dataset.delay || index * 0.1;
-            
+
             setTimeout(() => {
-                if (entry.target.classList.contains('feature-card') || 
+                if (entry.target.classList.contains('feature-card') ||
                     entry.target.classList.contains('benefit-item') ||
                     entry.target.classList.contains('prototype-item')) {
                     entry.target.classList.add('animate-in');
@@ -383,14 +384,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Animar imagem do hero quando visível e expandir texto
     const heroImage = document.querySelector('.hero-image .prototype-placeholder');
     const heroSubtitle = document.querySelector('.hero-subtitle');
-    
+
     if (heroImage) {
         const heroImageObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     setTimeout(() => {
                         entry.target.classList.add('animate-in');
-                        
+
                         // Expandir subtítulo quando imagem aparecer
                         if (heroSubtitle) {
                             setTimeout(() => {
@@ -557,16 +558,16 @@ function updateParallax() {
     const scrolled = window.pageYOffset;
     const heroBackground = document.querySelector('.hero-background');
     const heroContent = document.querySelector('.hero-content');
-    
+
     if (heroBackground && scrolled < window.innerHeight) {
         const parallaxSpeed = 0.4;
         heroBackground.style.transform = `translateY(${scrolled * parallaxSpeed}px) scale(${1 + scrolled * 0.0003})`;
-        
+
         if (heroContent) {
             heroContent.style.opacity = Math.max(0, 1 - scrolled / window.innerHeight);
         }
     }
-    
+
     ticking = false;
 }
 
@@ -581,15 +582,15 @@ window.addEventListener('scroll', () => {
 function updatePrototypesParallax() {
     const prototypesSection = document.querySelector('.prototypes');
     if (!prototypesSection) return;
-    
+
     const rect = prototypesSection.getBoundingClientRect();
     const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-    
+
     if (isVisible) {
         const scrolled = window.pageYOffset;
         const sectionTop = prototypesSection.offsetTop;
         const parallaxOffset = (scrolled - sectionTop) * 0.2;
-        
+
         const prototypeItems = document.querySelectorAll('.prototype-item');
         prototypeItems.forEach((item, index) => {
             const delay = index * 20;
@@ -611,22 +612,22 @@ window.addEventListener('scroll', () => {
 // Sistema avançado de scroll reveal com animações escalonadas
 function initScrollReveal() {
     const revealElements = document.querySelectorAll('[data-scroll-reveal]');
-    
+
     const revealObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry, index) => {
             if (entry.isIntersecting && !entry.target.classList.contains('revealed')) {
                 // Adicionar delay escalonado baseado no índice
                 const delay = (index % 6) * 100;
-                
+
                 setTimeout(() => {
                     entry.target.classList.add('revealed');
-                    
+
                     // Animação especial para imagem do hero
                     if (entry.target.tagName === 'IMG' || entry.target.classList.contains('prototype-placeholder')) {
                         entry.target.style.opacity = '1';
                         entry.target.style.transform = 'translateY(0) scale(1)';
                     }
-                    
+
                     // Animação para expansão de texto do subtítulo
                     const subtitle = entry.target.closest('.hero-content-wrapper')?.querySelector('.hero-subtitle');
                     if (subtitle && !subtitle.classList.contains('expanded')) {
@@ -634,9 +635,9 @@ function initScrollReveal() {
                             subtitle.classList.add('expanded');
                         }, 500);
                     }
-                    
+
                 }, delay);
-                
+
                 // Não observar mais este elemento
                 revealObserver.unobserve(entry.target);
             }
@@ -645,20 +646,20 @@ function initScrollReveal() {
         threshold: 0.15,
         rootMargin: '0px 0px -100px 0px'
     });
-    
+
     revealElements.forEach((element) => {
         revealObserver.observe(element);
     });
-    
+
     // Observer especial para cards de features e benefits
     const cardObserver = new IntersectionObserver((entries) => {
         entries.forEach((entry, index) => {
             if (entry.isIntersecting && !entry.target.classList.contains('revealed')) {
                 const delay = (index % 6) * 80;
-                
+
                 setTimeout(() => {
                     entry.target.classList.add('revealed');
-                    
+
                     // Animar ícone dentro do card
                     const icon = entry.target.querySelector('.feature-icon, .benefit-icon');
                     if (icon) {
@@ -668,7 +669,7 @@ function initScrollReveal() {
                         }, 300);
                     }
                 }, delay);
-                
+
                 cardObserver.unobserve(entry.target);
             }
         });
@@ -676,7 +677,7 @@ function initScrollReveal() {
         threshold: 0.2,
         rootMargin: '0px 0px -50px 0px'
     });
-    
+
     const cards = document.querySelectorAll('.feature-card[data-scroll-reveal], .benefit-item[data-scroll-reveal]');
     cards.forEach(card => cardObserver.observe(card));
 }
@@ -749,7 +750,7 @@ document.addEventListener('mousemove', (e) => {
         const rect = card.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
+
         card.style.setProperty('--mouse-x', `${x}px`);
         card.style.setProperty('--mouse-y', `${y}px`);
     });

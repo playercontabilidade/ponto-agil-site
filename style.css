@@ -211,6 +211,19 @@ html {
     box-shadow: 0 6px 22px rgba(113, 198, 58, 0.45);
 }
 
+@keyframes mockPulse {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-10px); }
+}
+
+.hero-image .prototype-placeholder.animate-in img {
+    animation: mockPulse 3s ease-in-out infinite;
+}
+
+.nav-link--partner {
+    animation: partnerPulse 2s ease-in-out infinite;
+}
+
 .menu-toggle {
     display: none;
     flex-direction: column;
@@ -982,6 +995,33 @@ button.plan-detail-cta {
     max-width: 720px;
     margin: 0 auto;
     line-height: 1.55;
+}
+
+.trust-bar {
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+    border-bottom: 1px solid var(--gray-200);
+    padding: 1rem 20px;
+}
+
+.trust-bar__items {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+}
+
+.trust-bar__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.trust-bar__item i {
+    color: var(--secondary-color);
+    font-size: 1.1rem;
 }
 
 @media (max-width: 480px) {
@@ -1871,8 +1911,8 @@ button.plan-detail-cta {
 
 .social-links {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    flex-direction: row;
+    gap: 1.5rem;
 }
 
 .social-link {
@@ -1883,6 +1923,42 @@ button.plan-detail-cta {
 
 .social-link:hover {
     color: var(--white);
+}
+
+.social-link i {
+    font-size: 1.5rem;
+}
+
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--gray-300);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+.contact-item:hover {
+    color: var(--white);
+}
+
+.contact-item i {
+    font-size: 1.1rem;
+    width: 1.2rem;
+    text-align: center;
+}
+
+.app-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .footer-bottom {
@@ -2436,8 +2512,31 @@ section,
     box-shadow: 0 6px 20px rgba(37, 211, 102, 0.55);
 }
 
+.whatsapp-tooltip {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: white;
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.whatsapp-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 18px;
+    transform: none;
+    border: 5px solid transparent;
+    border-top-color: white;
+}
+
 @media (max-width: 480px) {
-    .whatsapp-float {
+    .whatsapp-tooltip {
         right: 16px;
         bottom: 16px;
         width: 52px;
