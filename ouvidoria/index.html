@@ -145,6 +145,10 @@
                 <option value="" selected>Nenhum</option>
               </select>
               <span class="error" id="departamentoError"></span>
+              <span class="help" id="departamentoHelp"
+                >Selecione o departamento (Alvo) para o qual você deseja
+                registrar a manifestação.
+              </span>
             </div>
           </div>
 
@@ -342,6 +346,50 @@
           </div>
         </div>
       </aside>
+    </div>
+
+    <div
+      id="protocoloModal"
+      class="modal protocolo-modal is-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="protocoloModalTitulo"
+    >
+      <div class="modal__backdrop" data-modal-close="1"></div>
+      <div class="modal__panel protocolo-modal__panel" role="document">
+        <div class="protocolo-modal__icon" aria-hidden="true">✓</div>
+        <h2 id="protocoloModalTitulo" class="protocolo-modal__title">
+          Manifestação registrada
+        </h2>
+        <p id="protocoloModalMensagem" class="protocolo-modal__mensagem"></p>
+        <div class="protocolo-modal__protocolo-box">
+          <span class="protocolo-modal__protocolo-label">Seu protocolo</span>
+          <code
+            id="protocoloModalProtocolo"
+            class="protocolo-modal__protocolo"
+          ></code>
+          <button
+            type="button"
+            class="btn btn-secondary protocolo-modal__copy"
+            id="protocoloModalCopiar"
+          >
+            Copiar protocolo
+          </button>
+        </div>
+        <p
+          id="protocoloModalAviso"
+          class="protocolo-modal__aviso"
+          role="note"
+        ></p>
+        <button
+          type="button"
+          class="btn protocolo-modal__confirmar"
+          id="protocoloModalFechar"
+          data-modal-close="1"
+        >
+          Entendi, salvei o protocolo
+        </button>
+      </div>
     </div>
 
     <div
