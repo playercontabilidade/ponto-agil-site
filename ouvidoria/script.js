@@ -1,9 +1,24 @@
-const { baseUrl, API_ENDPOINTS, ALLOWED_MIME_TYPES, ALLOWED_FILE_EXTENSIONS } =
-  window.PONTO_AGIL_CONFIG || {};
+const {
+  baseUrl,
+  API_ENDPOINTS,
+  ALLOWED_MIME_TYPES,
+  ALLOWED_FILE_EXTENSIONS,
+  TIPO_MANIFESTACAO,
+} = window.PONTO_AGIL_CONFIG || {};
 if (!baseUrl || !API_ENDPOINTS) {
   throw new Error(
     "Configuração ausente: carregue ./config.js antes de ./script.js",
   );
+}
+
+/** tipoManifestacao na URL (?tipoManifestacao=...) ou fallback do config. */
+function obterTipoManifestacao() {
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = String(params.get("tipoManifestacao") ?? "").trim();
+  if (fromUrl) return fromUrl.toUpperCase();
+  return String(TIPO_MANIFESTACAO || "DENUNCIA")
+    .trim()
+    .toUpperCase();
 }
 
 /** UUID do protocolo após consulta bem-sucedida + token (para POST replicar). */
@@ -372,7 +387,13 @@ async function postEnviarOuvidoriaMultipart(token, fields, files) {
 }
 
 async function fetchCategoriasPorToken(token) {
-  const data = await fetchBearerJson(API_ENDPOINTS.OUVIDORIA_CATEGORIAS, token);
+  let path = API_ENDPOINTS.OUVIDORIA_CATEGORIAS;
+  const tipo = obterTipoManifestacao();
+  if (tipo) {
+    path = `${path}?tipoManifestacao=${encodeURIComponent(tipo)}`;
+  }
+
+  const data = await fetchBearerJson(path, token);
   const rawList = normalizeListPayload(data);
   const mapped = rawList
     .map((item) =>
@@ -1791,14 +1812,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildOuvidoriaFields() {
+    const categoria = String(categoriaEl.value || "").trim();
     const fields = {
-      categoriaEnum: categoriaEl.value,
-      departamentoId: departamentoEl.value
-        ? String(departamentoEl.value)
-        : undefined,
+      tipoManifestacao: obterTipoManifestacao(),
       dataOcorrido: dataEl.value,
       descricao: String(descricaoEl.value || "").trim(),
     };
+
+    if (categoria) {
+      // Backend: attrs.get("categoria") → TipoDenunciaEnum.valueOf(...)
+      fields["atributosEspecificos[categoria]"] = categoria.toUpperCase();
+    }
+
+    const departamentoId = String(departamentoEl.value || "").trim();
+    if (departamentoId) {
+      fields.departamentoId = departamentoId;
+    }
+
     return fields;
   }
 
