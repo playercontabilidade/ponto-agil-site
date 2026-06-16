@@ -172,7 +172,7 @@ document.addEventListener('click', (e) => {
         const planId = planBtn.getAttribute('data-plan-id');
         const faixaId = planBtn.getAttribute('data-faixa-id');
         if (planId != null && faixaId != null && planId !== '' && faixaId !== '') {
-            setCheckoutSelection(planId, faixaId);
+            window.location.href = `contratacao/?planoId=${encodeURIComponent(planId)}&faixaId=${encodeURIComponent(faixaId)}`;
         }
         return;
     }
