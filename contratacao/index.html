@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contratar - Ponto Ágil</title>
+    <link rel="icon" type="image/png" href="../images/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="ctr-header">
+      <a href="../index.html" class="ctr-logo" aria-label="Ponto Ágil - Início">
+        <img src="../images/logo.png" alt="Ponto Ágil" />
+      </a>
+      <span class="ctr-secure">
+        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+        Ambiente seguro
+      </span>
+    </header>
+
+    <main class="ctr-shell">
+      <section class="ctr-main-card">
+        <div class="ctr-intro">
+          <h1>Contrate o Ponto Ágil</h1>
+          <p>Comece sua gestão de ponto em poucos minutos.</p>
+        </div>
+
+        <nav class="ctr-stepper" id="stepper" aria-label="Etapas da contratação">
+          <div class="ctr-stepper__item" data-stepper="empresa">
+            <span class="ctr-stepper__icon"><i class="fa-solid fa-building"></i></span>
+            <span class="ctr-stepper__label">Dados da Empresa</span>
+          </div>
+          <div class="ctr-stepper__item" data-stepper="responsavel">
+            <span class="ctr-stepper__icon"><i class="fa-solid fa-user"></i></span>
+            <span class="ctr-stepper__label">Responsável Legal</span>
+          </div>
+          <div class="ctr-stepper__item" data-stepper="contrato">
+            <span class="ctr-stepper__icon"><i class="fa-solid fa-file-lines"></i></span>
+            <span class="ctr-stepper__label">Contrato Digital</span>
+          </div>
+          <div class="ctr-stepper__item" data-stepper="plano-resumo">
+            <span class="ctr-stepper__icon"><i class="fa-solid fa-cube"></i></span>
+            <span class="ctr-stepper__label">Plano Selecionado</span>
+          </div>
+        </nav>
+
+        <!-- Etapa 0: Seleção de plano -->
+        <section class="ctr-step" id="step-plano" hidden>
+          <header class="ctr-step__head">
+            <i class="fa-solid fa-cube" aria-hidden="true"></i>
+            <h2>Escolha seu plano</h2>
+          </header>
+          <p class="ctr-step__hint">
+            Selecione o plano e a faixa de colaboradores para iniciar a contratação.
+          </p>
+          <div id="planosContainer" class="planos-grid" aria-live="polite"></div>
+          <p id="planoMessage" class="form-message" hidden></p>
+        </section>
+
+        <!-- Etapa 1: Dados da empresa -->
+        <section class="ctr-step" id="step-empresa" hidden>
+          <header class="ctr-step__head">
+            <i class="fa-solid fa-building" aria-hidden="true"></i>
+            <h2>Dados da Empresa</h2>
+          </header>
+          <form id="formEmpresa" class="ctr-form" novalidate>
+            <div class="field">
+              <label class="label" for="razaoSocial">Razão Social</label>
+              <input
+                class="control"
+                type="text"
+                id="razaoSocial"
+                name="razaoSocial"
+                placeholder="Nome da empresa"
+                required
+                autocomplete="organization"
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="cnpj">CNPJ</label>
+              <input
+                class="control"
+                type="text"
+                id="cnpj"
+                name="cnpj"
+                placeholder="00.000.000/0001-00"
+                inputmode="numeric"
+                required
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="emailCorporativo">E-mail Corporativo</label>
+              <input
+                class="control"
+                type="email"
+                id="emailCorporativo"
+                name="emailCorporativo"
+                placeholder="contato@empresa.com.br"
+                required
+                autocomplete="email"
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="telefoneEmpresa">Telefone</label>
+              <input
+                class="control"
+                type="tel"
+                id="telefoneEmpresa"
+                name="telefoneEmpresa"
+                placeholder="(11) 99999-9999"
+                inputmode="tel"
+                required
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="cep">CEP</label>
+              <input
+                class="control"
+                type="text"
+                id="cep"
+                name="cep"
+                placeholder="00000-000"
+                inputmode="numeric"
+                required
+              />
+            </div>
+            <p id="empresaMessage" class="form-message" hidden></p>
+            <button class="btn btn-primary btn-full" type="submit">
+              Continuar <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
+          </form>
+        </section>
+
+        <!-- Etapa 2: Responsável legal -->
+        <section class="ctr-step" id="step-responsavel" hidden>
+          <header class="ctr-step__head">
+            <i class="fa-solid fa-user" aria-hidden="true"></i>
+            <h2>Responsável Legal</h2>
+          </header>
+          <form id="formResponsavel" class="ctr-form" novalidate>
+            <div class="field">
+              <label class="label" for="responsavelNome">Nome Completo</label>
+              <input
+                class="control"
+                type="text"
+                id="responsavelNome"
+                name="responsavelNome"
+                placeholder="Seu nome completo"
+                required
+                autocomplete="name"
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="responsavelCpf">CPF</label>
+              <input
+                class="control"
+                type="text"
+                id="responsavelCpf"
+                name="responsavelCpf"
+                placeholder="000.000.000-00"
+                inputmode="numeric"
+                required
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="responsavelEmail">E-mail</label>
+              <input
+                class="control"
+                type="email"
+                id="responsavelEmail"
+                name="responsavelEmail"
+                placeholder="voce@empresa.com.br"
+                required
+                autocomplete="email"
+              />
+            </div>
+            <div class="field">
+              <label class="label" for="responsavelTelefone">Telefone</label>
+              <input
+                class="control"
+                type="tel"
+                id="responsavelTelefone"
+                name="responsavelTelefone"
+                placeholder="(11) 99999-9999"
+                inputmode="tel"
+                required
+              />
+            </div>
+            <p id="responsavelMessage" class="form-message" hidden></p>
+            <div class="ctr-actions">
+              <button class="btn btn-ghost" type="button" data-action="voltar-empresa">
+                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Voltar
+              </button>
+              <button class="btn btn-primary btn-grow" type="submit" id="btnCriarContratacao">
+                Continuar para Contrato
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Etapa 3: Validar e-mail -->
+        <section class="ctr-step" id="step-email" hidden>
+          <header class="ctr-step__head">
+            <i class="fa-solid fa-envelope-circle-check" aria-hidden="true"></i>
+            <h2>Validar e-mail</h2>
+          </header>
+          <p class="ctr-step__hint">
+            Enviamos um código de <strong>6 dígitos</strong> para
+            <span id="emailDestino" class="ctr-highlight"></span>.
+            Insira abaixo para continuar.
+          </p>
+          <form id="formEmail" class="ctr-form" novalidate>
+            <div class="field">
+              <label class="label" for="codigoEmail">Código de verificação</label>
+              <input
+                class="control control--code"
+                type="text"
+                id="codigoEmail"
+                name="codigoEmail"
+                placeholder="000000"
+                inputmode="numeric"
+                maxlength="6"
+                pattern="\d{6}"
+                autocomplete="one-time-code"
+                required
+              />
+              <span class="help">
+                Expira em <span id="emailTimer">10:00</span>
+                · Tentativas restantes: <span id="emailAttemptsLeft">5</span>
+              </span>
+            </div>
+            <p id="emailMessage" class="form-message" hidden></p>
+            <div class="ctr-actions">
+              <button class="btn btn-ghost" type="button" data-action="reiniciar">
+                Recomeçar
+              </button>
+              <button class="btn btn-primary btn-grow" type="submit" id="btnValidarEmail">
+                Validar código
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Etapa 4: Contrato digital -->
+        <section class="ctr-step" id="step-contrato" hidden>
+          <header class="ctr-step__head">
+            <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+            <h2>Contrato Digital</h2>
+          </header>
+          <div class="contract-box">
+            <div class="contract-box__head">
+              <span>Contrato de Prestação de Serviços — Ponto Ágil</span>
+              <span class="contract-box__tag">HTML</span>
+            </div>
+            <div
+              id="contractContent"
+              class="contract-box__body"
+              aria-label="Conteúdo do contrato"
+            ></div>
+          </div>
+          <p id="hashDocumento" class="contract-hash" hidden></p>
+          <label class="accept-check">
+            <input type="checkbox" id="aceiteContrato" />
+            <span>
+              Declaro que li e aceito os termos do Contrato de Prestação de Serviços,
+              incluindo as cláusulas de privacidade e proteção de dados (LGPD).
+            </span>
+          </label>
+          <p id="contratoMessage" class="form-message" hidden></p>
+          <div class="ctr-actions">
+            <button class="btn btn-ghost" type="button" data-action="voltar-email" disabled>
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Voltar
+            </button>
+            <button class="btn btn-primary btn-grow" type="button" id="btnAceitarContrato" disabled>
+              Aceitar e Prosseguir para Pagamento
+            </button>
+          </div>
+        </section>
+
+        <!-- Etapa 5: Plano selecionado -->
+        <section class="ctr-step" id="step-plano-resumo" hidden>
+          <header class="ctr-step__head">
+            <i class="fa-solid fa-cube" aria-hidden="true"></i>
+            <h2>Plano Selecionado</h2>
+          </header>
+          <article class="plan-card" id="planSummaryCard">
+            <div class="plan-card__head">
+              <span>Plano selecionado</span>
+              <span class="plan-card__badge" id="planRecommendedBadge" hidden>
+                <i class="fa-solid fa-star" aria-hidden="true"></i> Recomendado
+              </span>
+            </div>
+            <h3 class="plan-card__name" id="planSummaryName">—</h3>
+            <dl class="plan-card__details">
+              <div>
+                <dt>Colaboradores</dt>
+                <dd id="planSummaryFaixa">—</dd>
+              </div>
+              <div>
+                <dt>Período de teste</dt>
+                <dd class="plan-card__trial">14 dias grátis</dd>
+              </div>
+              <div>
+                <dt>Valor mensal</dt>
+                <dd class="plan-card__price" id="planSummaryPrice">—</dd>
+              </div>
+            </dl>
+          </article>
+          <div class="plan-features">
+            <h4>Incluído no plano</h4>
+            <ul id="planSummaryFeatures"></ul>
+          </div>
+          <p id="planoResumoMessage" class="form-message" hidden></p>
+          <div class="ctr-actions">
+            <button class="btn btn-ghost" type="button" data-action="voltar-contrato">
+              <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Voltar
+            </button>
+            <button class="btn btn-primary btn-grow" type="button" id="btnFinalizarContratacao">
+              Finalizar Contratação
+            </button>
+          </div>
+        </section>
+
+        <!-- Etapa 6: Aguardando pagamento -->
+        <section class="ctr-step" id="step-pagamento" hidden>
+          <div class="payment-wait">
+            <div class="payment-wait__icon">
+              <i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>
+            </div>
+            <h2>Aguardando confirmação do pagamento</h2>
+            <p>
+              Após a confirmação, suas credenciais serão enviadas por e-mail.
+            </p>
+            <button class="btn btn-secondary" type="button" id="btnAbrirCheckout" hidden>
+              Abrir pagamento novamente
+            </button>
+            <a href="../index.html" class="btn btn-ghost">Voltar ao site</a>
+          </div>
+        </section>
+
+        <p class="ctr-footer-note">
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+          Seus dados estão protegidos e serão utilizados apenas para a contratação.
+        </p>
+      </section>
+
+      <aside class="ctr-sidebar" aria-label="Informações sobre a contratação">
+        <section class="sidebar-card">
+          <h3>Fluxo de Contratação</h3>
+          <ol class="flow-list" id="flowList">
+            <li data-flow="dados">
+              <span class="flow-list__icon"><i class="fa-solid fa-check"></i></span>
+              <div>
+                <strong>Dados Informados</strong>
+                <p>Dados da empresa preenchidos com sucesso.</p>
+              </div>
+            </li>
+            <li data-flow="contrato">
+              <span class="flow-list__icon"><i class="fa-solid fa-file-lines"></i></span>
+              <div>
+                <strong>Contrato Digital</strong>
+                <p>Visualize e assine eletronicamente o contrato de prestação de serviços.</p>
+              </div>
+            </li>
+            <li data-flow="pagamento">
+              <span class="flow-list__icon"><i class="fa-solid fa-credit-card"></i></span>
+              <div>
+                <strong>Pagamento</strong>
+                <p>Realize o pagamento de forma segura via PIX, boleto ou cartão.</p>
+              </div>
+            </li>
+            <li data-flow="ativacao">
+              <span class="flow-list__icon"><i class="fa-solid fa-bolt"></i></span>
+              <div>
+                <strong>Ativação Automática</strong>
+                <p>Após a confirmação do pagamento, sua empresa será ativada automaticamente.</p>
+              </div>
+            </li>
+            <li data-flow="acesso">
+              <span class="flow-list__icon"><i class="fa-solid fa-right-to-bracket"></i></span>
+              <div>
+                <strong>Primeiro Acesso</strong>
+                <p>Receba suas credenciais por e-mail e comece a utilizar o sistema.</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="sidebar-guarantees">
+          <h3>Garantias Incluídas</h3>
+          <ul>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Assinatura eletrônica com validade jurídica.</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Ativação automática após pagamento.</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Suporte especializado em todo o processo.</li>
+          </ul>
+        </section>
+
+        <section class="sidebar-social">
+          <div class="sidebar-social__avatars" aria-hidden="true">
+            <span>J</span><span>A</span><span>R</span><span>C</span>
+          </div>
+          <p><strong>+1.400 empresas</strong> já utilizam</p>
+          <p class="sidebar-social__rating">Avaliação média de 4.9 <i class="fa-solid fa-star"></i> pelos clientes</p>
+        </section>
+      </aside>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/state.js"></script>
+    <script src="./js/api.js"></script>
+    <script src="./js/app.js"></script>
+  </body>
+</html>
