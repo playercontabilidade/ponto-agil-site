@@ -2,7 +2,7 @@
   const baseUrl =
     typeof window.PONTO_AGIL_API === "string" && window.PONTO_AGIL_API
       ? window.PONTO_AGIL_API.replace(/\/$/, "")
-      : "https://pontoagil.playercontabilidade.com";
+      : "http://localhost:8080";
 
   const API_ENDPOINTS = {
     OUVIDORIA_ENVIAR: "/ouvidoria/public/enviar",
