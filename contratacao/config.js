@@ -13,7 +13,15 @@
       `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/contrato`,
     ACEITE_CONTRATO: (id) =>
       `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/aceite-contrato`,
+    STATUS: (id) =>
+      `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/status`,
+    REENVIAR_CODIGO: (id) =>
+      `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/reenviar-codigo`,
+    CANCELAR: (id) =>
+      `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/cancelar`,
   };
+
+  const STATUS_POLL_INTERVAL_MS = 10_000;
 
   const STORAGE_KEY = "ponto_agil_contratacao";
 
@@ -28,5 +36,6 @@
     EMAIL_CODE_LENGTH,
     EMAIL_MAX_ATTEMPTS,
     EMAIL_EXPIRY_MS,
+    STATUS_POLL_INTERVAL_MS,
   });
 })();
