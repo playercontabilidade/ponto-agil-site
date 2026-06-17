@@ -568,6 +568,141 @@ body {
   margin: 8px;
 }
 
+.payment-wait__icon--pending {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.payment-wait__icon--success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.status-chip {
+  display: inline-block;
+  margin: 0 0 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-chip--success {
+  background: var(--success-bg);
+  color: #2d6a12;
+}
+
+.status-chip--danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.status-id {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: var(--gray-500);
+  word-break: break-all;
+}
+
+.status-tracker {
+  display: grid;
+  gap: 0;
+  margin-bottom: 24px;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.status-tracker__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--gray-200);
+  background: #fff;
+  font-size: 14px;
+}
+
+.status-tracker__item:last-child {
+  border-bottom: none;
+}
+
+.status-tracker__item.is-done {
+  background: var(--success-bg);
+  color: #2d6a12;
+}
+
+.status-tracker__item.is-active {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.status-tracker__item.is-pending {
+  color: var(--gray-500);
+}
+
+.status-tracker__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  background: var(--gray-200);
+  color: var(--gray-500);
+}
+
+.status-tracker__item.is-done .status-tracker__dot {
+  background: var(--success);
+  color: #fff;
+}
+
+.status-tracker__item.is-active .status-tracker__dot {
+  background: var(--primary);
+  color: #fff;
+}
+
+.conflict-panel {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(25, 74, 146, 0.25);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fc 100%);
+}
+
+.conflict-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.conflict-panel__text {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
+.conflict-panel__email {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.conflict-panel__actions {
+  display: grid;
+  gap: 8px;
+}
+
 /* Sidebar */
 .ctr-sidebar {
   display: grid;

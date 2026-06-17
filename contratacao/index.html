@@ -197,7 +197,28 @@
               />
             </div>
             <p id="responsavelMessage" class="form-message" hidden></p>
-            <div class="ctr-actions">
+
+            <div id="conflictPanel" class="conflict-panel" hidden>
+              <p class="conflict-panel__title">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                Contratação em andamento
+              </p>
+              <p id="conflictMessage" class="conflict-panel__text"></p>
+              <p id="conflictEmail" class="conflict-panel__email" hidden></p>
+              <div class="conflict-panel__actions">
+                <button class="btn btn-primary btn-full" type="button" id="btnContinuarContratacao">
+                  Continuar contratação
+                </button>
+                <button class="btn btn-secondary btn-full" type="button" id="btnReenviarCodigoConflict" hidden>
+                  Reenviar código
+                </button>
+                <button class="btn btn-ghost btn-full" type="button" id="btnCancelarContratacao" hidden>
+                  Cancelar e começar de novo
+                </button>
+              </div>
+            </div>
+
+            <div class="ctr-actions" id="responsavelActions">
               <button class="btn btn-ghost" type="button" data-action="voltar-empresa">
                 <i class="fa-solid fa-chevron-left" aria-hidden="true"></i> Voltar
               </button>
@@ -242,7 +263,13 @@
             </div>
             <p id="emailMessage" class="form-message" hidden></p>
             <div class="ctr-actions">
-              <button class="btn btn-ghost" type="button" data-action="reiniciar">
+              <button class="btn btn-ghost" type="button" id="btnReenviarCodigoEmail" hidden>
+                Reenviar código
+              </button>
+              <button class="btn btn-ghost" type="button" data-action="cancelar-recomecar" id="btnCancelarRecomecar" hidden>
+                Cancelar e começar de novo
+              </button>
+              <button class="btn btn-ghost" type="button" data-action="reiniciar" id="btnRecomecarLocal" hidden>
                 Recomeçar
               </button>
               <button class="btn btn-primary btn-grow" type="submit" id="btnValidarEmail">
@@ -332,19 +359,46 @@
           </div>
         </section>
 
-        <!-- Etapa 6: Aguardando pagamento -->
+        <!-- Etapa 6: Pagamento Asaas -->
         <section class="ctr-step" id="step-pagamento" hidden>
           <div class="payment-wait">
-            <div class="payment-wait__icon">
+            <div class="payment-wait__icon payment-wait__icon--pending">
+              <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+            </div>
+            <h2>Pagamento</h2>
+            <p id="pagamentoDescricao">
+              Realize o pagamento de forma segura. Após a confirmação, suas credenciais serão enviadas por e-mail.
+            </p>
+            <p class="status-chip" id="pagamentoStatusChip" hidden></p>
+            <button class="btn btn-primary" type="button" id="btnAbrirCheckout" hidden>
+              Ir para pagamento
+            </button>
+            <button class="btn btn-secondary" type="button" id="btnAtualizarStatus" hidden>
+              Atualizar status
+            </button>
+            <a href="../index.html" class="btn btn-ghost">Voltar ao site</a>
+          </div>
+        </section>
+
+        <!-- Etapa 7: Acompanhamento de status -->
+        <section class="ctr-step" id="step-acompanhamento" hidden>
+          <div class="status-tracker" id="statusTracker" aria-live="polite"></div>
+          <div class="payment-wait" id="acompanhamentoPainel">
+            <div class="payment-wait__icon" id="acompanhamentoIcon">
               <i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>
             </div>
-            <h2>Aguardando confirmação do pagamento</h2>
-            <p>
-              Após a confirmação, suas credenciais serão enviadas por e-mail.
+            <h2 id="acompanhamentoTitulo">Processando contratação</h2>
+            <p id="acompanhamentoDescricao">
+              Estamos finalizando sua contratação. Você receberá as credenciais por e-mail assim que tudo estiver pronto.
             </p>
-            <button class="btn btn-secondary" type="button" id="btnAbrirCheckout" hidden>
-              Abrir pagamento novamente
+            <p class="status-chip" id="acompanhamentoStatusChip"></p>
+            <p class="status-id" id="acompanhamentoId" hidden></p>
+            <button class="btn btn-secondary" type="button" id="btnAtualizarAcompanhamento">
+              Atualizar status
             </button>
+            <a href="https://www.pontoagil.com.br/login" class="btn btn-primary" id="btnIrLogin" hidden target="_blank" rel="noopener noreferrer">
+              Acessar o sistema
+            </a>
             <a href="../index.html" class="btn btn-ghost">Voltar ao site</a>
           </div>
         </section>
@@ -418,6 +472,7 @@
 
     <script src="./config.js"></script>
     <script src="./js/utils.js"></script>
+    <script src="./js/status.js"></script>
     <script src="./js/state.js"></script>
     <script src="./js/api.js"></script>
     <script src="./js/app.js"></script>
