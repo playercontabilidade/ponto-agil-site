@@ -1,6 +1,13 @@
 (function () {
   const { baseUrl, API_ENDPOINTS } = window.PONTO_AGIL_CONTRATACAO_CONFIG;
-  const { parseApiError } = window.ContratacaoUtils;
+  const { parseApiError, parseApiBody } = window.ContratacaoUtils;
+
+  function createApiError(response, body, message) {
+    const err = new Error(message || `Erro HTTP ${response.status}`);
+    err.status = response.status;
+    err.body = body;
+    return err;
+  }
 
   async function request(path, options) {
     const url = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
@@ -13,12 +20,17 @@
       },
     });
 
+    const body = await parseApiBody(response);
+
     if (!response.ok) {
-      throw new Error(await parseApiError(response));
+      const message =
+        (typeof body?.mensagem === "string" && body.mensagem) ||
+        (await parseApiError(response, body));
+      throw createApiError(response, body, message);
     }
 
     if (response.status === 204) return null;
-    return response.json();
+    return body;
   }
 
   function getPlanosPublicos() {
@@ -50,11 +62,32 @@
     });
   }
 
+  function getStatus(contratacaoId) {
+    return request(API_ENDPOINTS.STATUS(contratacaoId), { method: "GET" });
+  }
+
+  function reenviarCodigo(contratacaoId) {
+    return request(API_ENDPOINTS.REENVIAR_CODIGO(contratacaoId), {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
+  function cancelarContratacao(contratacaoId) {
+    return request(API_ENDPOINTS.CANCELAR(contratacaoId), {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+  }
+
   window.ContratacaoApi = Object.freeze({
     getPlanosPublicos,
     criarContratacao,
     validarEmail,
     getContrato,
     aceitarContrato,
+    getStatus,
+    reenviarCodigo,
+    cancelarContratacao,
   });
 })();
