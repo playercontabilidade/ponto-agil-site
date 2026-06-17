@@ -12,16 +12,21 @@
     });
   }
 
-  async function parseApiError(response) {
+  async function parseApiBody(response) {
     const text = await response.text();
+    if (!text) return null;
     try {
-      const data = JSON.parse(text);
-      if (typeof data.mensagem === "string" && data.mensagem) return data.mensagem;
-      if (typeof data.message === "string" && data.message) return data.message;
+      return JSON.parse(text);
     } catch (_) {
-      /* texto não JSON */
+      return { mensagem: text };
     }
-    return text || `Erro HTTP ${response.status}`;
+  }
+
+  async function parseApiError(response, parsedBody) {
+    const data = parsedBody ?? null;
+    if (data && typeof data.mensagem === "string" && data.mensagem) return data.mensagem;
+    if (data && typeof data.message === "string" && data.message) return data.message;
+    return `Erro HTTP ${response.status}`;
   }
 
   function maskCnpj(value) {
@@ -119,6 +124,7 @@
   window.ContratacaoUtils = Object.freeze({
     onlyDigits,
     formatCurrencyBRL,
+    parseApiBody,
     parseApiError,
     maskCnpj,
     maskCpf,
