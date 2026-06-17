@@ -10,10 +10,14 @@
     planoFuncionalidades: [],
     contratacaoId: null,
     status: null,
+    concluida: false,
     checkoutUrl: null,
     hashDocumento: null,
     emailAttempts: 0,
     contratacaoCreatedAt: null,
+    podeReenviarCodigo: false,
+    podeCancelar: false,
+    responsavelEmailMascarado: "",
     empresa: {
       razaoSocial: "",
       cnpj: "",
@@ -48,6 +52,34 @@
 
   function clear() {
     sessionStorage.removeItem(STORAGE_KEY);
+  }
+
+  function clearContratacao() {
+    return save({
+      contratacaoId: null,
+      status: null,
+      concluida: false,
+      checkoutUrl: null,
+      hashDocumento: null,
+      emailAttempts: 0,
+      contratacaoCreatedAt: null,
+      podeReenviarCodigo: false,
+      podeCancelar: false,
+      responsavelEmailMascarado: "",
+    });
+  }
+
+  function applyConflictPayload(body) {
+    const status = body?.statusContratacao ?? body?.status ?? null;
+    return save({
+      contratacaoId: body?.contratacaoId ?? null,
+      status,
+      contratacaoCreatedAt: Date.now(),
+      emailAttempts: 0,
+      podeReenviarCodigo: Boolean(body?.podeReenviarCodigo),
+      podeCancelar: Boolean(body?.podeCancelar),
+      responsavelEmailMascarado: body?.responsavelEmail ?? "",
+    });
   }
 
   function setPlano(planoId, faixaId, details) {
@@ -94,6 +126,8 @@
     load,
     save,
     clear,
+    clearContratacao,
+    applyConflictPayload,
     setPlano,
     setEmpresa,
     setResponsavel,
