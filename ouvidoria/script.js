@@ -3,7 +3,10 @@ const {
   API_ENDPOINTS,
   ALLOWED_MIME_TYPES,
   ALLOWED_FILE_EXTENSIONS,
+  TIPOS_MANIFESTACAO,
+  TIPO_MANIFESTACAO_PADRAO,
   TIPO_MANIFESTACAO,
+  ROTULOS_TIPO_MANIFESTACAO,
 } = window.PONTO_AGIL_CONFIG || {};
 if (!baseUrl || !API_ENDPOINTS) {
   throw new Error(
@@ -12,13 +15,43 @@ if (!baseUrl || !API_ENDPOINTS) {
 }
 
 /** tipoManifestacao na URL (?tipoManifestacao=...) ou fallback do config. */
+function obterTiposManifestacaoValidos() {
+  const lista = Array.isArray(TIPOS_MANIFESTACAO) ? TIPOS_MANIFESTACAO : [];
+  const normalizada = lista
+    .map((t) =>
+      String(t ?? "")
+        .trim()
+        .toUpperCase(),
+    )
+    .filter(Boolean);
+  if (normalizada.length > 0) return normalizada;
+  return ["DENUNCIA", "ELOGIO", "RECLAMACAO", "SUGESTAO"];
+}
+
 function obterTipoManifestacao() {
   const params = new URLSearchParams(window.location.search);
-  const fromUrl = String(params.get("tipoManifestacao") ?? "").trim();
-  if (fromUrl) return fromUrl.toUpperCase();
-  return String(TIPO_MANIFESTACAO || "DENUNCIA")
+  const fromUrl = String(params.get("tipoManifestacao") ?? "")
     .trim()
     .toUpperCase();
+  const tiposValidos = obterTiposManifestacaoValidos();
+  const padrao = String(
+    TIPO_MANIFESTACAO_PADRAO || TIPO_MANIFESTACAO || "DENUNCIA",
+  )
+    .trim()
+    .toUpperCase();
+
+  if (fromUrl && tiposValidos.includes(fromUrl)) return fromUrl;
+  if (tiposValidos.includes(padrao)) return padrao;
+  return tiposValidos[0] || "DENUNCIA";
+}
+
+function rotuloTipoManifestacao(tipo) {
+  const chave = String(tipo ?? "")
+    .trim()
+    .toUpperCase();
+  if (!chave) return "—";
+  const mapa = ROTULOS_TIPO_MANIFESTACAO || {};
+  return mapa[chave] || humanizarEnum(chave);
 }
 
 /** UUID do protocolo após consulta bem-sucedida + token (para POST replicar). */
@@ -106,6 +139,7 @@ function mapSelectableItem(item, idKeys, nomeKeys) {
 }
 
 const CATEGORIA_ID_KEYS = [
+  "tipo",
   "valor",
   "id",
   "categoriaId",
@@ -113,7 +147,26 @@ const CATEGORIA_ID_KEYS = [
   "uuid",
   "key",
 ];
-const CATEGORIA_NOME_KEYS = ["descricao", "nome", "titulo", "label", "name"];
+const CATEGORIA_NOME_KEYS = ["nome", "descricao", "titulo", "label", "name"];
+
+/** TipoCategoriaManifestacaoDTO: { tipo, nome, descricao } + formatos legados. */
+function mapCategoriaItem(item) {
+  if (!item) return null;
+
+  if (typeof item === "string") {
+    const nome = item.trim();
+    if (!nome) return null;
+    return { id: nome, nome };
+  }
+
+  if (typeof item !== "object") return null;
+
+  const id = firstStringFromObject(item, CATEGORIA_ID_KEYS);
+  const nome = firstStringFromObject(item, CATEGORIA_NOME_KEYS);
+  if (!id && !nome) return null;
+
+  return { id: id || nome, nome: nome || id };
+}
 
 const DEPARTAMENTO_ID_KEYS = ["id", "departamentoId", "codigo", "uuid", "key"];
 const DEPARTAMENTO_NOME_KEYS = ["nome", "descricao", "name", "titulo", "label"];
@@ -196,10 +249,12 @@ const CATEGORIA_PROTOCOLO_VALOR_KEYS = [
   "tipoCategoria",
 ];
 const CATEGORIA_PROTOCOLO_NOME_KEYS = [
+  "nome",
   "categoriaNome",
   "categoriaDescricao",
   "nomeCategoria",
   "descricaoCategoria",
+  "descricao",
 ];
 const DEPARTAMENTO_PROTOCOLO_VALOR_KEYS = [
   "departamento",
@@ -211,6 +266,26 @@ const DEPARTAMENTO_PROTOCOLO_NOME_KEYS = [
   "departamentoDescricao",
   "nomeDepartamento",
 ];
+
+const TIPO_MANIFESTACAO_PROTOCOLO_KEYS = [
+  "tipo de manifestação",
+  "tipoDeManifestacao",
+  "tipo_manifestacao",
+  "tipoManifestacao",
+  "tipoManifestacaoNome",
+];
+
+function extrairTipoManifestacaoProtocolo(data) {
+  if (!data || typeof data !== "object") return "";
+  return firstStringFromObject(data, TIPO_MANIFESTACAO_PROTOCOLO_KEYS);
+}
+
+function formatarTipoManifestacaoProtocolo(data) {
+  const raw = extrairTipoManifestacaoProtocolo(data);
+  if (!raw) return "—";
+  const rotulo = rotuloTipoManifestacao(raw);
+  return rotulo && rotulo !== "—" ? rotulo : raw;
+}
 
 function extrairCampoProtocolo(data, valorKeys, nomeKeys) {
   if (!data || typeof data !== "object") return { id: "", nome: "" };
@@ -395,11 +470,7 @@ async function fetchCategoriasPorToken(token) {
 
   const data = await fetchBearerJson(path, token);
   const rawList = normalizeListPayload(data);
-  const mapped = rawList
-    .map((item) =>
-      mapSelectableItem(item, CATEGORIA_ID_KEYS, CATEGORIA_NOME_KEYS),
-    )
-    .filter(Boolean);
+  const mapped = rawList.map((item) => mapCategoriaItem(item)).filter(Boolean);
   return sortOptionsByNome(dedupeOptions(mapped));
 }
 
@@ -481,6 +552,9 @@ function getProtocoloConsultaUiElements() {
     protocoloStatusBadge: document.getElementById("protocoloStatusBadge"),
     protocoloValor: document.getElementById("protocoloValor"),
     protocoloAnonima: document.getElementById("protocoloAnonima"),
+    protocoloTipoManifestacao: document.getElementById(
+      "protocoloTipoManifestacao",
+    ),
     protocoloCategoria: document.getElementById("protocoloCategoria"),
     protocoloDepartamento: document.getElementById("protocoloDepartamento"),
     protocoloDataOcorrido: document.getElementById("protocoloDataOcorrido"),
@@ -1318,6 +1392,10 @@ function preencherProtocoloConsultaUI(data, els) {
     els.protocoloAnonima.textContent =
       data.anonima === true ? "Sim" : data.anonima === false ? "Não" : "—";
   }
+  if (els.protocoloTipoManifestacao) {
+    els.protocoloTipoManifestacao.textContent =
+      formatarTipoManifestacaoProtocolo(data);
+  }
   if (els.protocoloCategoria) {
     els.protocoloCategoria.textContent = formatarCategoriaProtocolo(data);
   }
@@ -1399,6 +1477,9 @@ document.addEventListener("DOMContentLoaded", () => {
   );
   const protocoloValorEl = document.getElementById("protocoloValor");
   const protocoloAnonimaEl = document.getElementById("protocoloAnonima");
+  const protocoloTipoManifestacaoEl = document.getElementById(
+    "protocoloTipoManifestacao",
+  );
   const protocoloCategoriaEl = document.getElementById("protocoloCategoria");
   const protocoloDepartamentoEl = document.getElementById(
     "protocoloDepartamento",
@@ -1422,6 +1503,7 @@ document.addEventListener("DOMContentLoaded", () => {
     protocoloStatusBadge: protocoloStatusBadgeEl,
     protocoloValor: protocoloValorEl,
     protocoloAnonima: protocoloAnonimaEl,
+    protocoloTipoManifestacao: protocoloTipoManifestacaoEl,
     protocoloCategoria: protocoloCategoriaEl,
     protocoloDepartamento: protocoloDepartamentoEl,
     protocoloDataOcorrido: protocoloDataOcorridoEl,
@@ -1698,7 +1780,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isValid) {
       if (len === 0) {
         msg =
-          "Conte com calma o que aconteceu aqui — é o principal para entendermos sua manifestação na ouvidoria (mínimo de 10 caracteres).";
+          "detalhe bem a sua manifestação — é o principal para entender sua solicitação (mínimo de 10 caracteres).";
       } else if (len < 10) {
         msg =
           "Quase lá: escreva pelo menos 10 caracteres para podermos seguir.";
