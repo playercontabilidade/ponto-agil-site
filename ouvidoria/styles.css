@@ -669,6 +669,17 @@ form {
   z-index: 50;
 }
 
+.modal:not(.is-hidden) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal:not(.is-hidden) .modal__panel {
+  margin: 0;
+}
+
 .modal__backdrop {
   position: absolute;
   inset: 0;
@@ -748,6 +759,104 @@ form {
   max-height: min(72vh, 720px);
   object-fit: contain;
   display: block;
+}
+
+.protocolo-modal__panel {
+  width: min(100%, 480px);
+  padding: 28px 24px 24px;
+  text-align: center;
+}
+
+.protocolo-modal__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  border-radius: 999px;
+  background: rgba(113, 198, 58, 0.15);
+  color: #3d7a1a;
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.protocolo-modal__title {
+  margin: 0 0 10px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.protocolo-modal__mensagem {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #374151;
+}
+
+.protocolo-modal__protocolo-box {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f0fdf4;
+  border: 2px solid rgba(113, 198, 58, 0.45);
+}
+
+.protocolo-modal__protocolo-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3d7a1a;
+}
+
+.protocolo-modal__protocolo {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #d1fae5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #0f2d5a;
+  word-break: break-all;
+  user-select: all;
+}
+
+.protocolo-modal__copy {
+  align-self: center;
+  font-size: 13px;
+}
+
+.protocolo-modal__copy.is-copied {
+  border-color: rgba(113, 198, 58, 0.6);
+  background: rgba(113, 198, 58, 0.1);
+  color: #3d7a1a;
+}
+
+.protocolo-modal__aviso {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #92400e;
+  text-align: left;
+}
+
+.protocolo-modal__confirmar {
+  width: 100%;
 }
 
 .field-row {
