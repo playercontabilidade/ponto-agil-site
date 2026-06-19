@@ -7,6 +7,7 @@
   const API_ENDPOINTS = {
     OUVIDORIA_ENVIAR: "/ouvidoria/public/enviar",
     OUVIDORIA_CATEGORIAS: "/ouvidoria/public/categorias",
+    OUVIDORIA_PRAZO_RESPOSTA: "/ouvidoria/public/prazo-resposta",
     DEPARTAMENTO_POR_TOKEN_LISTAR: "/departamento/por-token/listar",
     OUVIDORIA_ACOMPANHAMENTO: (uuid) =>
       `/ouvidoria/public/acompanhamento/${encodeURIComponent(String(uuid ?? "").trim())}`,
