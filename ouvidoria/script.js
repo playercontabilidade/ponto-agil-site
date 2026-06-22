@@ -28,7 +28,7 @@ function obterTiposManifestacaoValidos() {
   return ["DENUNCIA", "ELOGIO", "RECLAMACAO", "SUGESTAO"];
 }
 
-function obterTipoManifestacao() {
+function obterTipoManifestacaoInicial() {
   const params = new URLSearchParams(window.location.search);
   const fromUrl = String(params.get("tipoManifestacao") ?? "")
     .trim()
@@ -45,6 +45,35 @@ function obterTipoManifestacao() {
   return tiposValidos[0] || "DENUNCIA";
 }
 
+/** @type {string | null} */
+let tipoManifestacaoSelecionado = null;
+
+function obterTipoManifestacao() {
+  if (!tipoManifestacaoSelecionado) {
+    tipoManifestacaoSelecionado = obterTipoManifestacaoInicial();
+  }
+  return tipoManifestacaoSelecionado;
+}
+
+function definirTipoManifestacao(tipo) {
+  const tiposValidos = obterTiposManifestacaoValidos();
+  const chave = String(tipo ?? "")
+    .trim()
+    .toUpperCase();
+  if (!tiposValidos.includes(chave)) return false;
+  if (tipoManifestacaoSelecionado === chave) return false;
+  tipoManifestacaoSelecionado = chave;
+
+  const params = new URLSearchParams(window.location.search);
+  params.set("tipoManifestacao", chave);
+  const query = params.toString();
+  const newUrl = query
+    ? `${window.location.pathname}?${query}${window.location.hash}`
+    : `${window.location.pathname}${window.location.hash}`;
+  window.history.replaceState({}, "", newUrl);
+  return true;
+}
+
 function rotuloTipoManifestacao(tipo) {
   const chave = String(tipo ?? "")
     .trim()
@@ -52,6 +81,102 @@ function rotuloTipoManifestacao(tipo) {
   if (!chave) return "—";
   const mapa = ROTULOS_TIPO_MANIFESTACAO || {};
   return mapa[chave] || humanizarEnum(chave);
+}
+
+function tituloFormularioOuvidoria(tipo) {
+  const rotulo = rotuloTipoManifestacao(
+    tipo ?? obterTipoManifestacao(),
+  );
+  if (!rotulo || rotulo === "—") return "Registrar na ouvidoria";
+  return `Registrar ${rotulo.toLowerCase()}`;
+}
+
+function aplicarTituloFormularioOuvidoria(pageTitleEl, tipo) {
+  if (!pageTitleEl) return;
+  pageTitleEl.textContent = tituloFormularioOuvidoria(tipo);
+}
+
+/** @type {Map<string, { diasPrazoMinimo: number, diasPrazoMaximo: number }> | null} */
+let prazosRespostaPorTipo = null;
+
+function normalizarPrazosResposta(payload) {
+  const list = normalizeListPayload(payload);
+  const mapa = new Map();
+  list.forEach((item) => {
+    if (!item || typeof item !== "object") return;
+    const tipo = String(item.tipoManifestacao ?? "")
+      .trim()
+      .toUpperCase();
+    if (!tipo) return;
+    const min = Number(item.diasPrazoMinimo);
+    const max = Number(item.diasPrazoMaximo);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return;
+    mapa.set(tipo, { diasPrazoMinimo: min, diasPrazoMaximo: max });
+  });
+  return mapa;
+}
+
+async function fetchPrazosResposta(token) {
+  const tok = String(token || "").trim();
+  if (!tok) return new Map();
+  const data = await fetchBearerJson(
+    API_ENDPOINTS.OUVIDORIA_PRAZO_RESPOSTA,
+    tok,
+  );
+  return normalizarPrazosResposta(data);
+}
+
+function formatarIntervaloPrazo(min, max) {
+  if (min === max) return `${min} dias`;
+  return `${min} a ${max} dias`;
+}
+
+function montarLegendaPrazoResposta(tipo, prazo) {
+  const rotulo = rotuloTipoManifestacao(tipo);
+  const intervalo = formatarIntervaloPrazo(
+    prazo.diasPrazoMinimo,
+    prazo.diasPrazoMaximo,
+  );
+  const chave = String(tipo ?? "")
+    .trim()
+    .toUpperCase();
+
+  const contextos = {
+    DENUNCIA: `Denúncias são analisadas com sigilo. O prazo estimado de resposta é de ${intervalo}.`,
+    ELOGIO: `Elogios são registrados e encaminhados à equipe responsável. O prazo estimado de resposta é de ${intervalo}.`,
+    SUGESTAO: `Sugestões passam por análise da ouvidoria. O prazo estimado de resposta é de ${intervalo}.`,
+    RECLAMACAO: `Reclamações são tratadas com prioridade. O prazo estimado de resposta é de ${intervalo}.`,
+  };
+
+  if (contextos[chave]) return contextos[chave];
+  return `Manifestações do tipo ${rotulo.toLowerCase()} têm prazo estimado de resposta de ${intervalo}.`;
+}
+
+function obterLegendaPrazoPorTipo(tipo) {
+  if (!prazosRespostaPorTipo || prazosRespostaPorTipo.size === 0) return "";
+  const chave = String(tipo ?? "")
+    .trim()
+    .toUpperCase();
+  const prazo = prazosRespostaPorTipo.get(chave);
+  if (!prazo) return "";
+  return montarLegendaPrazoResposta(chave, prazo);
+}
+
+function aplicarLegendaPrazoResposta(noteEl, visivel) {
+  if (!noteEl) return;
+  if (!visivel) {
+    noteEl.classList.add("is-hidden");
+    noteEl.textContent = "";
+    return;
+  }
+  const legenda = obterLegendaPrazoPorTipo(obterTipoManifestacao());
+  if (!legenda) {
+    noteEl.classList.add("is-hidden");
+    noteEl.textContent = "";
+    return;
+  }
+  noteEl.textContent = legenda;
+  noteEl.classList.remove("is-hidden");
 }
 
 /** UUID do protocolo após consulta bem-sucedida + token (para POST replicar). */
@@ -472,6 +597,77 @@ async function fetchCategoriasPorToken(token) {
   const rawList = normalizeListPayload(data);
   const mapped = rawList.map((item) => mapCategoriaItem(item)).filter(Boolean);
   return sortOptionsByNome(dedupeOptions(mapped));
+}
+
+async function executarCargaCategorias(token, categoriaEl, categoriaErrorEl) {
+  try {
+    ouvidoriaLookup.categorias.clear();
+    const categorias = await fetchCategoriasPorToken(token);
+    resetSelectKeepingPlaceholder(categoriaEl);
+
+    if (categorias.length === 0) {
+      setTextError(
+        categoriaErrorEl,
+        true,
+        "Não há categorias disponíveis para este tipo no momento. Tente outro tipo ou atualize a página.",
+      );
+      return { ok: false };
+    }
+
+    fillSelect(categoriaEl, categorias, formatarNomeCategoriaExibicao);
+    registrarOpcoesLookup(ouvidoriaLookup.categorias, categorias);
+    setTextError(categoriaErrorEl, false, "");
+    return { ok: true };
+  } catch (err) {
+    resetSelectKeepingPlaceholder(categoriaEl);
+    setTextError(
+      categoriaErrorEl,
+      true,
+      `Não foi possível carregar as categorias. ${mensagemErroAmigavel(err)}`,
+    );
+    return { ok: false };
+  }
+}
+
+function setTipoManifestacaoOptionsDisabled(containerEl, disabled) {
+  if (!containerEl) return;
+  containerEl.querySelectorAll('input[type="radio"]').forEach((input) => {
+    input.disabled = Boolean(disabled);
+  });
+  containerEl.classList.toggle("tipo-manifestacao-options--disabled", Boolean(disabled));
+}
+
+function renderTipoManifestacaoOptions(containerEl, valorAtual, onChange) {
+  if (!containerEl) return;
+  containerEl.replaceChildren();
+  const tipos = obterTiposManifestacaoValidos();
+  const selecionado = String(valorAtual ?? obterTipoManifestacao())
+    .trim()
+    .toUpperCase();
+
+  tipos.forEach((tipo) => {
+    const id = `tipoManifestacao_${tipo}`;
+    const label = document.createElement("label");
+    label.className = "tipo-manifestacao-option";
+    label.htmlFor = id;
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "tipoManifestacao";
+    input.id = id;
+    input.value = tipo;
+    input.checked = tipo === selecionado;
+    input.addEventListener("change", () => {
+      if (!input.checked) return;
+      onChange(tipo);
+    });
+
+    const span = document.createElement("span");
+    span.textContent = rotuloTipoManifestacao(tipo);
+
+    label.append(input, span);
+    containerEl.appendChild(label);
+  });
 }
 
 async function fetchDepartamentosPorToken(token) {
@@ -1598,6 +1794,12 @@ document.addEventListener("DOMContentLoaded", () => {
     "ouvidoriaEnvioResultFechar",
   );
   const ouvidoriaInfoNoteEl = document.getElementById("ouvidoriaInfoNote");
+  const prazoRespostaNoteEl = document.getElementById("prazoRespostaNote");
+  const tipoManifestacaoOptionsEl = document.getElementById(
+    "tipoManifestacaoOptions",
+  );
+
+  tipoManifestacaoSelecionado = obterTipoManifestacaoInicial();
 
   function esconderResultadoEnvioOuvidoria() {
     if (ouvidoriaEnvioResultEl)
@@ -1636,11 +1838,64 @@ document.addEventListener("DOMContentLoaded", () => {
   setTextError(categoriaErrorEl, false, "");
   setTextError(departamentoErrorEl, false, "");
 
+  if (token) {
+    fetchPrazosResposta(token)
+      .then((mapa) => {
+        prazosRespostaPorTipo = mapa;
+        aplicarLegendaPrazoResposta(prazoRespostaNoteEl, true);
+      })
+      .catch(() => {
+        prazosRespostaPorTipo = null;
+        aplicarLegendaPrazoResposta(prazoRespostaNoteEl, false);
+      });
+  } else {
+    prazosRespostaPorTipo = null;
+    aplicarLegendaPrazoResposta(prazoRespostaNoteEl, false);
+  }
+
   categoriaEl.disabled = true;
   departamentoEl.disabled = true;
   btnRevisar.disabled = true;
 
   let listsLoadedOk = false;
+
+  async function aoMudarTipoManifestacao(novoTipo) {
+    if (!definirTipoManifestacao(novoTipo)) return;
+
+    aplicarLegendaPrazoResposta(prazoRespostaNoteEl, true);
+    aplicarTituloFormularioOuvidoria(pageTitleEl, novoTipo);
+    setTextError(categoriaErrorEl, false, "");
+    categoriaEl.value = "";
+    listsLoadedOk = false;
+    btnRevisar.disabled = true;
+    categoriaEl.disabled = true;
+    setTipoManifestacaoOptionsDisabled(tipoManifestacaoOptionsEl, true);
+
+    if (!token) {
+      setTipoManifestacaoOptionsDisabled(tipoManifestacaoOptionsEl, false);
+      return;
+    }
+
+    const { ok: categoriasOk } = await executarCargaCategorias(
+      token,
+      categoriaEl,
+      categoriaErrorEl,
+    );
+    listsLoadedOk = categoriasOk && hasSelectableOptions(categoriaEl);
+    categoriaEl.disabled =
+      !categoriasOk || !hasSelectableOptions(categoriaEl);
+    btnRevisar.disabled = !listsLoadedOk;
+    setTipoManifestacaoOptionsDisabled(tipoManifestacaoOptionsEl, false);
+  }
+
+  renderTipoManifestacaoOptions(
+    tipoManifestacaoOptionsEl,
+    obterTipoManifestacao(),
+    (tipo) => {
+      aoMudarTipoManifestacao(tipo);
+    },
+  );
+  aplicarTituloFormularioOuvidoria(pageTitleEl, obterTipoManifestacao());
 
   function hasSelectableOptions(selectEl) {
     return Array.from(selectEl.options || []).some((opt) => Boolean(opt.value));
@@ -1663,39 +1918,19 @@ document.addEventListener("DOMContentLoaded", () => {
         setTextError(departamentoErrorEl, true, semToken);
         categoriaEl.disabled = true;
         departamentoEl.disabled = true;
+        setTipoManifestacaoOptionsDisabled(tipoManifestacaoOptionsEl, true);
         listsLoadedOk = false;
         btnRevisar.disabled = true;
         return;
       }
 
       const loadCategorias = async () => {
-        try {
-          const categorias = await fetchCategoriasPorToken(token);
-          resetSelectKeepingPlaceholder(categoriaEl);
-
-          if (categorias.length === 0) {
-            setTextError(
-              categoriaErrorEl,
-              true,
-              "Não há categorias disponíveis no momento. Atualize a página ou tente de novo mais tarde.",
-            );
-            categoriasOk = false;
-            return;
-          }
-
-          fillSelect(categoriaEl, categorias, formatarNomeCategoriaExibicao);
-          registrarOpcoesLookup(ouvidoriaLookup.categorias, categorias);
-          setTextError(categoriaErrorEl, false, "");
-          categoriasOk = true;
-        } catch (err) {
-          resetSelectKeepingPlaceholder(categoriaEl);
-          setTextError(
-            categoriaErrorEl,
-            true,
-            `Não foi possível carregar as categorias. ${mensagemErroAmigavel(err)}`,
-          );
-          categoriasOk = false;
-        }
+        const { ok } = await executarCargaCategorias(
+          token,
+          categoriaEl,
+          categoriaErrorEl,
+        );
+        categoriasOk = ok;
       };
 
       const loadDepartamentos = async () => {
@@ -1929,6 +2164,10 @@ document.addEventListener("DOMContentLoaded", () => {
         ? categoriaEl.selectedOptions[0].textContent
         : "";
 
+    addReviewRow(
+      "Tipo de manifestação",
+      rotuloTipoManifestacao(obterTipoManifestacao()),
+    );
     addReviewRow("Categoria", categoriaNome || categoriaEl.value || "—");
     addReviewRow(
       "Departamento",
@@ -1993,6 +2232,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ouvidoriaReviewEl.classList.add("is-hidden");
     form.classList.add("is-hidden");
     if (ouvidoriaInfoNoteEl) ouvidoriaInfoNoteEl.classList.add("is-hidden");
+    aplicarLegendaPrazoResposta(prazoRespostaNoteEl, false);
 
     ouvidoriaEnvioResultMensagemEl.textContent =
       String(data.mensagem ?? "").trim() ||
@@ -2033,7 +2273,8 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDescricaoUi();
     form.classList.remove("is-hidden");
     if (ouvidoriaInfoNoteEl) ouvidoriaInfoNoteEl.classList.remove("is-hidden");
-    if (pageTitleEl) pageTitleEl.textContent = "Registrar na ouvidoria";
+    aplicarLegendaPrazoResposta(prazoRespostaNoteEl, true);
+    if (pageTitleEl) pageTitleEl.textContent = tituloFormularioOuvidoria();
     if (messageEl) {
       messageEl.textContent =
         "Preencha o formulário abaixo. Você poderá revisar antes do envio.";
@@ -2129,6 +2370,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isOuvidoria = mode === "ouvidoria";
     esconderResultadoEnvioOuvidoria();
     if (ouvidoriaInfoNoteEl) ouvidoriaInfoNoteEl.classList.remove("is-hidden");
+    aplicarLegendaPrazoResposta(prazoRespostaNoteEl, isOuvidoria);
     if (isOuvidoria) protocoloReplicarCtx.protocoloUuid = null;
     if (!isOuvidoria) {
       ouvidoriaReviewEl.classList.add("is-hidden");
@@ -2150,7 +2392,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (pageTitleEl) {
       pageTitleEl.textContent = isOuvidoria
-        ? "Registrar na ouvidoria"
+        ? tituloFormularioOuvidoria()
         : "Consultar protocolo";
     }
     if (messageEl) {

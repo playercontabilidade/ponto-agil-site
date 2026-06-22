@@ -10,7 +10,12 @@
     <div class="ouvidoria-shell">
       <main class="card">
         <span class="badge">Canal de ouvidoria</span>
-        <h1>Registrar na ouvidoria</h1>
+        <h1 id="pageTitle">Registrar denúncia</h1>
+        <p
+          id="prazoRespostaNote"
+          class="prazo-resposta-note is-hidden"
+          role="note"
+        ></p>
         <div class="top-actions" role="group" aria-label="Ações">
           <button
             class="btn btn-secondary"
@@ -134,6 +139,16 @@
         </section>
 
         <form id="ouvidoriaForm" novalidate>
+          <fieldset class="field tipo-manifestacao-field">
+            <legend class="label">Tipo de manifestação</legend>
+            <div
+              id="tipoManifestacaoOptions"
+              class="tipo-manifestacao-options"
+              role="radiogroup"
+              aria-label="Tipo de manifestação"
+            ></div>
+          </fieldset>
+
           <div class="field-row">
             <div class="field">
               <label class="label" for="categoria">Categoria</label>
