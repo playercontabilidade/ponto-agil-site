@@ -91,7 +91,7 @@
       case STATUS.AGUARDANDO_ASSINATURA:
         return "contrato";
       case STATUS.CONTRATO_ASSINADO:
-        return "plano-resumo";
+        return "pagamento";
       case STATUS.AGUARDANDO_PAGAMENTO:
         return "pagamento";
       case STATUS.PAGAMENTO_CONFIRMADO:

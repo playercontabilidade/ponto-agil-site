@@ -17,7 +17,6 @@
     RESPONSAVEL: "responsavel",
     EMAIL: "email",
     CONTRATO: "contrato",
-    PLANO_RESUMO: "plano-resumo",
     PAGAMENTO: "pagamento",
     ACOMPANHAMENTO: "acompanhamento",
   };
@@ -27,16 +26,19 @@
     [STEPS.RESPONSAVEL]: "responsavel",
     [STEPS.EMAIL]: "responsavel",
     [STEPS.CONTRATO]: "contrato",
-    [STEPS.PLANO_RESUMO]: "plano-resumo",
-    [STEPS.PAGAMENTO]: "plano-resumo",
-    [STEPS.ACOMPANHAMENTO]: "plano-resumo",
+    [STEPS.PAGAMENTO]: "pagamento",
+    [STEPS.ACOMPANHAMENTO]: "enviado",
   };
+
+  const STEPPER_ORDER = ["empresa", "responsavel", "contrato", "pagamento", "enviado"];
 
   let currentStep = STEPS.PLANO;
   let planosCache = [];
   let emailTimerId = null;
   let statusPollId = null;
   let contractLoaded = false;
+  let contractZoom = 100;
+  let contractHtmlCache = "";
   let isSubmitting = false;
   let checkoutOpened = false;
 
@@ -51,15 +53,19 @@
     responsavelMessage: document.getElementById("responsavelMessage"),
     emailMessage: document.getElementById("emailMessage"),
     contratoMessage: document.getElementById("contratoMessage"),
-    planoResumoMessage: document.getElementById("planoResumoMessage"),
     emailDestino: document.getElementById("emailDestino"),
     emailTimer: document.getElementById("emailTimer"),
     emailAttemptsLeft: document.getElementById("emailAttemptsLeft"),
     contractContent: document.getElementById("contractContent"),
+    contractViewer: document.getElementById("contractViewer"),
+    contractZoomLabel: document.getElementById("contractZoomLabel"),
+    btnContractZoomIn: document.getElementById("btnContractZoomIn"),
+    btnContractZoomOut: document.getElementById("btnContractZoomOut"),
+    btnContractDownload: document.getElementById("btnContractDownload"),
+    btnContractFullscreen: document.getElementById("btnContractFullscreen"),
     hashDocumento: document.getElementById("hashDocumento"),
     aceiteContrato: document.getElementById("aceiteContrato"),
     btnAceitarContrato: document.getElementById("btnAceitarContrato"),
-    btnFinalizarContratacao: document.getElementById("btnFinalizarContratacao"),
     btnAbrirCheckout: document.getElementById("btnAbrirCheckout"),
     btnAtualizarStatus: document.getElementById("btnAtualizarStatus"),
     pagamentoDescricao: document.getElementById("pagamentoDescricao"),
@@ -72,6 +78,17 @@
     acompanhamentoId: document.getElementById("acompanhamentoId"),
     btnAtualizarAcompanhamento: document.getElementById("btnAtualizarAcompanhamento"),
     btnIrLogin: document.getElementById("btnIrLogin"),
+    btnBaixarContrato: document.getElementById("btnBaixarContrato"),
+    successPanel: document.getElementById("successPanel"),
+    processingPanel: document.getElementById("processingPanel"),
+    ctrSidebar: document.getElementById("ctrSidebar"),
+    ctrFooterNote: document.getElementById("ctrFooterNote"),
+    ctrIntro: document.getElementById("ctrIntro"),
+    ctrShell: document.querySelector(".ctr-shell"),
+    sidebarPlanoNome: document.getElementById("sidebarPlanoNome"),
+    sidebarFaixa: document.getElementById("sidebarFaixa"),
+    sidebarPreco: document.getElementById("sidebarPreco"),
+    sidebarRecommended: document.getElementById("sidebarRecommended"),
     conflictPanel: document.getElementById("conflictPanel"),
     conflictMessage: document.getElementById("conflictMessage"),
     conflictEmail: document.getElementById("conflictEmail"),
@@ -82,12 +99,6 @@
     btnReenviarCodigoEmail: document.getElementById("btnReenviarCodigoEmail"),
     btnCancelarRecomecar: document.getElementById("btnCancelarRecomecar"),
     btnRecomecarLocal: document.getElementById("btnRecomecarLocal"),
-    planSummaryName: document.getElementById("planSummaryName"),
-    planSummaryFaixa: document.getElementById("planSummaryFaixa"),
-    planSummaryPrice: document.getElementById("planSummaryPrice"),
-    planSummaryFeatures: document.getElementById("planSummaryFeatures"),
-    planRecommendedBadge: document.getElementById("planRecommendedBadge"),
-    flowList: document.getElementById("flowList"),
   };
 
   function $(id) {
@@ -100,10 +111,10 @@
       section.hidden = section.id !== `step-${step}`;
     });
 
-    const hideStepper = [STEPS.PLANO, STEPS.PAGAMENTO, STEPS.ACOMPANHAMENTO].includes(step);
+    const hideStepper = step === STEPS.PLANO;
     els.stepper.classList.toggle("is-hidden", hideStepper);
     updateStepper(step);
-    updateFlowSidebar(step);
+    updateLayoutForStep(step);
 
     if (step === STEPS.EMAIL) updateEmailActionButtons();
 
@@ -114,56 +125,69 @@
     }
   }
 
+  function updateLayoutForStep(step) {
+    const showSidebar =
+      step !== STEPS.PLANO &&
+      step !== STEPS.ACOMPANHAMENTO &&
+      State.hasPlanoSelecionado();
+    if (els.ctrSidebar) els.ctrSidebar.hidden = !showSidebar;
+    if (els.ctrIntro) els.ctrIntro.hidden = step !== STEPS.PLANO;
+    if (els.ctrFooterNote) {
+      els.ctrFooterNote.hidden = step === STEPS.ACOMPANHAMENTO;
+    }
+    if (els.ctrShell) {
+      els.ctrShell.classList.toggle("ctr-shell--single", !showSidebar);
+    }
+    if (showSidebar) renderSidebarSummary();
+  }
+
   function updateStepper(step) {
-    const order = ["empresa", "responsavel", "contrato", "plano-resumo"];
     const activeKey = STEPPER_MAP[step];
-    const activeIndex = order.indexOf(activeKey);
+    const activeIndex = STEPPER_ORDER.indexOf(activeKey);
 
     document.querySelectorAll("[data-stepper]").forEach((item) => {
       const key = item.getAttribute("data-stepper");
-      const index = order.indexOf(key);
+      const index = STEPPER_ORDER.indexOf(key);
       item.classList.remove("is-active", "is-done");
 
       if (index < activeIndex) item.classList.add("is-done");
-      else if (index === activeIndex && step !== STEPS.EMAIL) item.classList.add("is-active");
-      else if (step === STEPS.EMAIL && key === "responsavel") item.classList.add("is-active");
+      else if (index === activeIndex) item.classList.add("is-active");
     });
 
     if (step === STEPS.EMAIL) {
       document.querySelector('[data-stepper="responsavel"]')?.classList.remove("is-done");
       document.querySelector('[data-stepper="responsavel"]')?.classList.add("is-active");
     }
+
+    if (step === STEPS.ACOMPANHAMENTO) {
+      const state = State.load();
+      const concluida =
+        Boolean(state.concluida) || S.normalizeStatus(state.status) === S.STATUS.CONCLUIDA;
+      document.querySelectorAll("[data-stepper]").forEach((item) => {
+        item.classList.remove("is-active", "is-done");
+        if (concluida) item.classList.add("is-done");
+        else if (item.getAttribute("data-stepper") === "enviado") item.classList.add("is-active");
+        else if (STEPPER_ORDER.indexOf(item.getAttribute("data-stepper")) < 4) {
+          item.classList.add("is-done");
+        }
+      });
+    }
   }
 
-  function updateFlowSidebar(step) {
-    const flowOrder = ["dados", "contrato", "pagamento", "ativacao", "acesso"];
-    let activeFlow = "dados";
+  function renderSidebarSummary() {
+    const state = State.load();
+    if (!State.hasPlanoSelecionado()) return;
 
-    if ([STEPS.EMPRESA, STEPS.RESPONSAVEL, STEPS.EMAIL].includes(step)) activeFlow = "dados";
-    else if (step === STEPS.CONTRATO || step === STEPS.PLANO_RESUMO) activeFlow = "contrato";
-    else if (step === STEPS.PAGAMENTO) activeFlow = "pagamento";
-    else if (step === STEPS.ACOMPANHAMENTO) activeFlow = "ativacao";
-
-    const activeIndex = flowOrder.indexOf(activeFlow);
-
-    els.flowList.querySelectorAll("li").forEach((li) => {
-      const key = li.getAttribute("data-flow");
-      const index = flowOrder.indexOf(key);
-      li.classList.remove("is-active", "is-done");
-      if (index < activeIndex) li.classList.add("is-done");
-      else if (index === activeIndex) li.classList.add("is-active");
-    });
-
-    if ([STEPS.RESPONSAVEL, STEPS.EMAIL].includes(step)) {
-      els.flowList.querySelector('[data-flow="dados"]')?.classList.add("is-done");
+    if (els.sidebarPlanoNome) els.sidebarPlanoNome.textContent = state.planoNome || "—";
+    if (els.sidebarFaixa) els.sidebarFaixa.textContent = state.faixaNome || "—";
+    if (els.sidebarPreco) {
+      els.sidebarPreco.textContent = `R$ ${U.formatCurrencyBRL(state.planoPreco)}`;
     }
-    if ([STEPS.PLANO_RESUMO, STEPS.PAGAMENTO].includes(step)) {
-      els.flowList.querySelector('[data-flow="dados"]')?.classList.add("is-done");
-      els.flowList.querySelector('[data-flow="contrato"]')?.classList.add("is-done");
-    }
-    if (step === STEPS.ACOMPANHAMENTO) {
-      els.flowList.querySelectorAll("li").forEach((li) => li.classList.add("is-done"));
-    }
+
+    const nome = String(state.planoNome || "").toLowerCase();
+    const isRecommended =
+      nome.includes("essencial") || nome.includes("profissional") || nome.includes("recomend");
+    if (els.sidebarRecommended) els.sidebarRecommended.hidden = !isRecommended;
   }
 
   function applyStatusPayload(payload) {
@@ -220,28 +244,25 @@
     const status = S.normalizeStatus(state.status);
     const concluida = Boolean(state.concluida) || status === S.STATUS.CONCLUIDA;
 
+    if (concluida) {
+      if (els.successPanel) els.successPanel.hidden = false;
+      if (els.processingPanel) els.processingPanel.hidden = true;
+      if (els.btnIrLogin) els.btnIrLogin.hidden = false;
+      stopStatusPolling();
+      return;
+    }
+
+    if (els.successPanel) els.successPanel.hidden = true;
+    if (els.processingPanel) els.processingPanel.hidden = false;
+
     renderStatusTracker(status, concluida);
 
     els.acompanhamentoStatusChip.textContent = S.getLabel(status);
-    els.acompanhamentoStatusChip.className = concluida
-      ? "status-chip status-chip--success"
-      : "status-chip";
+    els.acompanhamentoStatusChip.className = "status-chip";
 
     if (state.contratacaoId) {
       els.acompanhamentoId.hidden = false;
       els.acompanhamentoId.textContent = `Contratação: ${state.contratacaoId}`;
-    }
-
-    if (concluida) {
-      els.acompanhamentoIcon.className = "payment-wait__icon payment-wait__icon--success";
-      els.acompanhamentoIcon.innerHTML = '<i class="fa-solid fa-circle-check" aria-hidden="true"></i>';
-      els.acompanhamentoTitulo.textContent = "Contratação concluída!";
-      els.acompanhamentoDescricao.textContent =
-        "Sua empresa foi ativada. Verifique seu e-mail para acessar as credenciais de login.";
-      els.btnIrLogin.hidden = false;
-      els.btnAtualizarAcompanhamento.hidden = true;
-      stopStatusPolling();
-      return;
     }
 
     els.acompanhamentoIcon.className = "payment-wait__icon";
@@ -319,16 +340,6 @@
         }
         showStep(STEPS.CONTRATO);
         await loadContract();
-        break;
-
-      case "plano-resumo":
-        if (!S.canAcceptContract(status) && status !== S.STATUS.CONTRATO_ASSINADO) {
-          showStep(STEPS.CONTRATO);
-          await loadContract();
-          break;
-        }
-        renderPlanSummary();
-        showStep(STEPS.PLANO_RESUMO);
         break;
 
       case "pagamento":
@@ -505,6 +516,7 @@
     hideConflictPanel();
     State.clearContratacao();
     contractLoaded = false;
+    contractHtmlCache = "";
     checkoutOpened = false;
     els.aceiteContrato.checked = false;
     $("codigoEmail").value = "";
@@ -614,6 +626,7 @@
     hideConflictPanel();
     State.clearContratacao();
     contractLoaded = false;
+    contractHtmlCache = "";
     checkoutOpened = false;
     els.aceiteContrato.checked = false;
     U.showMessage(
@@ -684,6 +697,7 @@
         ? plano.funcionalidades.map((f) => f.nome).filter(Boolean)
         : [],
     });
+    renderSidebarSummary();
     return true;
   }
 
@@ -729,29 +743,57 @@
       .join("");
   }
 
-  function renderPlanSummary() {
+  function applyContractZoom() {
+    if (!els.contractContent) return;
+    els.contractContent.style.transform = `scale(${contractZoom / 100})`;
+    if (els.contractZoomLabel) els.contractZoomLabel.textContent = `${contractZoom}%`;
+  }
+
+  function downloadContractHtml() {
+    const html = contractHtmlCache || els.contractContent?.innerHTML || "";
+    if (!html || html.includes("Carregando contrato")) return;
+
+    const blob = new Blob(
+      [
+        `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Contrato - Ponto Ágil</title></head><body>${html}</body></html>`,
+      ],
+      { type: "text/html;charset=utf-8" },
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "contrato-ponto-agil.html";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadSignedContract() {
+    if (contractHtmlCache) {
+      downloadContractHtml();
+      return;
+    }
+
     const state = State.load();
-    els.planSummaryName.textContent = state.planoNome || "—";
-    els.planSummaryFaixa.textContent = state.faixaNome || "—";
-    els.planSummaryPrice.textContent = `R$ ${U.formatCurrencyBRL(state.planoPreco)}`;
+    if (!state.contratacaoId) return;
 
-    const isProfissional = String(state.planoNome || "")
-      .toLowerCase()
-      .includes("profissional");
-    els.planRecommendedBadge.hidden = !isProfissional;
+    try {
+      const data = await Api.getContrato(state.contratacaoId);
+      contractHtmlCache = data.conteudoHtml || "";
+      downloadContractHtml();
+    } catch (_) {
+      /* contrato indisponível */
+    }
+  }
 
-    const features = state.planoFuncionalidades?.length
-      ? state.planoFuncionalidades
-      : [
-          "Ponto via app, web e biometria.",
-          "Relatórios e dashboards automáticos.",
-          "Integração com folha de pagamento.",
-          "Suporte especializado 24h.",
-        ];
+  function toggleContractFullscreen() {
+    const viewer = els.contractViewer;
+    if (!viewer) return;
 
-    els.planSummaryFeatures.innerHTML = features
-      .map((item) => `<li><i class="fa-solid fa-check" aria-hidden="true"></i> ${item}</li>`)
-      .join("");
+    if (!document.fullscreenElement) {
+      viewer.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
   }
 
   async function loadContract() {
@@ -775,8 +817,11 @@
 
     try {
       const data = await Api.getContrato(state.contratacaoId);
-      els.contractContent.innerHTML = data.conteudoHtml || "<p>Contrato indisponível.</p>";
+      contractHtmlCache = data.conteudoHtml || "";
+      els.contractContent.innerHTML = contractHtmlCache || "<p>Contrato indisponível.</p>";
       contractLoaded = Boolean(data.conteudoHtml);
+      contractZoom = 100;
+      applyContractZoom();
 
       if (data.hashDocumento) {
         els.hashDocumento.hidden = false;
@@ -1083,28 +1128,16 @@
 
     els.aceiteContrato.addEventListener("change", updateAceiteButton);
 
-    els.btnAceitarContrato.addEventListener("click", () => {
-      const state = State.load();
-      if (!contractLoaded || !els.aceiteContrato.checked || !S.canAcceptContract(state.status)) return;
-      U.showMessage(els.contratoMessage, "", "");
-      renderPlanSummary();
-      showStep(STEPS.PLANO_RESUMO);
-    });
-
-    els.btnFinalizarContratacao.addEventListener("click", async () => {
+    els.btnAceitarContrato.addEventListener("click", async () => {
       if (isSubmitting) return;
 
       const state = State.load();
       if (!state.contratacaoId) {
-        U.showMessage(els.planoResumoMessage, "Contratação não encontrada. Recomece o processo.", "error");
+        U.showMessage(els.contratoMessage, "Contratação não encontrada. Recomece o processo.", "error");
         return;
       }
 
-      if (!els.aceiteContrato.checked) {
-        U.showMessage(els.planoResumoMessage, "Aceite o contrato antes de finalizar.", "error");
-        showStep(STEPS.CONTRATO);
-        return;
-      }
+      if (!contractLoaded || !els.aceiteContrato.checked) return;
 
       if (!S.canAcceptContract(state.status) && !S.canOpenCheckout(state.status)) {
         try {
@@ -1122,7 +1155,7 @@
 
       if (!S.canAcceptContract(current.status)) {
         U.showMessage(
-          els.planoResumoMessage,
+          els.contratoMessage,
           "O contrato só pode ser assinado após a validação do e-mail.",
           "error",
         );
@@ -1131,8 +1164,8 @@
       }
 
       isSubmitting = true;
-      els.btnFinalizarContratacao.disabled = true;
-      U.showMessage(els.planoResumoMessage, "", "");
+      els.btnAceitarContrato.disabled = true;
+      U.showMessage(els.contratoMessage, "", "");
 
       try {
         const result = await Api.aceitarContrato(state.contratacaoId);
@@ -1150,15 +1183,29 @@
         }
       } catch (err) {
         U.showMessage(
-          els.planoResumoMessage,
-          err instanceof Error ? err.message : "Erro ao finalizar contratação.",
+          els.contratoMessage,
+          err instanceof Error ? err.message : "Erro ao assinar contrato.",
           "error",
         );
       } finally {
         isSubmitting = false;
-        els.btnFinalizarContratacao.disabled = false;
+        updateAceiteButton();
       }
     });
+
+    els.btnContractZoomIn?.addEventListener("click", () => {
+      contractZoom = Math.min(150, contractZoom + 10);
+      applyContractZoom();
+    });
+
+    els.btnContractZoomOut?.addEventListener("click", () => {
+      contractZoom = Math.max(70, contractZoom - 10);
+      applyContractZoom();
+    });
+
+    els.btnContractDownload?.addEventListener("click", downloadContractHtml);
+    els.btnContractFullscreen?.addEventListener("click", toggleContractFullscreen);
+    els.btnBaixarContrato?.addEventListener("click", downloadSignedContract);
 
     els.btnContinuarContratacao?.addEventListener("click", () => {
       continuarContratacao(els.responsavelMessage);
@@ -1207,6 +1254,9 @@
         case "voltar-empresa":
           hideConflictPanel();
           showStep(STEPS.EMPRESA);
+          break;
+        case "voltar-responsavel":
+          showStep(STEPS.RESPONSAVEL);
           break;
         case "cancelar-recomecar":
           cancelarERecomecar(els.emailMessage);
