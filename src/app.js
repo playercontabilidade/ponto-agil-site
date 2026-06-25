@@ -17,25 +17,11 @@ app.use('/images', express.static(path.join(raizProjeto, 'public', 'images')));
 app.use('/js', express.static(path.join(raizProjeto, 'public', 'js')));
 app.use('/ouvidoria', express.static(path.join(raizProjeto, 'ouvidoria')));
 
-app.get('/script.js', (req, res) => {
-  res.sendFile(path.join(raizProjeto, 'script.js'));
-});
-
 app.get('/mock.png', (req, res) => {
   res.sendFile(path.join(raizProjeto, 'mock.png'));
 });
 
-app.get('/privacidade', (req, res) => {
-  res.sendFile(path.join(raizProjeto, 'privacidade.html'));
-});
-
-app.get('/privacidade.html', (req, res) => {
-  res.sendFile(path.join(raizProjeto, 'privacidade.html'));
-});
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(raizProjeto, 'index.html'));
-});
+app.get('/index.html', (req, res) => res.redirect(301, '/'));
 
 montarRotas(app);
 
