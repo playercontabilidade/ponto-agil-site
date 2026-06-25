@@ -6,13 +6,12 @@ const RAIZ = path.join(__dirname, '..');
 const DIST = path.join(RAIZ, 'dist');
 const PUBLIC = path.join(RAIZ, 'public');
 const VIEWS = path.join(RAIZ, 'src', 'views');
-const API_PRODUCAO = 'https://pontoagil.playercontabilidade.com';
 
 require('dotenv').config({ path: path.join(RAIZ, '.env') });
 
 process.env.NODE_ENV = 'production';
 process.env.PONTO_AGIL_API =
-  process.env.PONTO_AGIL_API_BUILD || API_PRODUCAO;
+  process.env.PONTO_AGIL_API_BUILD;
 
 const api = require('../src/config/api');
 const planoServico = require('../src/services/plano_servico');
