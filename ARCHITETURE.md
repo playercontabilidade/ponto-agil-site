@@ -1,18 +1,43 @@
 # Arquitetura do Projeto Ponto Ágil Site
 
-## Estado atual vs. alvo
+Site institucional em **Node.js + Express + EJS**, organizado em **MVC**. Em desenvolvimento roda como servidor Express; em produção gera artefato estático (`dist/`) publicado no **GitHub Pages** (`portal.pontoagil.com.br`).
 
-| Aspecto | Hoje (legado) | Alvo (MVC) |
-|---------|---------------|------------|
-| Stack | HTML/CSS/JS estático | Node.js + Express + EJS |
-| Entrada | `index.html`, `privacidade.html` | `server.js` → `src/app.js` |
-| Rotas | Arquivos no disco | `src/routes/*.js` |
-| Templates | HTML monolítico | `src/views/**/*.ejs` |
-| Lógica | `script.js`, `ouvidoria/script.js` | Controllers + Services |
-| API externa | `fetch` no cliente | Service no servidor (e/ou módulo cliente em `public/js`) |
-| Deploy | GitHub Pages (`CNAME`) | Servidor Node ou build estático |
+---
 
-> **Validação:** o documento abaixo descreve a arquitetura **alvo**. A pasta `src/` ainda não existe — a migração parte dos arquivos atuais listados na seção [Mapeamento do legado](#mapeamento-do-legado).
+## Visão geral
+
+| Ambiente | Como roda | Entrada |
+|----------|-----------|---------|
+| Desenvolvimento | `npm run dev` → Express na porta 3000 | `server.js` → `src/app.js` |
+| Preview do build | `npm start` → serve `dist/` | `scripts/preview.js` |
+| Produção | `npm run build` → push do conteúdo de `dist/` | GitHub Pages |
+
+| Comando | Uso |
+|---------|-----|
+| `npm run dev` | Servidor Express com hot-reload manual (reiniciar ao alterar código) |
+| `npm run build` | Renderiza páginas EJS e copia assets para `dist/` |
+| `npm start` | Preview local do site estático gerado |
+| `npm test` | Testes smoke (`node:test`) |
+
+### Variáveis de ambiente
+
+| Variável | Uso |
+|----------|-----|
+| `PORT` | Porta do servidor dev/preview (padrão: 3000) |
+| `NODE_ENV` | `development` ou `production` |
+| `PONTO_AGIL_API` | API usada em dev (`npm run dev`) |
+| `PONTO_AGIL_API_BUILD` | API usada no `npm run build` (padrão: produção) |
+| `INCLUIR_CNAME` | `false` omite `CNAME` do `dist/` (preview) |
+
+Nunca commitar `.env`. Ver `.env.example`.
+
+### Deploy em produção
+
+1. `npm ci && npm run build`
+2. Validar com `npm start`
+3. Publicar o **conteúdo de `dist/`** na branch configurada no GitHub Pages (ex.: `master`, raiz `/`)
+
+O GitHub Pages serve apenas arquivos estáticos. Código em `src/` e `server.js` não executam em produção.
 
 ---
 
@@ -22,154 +47,185 @@
 Requisição HTTP
       │
       ▼
-  routes/          ← define URL e método (GET, POST…)
+  routes/          ← define URL e método
       │
       ▼
   controllers/     ← orquestra: valida entrada, chama service, escolhe view
       │
       ├──► services/   ← regras de negócio e chamadas à API Ponto Ágil
-      ├──► models/     ← estrutura/dados (Plano, Manifestação, Parceiro…)
+      ├──► models/     ← estrutura de dados e helpers
       │
       ▼
-  views/           ← templates EJS (HTML renderizado no servidor)
+  views/           ← templates EJS
       │
       ▼
-  Resposta HTML/JSON
+  Resposta HTML ou JSON
 ```
 
 ### Responsabilidade de cada camada
 
 | Camada | Faz | Não faz |
 |--------|-----|---------|
-| **Model** | Define formato dos dados (campos, defaults, helpers) | Acessar HTTP, renderizar HTML |
-| **View** | Exibe dados recebidos do controller (`<%= %>`) | Lógica de negócio ou chamadas à API |
-| **Controller** | Recebe req/res, chama service, passa dados à view | SQL/fetch direto (delega ao service) |
-| **Service** | Regras de negócio, integração com API, cache | Conhecer `req`/`res` do Express |
+| **Model** | Formato dos dados, normalização, helpers | HTTP, renderizar HTML |
+| **View** | Exibir dados do controller (`<%= %>`) | Regra de negócio, `fetch` |
+| **Controller** | Recebe `req`/`res`, chama service, monta locals da view | `fetch` direto (delega ao service) |
+| **Service** | Integração com API, montagem de DTOs para cliente | Conhecer `req`/`res` |
 | **Route** | Mapear path → controller | Lógica de aplicação |
 
 ---
 
-## Estrutura de pastas (alvo)
+## Estrutura de pastas
 
 ```text
 ponto-agil-site/
 ├── src/
-│   ├── models/
-│   │   ├── Plano.js
-│   │   ├── Manifestacao.js
-│   │   ├── Usuario.js
-│   │   └── Parceiro.js
-│   │
-│   ├── views/
-│   │   ├── layouts/
-│   │   │   └── main.ejs              # shell: <head>, header, footer, scripts
-│   │   ├── pages/
-│   │   │   ├── index.ejs             # homepage (hero, recursos, planos)
-│   │   │   ├── privacidade.ejs
-│   │   │   └── ouvidoria.ejs         # ou reutilizar módulo ouvidoria/
-│   │   └── partials/
-│   │       ├── header.ejs
-│   │       ├── footer.ejs
-│   │       ├── navbar.ejs
-│   │       └── cards/
-│   │           └── cardPlano.ejs
-│   │
-│   ├── controllers/
-│   │   ├── PaginaControlador.js      # páginas estáticas (index, privacidade…)
-│   │   ├── PlanoControlador.js       # listagem e seleção de planos
-│   │   ├── ManifestacaoControlador.js # formulário ouvidoria (POST)
-│   │   ├── ParceiroControlador.js    # query ?partner= na URL
-│   │   └── ApiControlador.js         # proxy/endpoints internos (opcional)
-│   │
-│   ├── routes/
-│   │   ├── index.js                  # agrupa e monta rotas no app
-│   │   ├── web.js                    # GET páginas
-│   │   ├── api.js                    # rotas JSON internas
-│   │   └── ouvidoria.js              # rotas do canal de ouvidoria
-│   │
-│   ├── services/
-│   │   ├── PlanoServico.js           # GET /plano/publico
-│   │   ├── ManifestacaoServico.js    # POST /ouvidoria/public/enviar
-│   │   └── IntegracaoApiServico.js   # cliente HTTP base (baseUrl, headers)
-│   │
-│   ├── middleware/
-│   │   ├── tratadorErro.js
-│   │   ├── validacao.js
-│   │   └── cors.js
-│   │
+│   ├── app.js                        # Express: views, static, rotas, middleware
 │   ├── config/
 │   │   ├── config.js                 # variáveis de ambiente
-│   │   └── api.js                    # endpoints (espelha ouvidoria/config.js)
-│   │
-│   └── app.js                        # Express: views, static, routes, middleware
+│   │   └── api.js                    # baseUrl e endpoints da API externa
+│   ├── controllers/
+│   │   ├── pagina_controlador.js     # homepage, privacidade
+│   │   ├── plano_controlador.js      # GET /api/planos
+│   │   ├── manifestacao_controlador.js
+│   │   └── parceiro_controlador.js   # query ?partner=
+│   ├── middleware/
+│   │   └── tratador_erro.js
+│   ├── models/
+│   │   ├── plano.js
+│   │   ├── manifestacao.js
+│   │   └── parceiro.js
+│   ├── routes/
+│   │   ├── index.js                  # monta rotas no app
+│   │   ├── web.js                    # páginas HTML
+│   │   ├── api.js                    # JSON interno
+│   │   └── ouvidoria.js              # canal de ouvidoria
+│   ├── services/
+│   │   ├── integracao_api_servico.js
+│   │   ├── plano_servico.js
+│   │   └── manifestacao_servico.js
+│   └── views/
+│       ├── layouts/
+│       │   ├── main.ejs              # shell do site principal
+│       │   └── ouvidoria.ejs         # shell da ouvidoria
+│       ├── pages/
+│       │   ├── index.ejs
+│       │   ├── privacidade.ejs
+│       │   └── ouvidoria.ejs
+│       └── partials/
+│           ├── header.ejs
+│           ├── navbar.ejs
+│           ├── footer.ejs
+│           ├── secao_planos.ejs
+│           └── cards/
+│               └── card_plano.ejs
 │
-├── public/                           # arquivos servidos sem processamento
+├── public/
 │   ├── css/
-│   │   ├── style.css                 # migrado de /style.css
-│   │   ├── components/
+│   │   ├── style.css
 │   │   └── pages/
-│   │       └── ouvidoria.css
 │   ├── js/
-│   │   ├── app.js                    # entry do cliente
+│   │   ├── app.js                    # entry da homepage
+│   │   ├── ouvidoria_app.js
 │   │   ├── modules/
-│   │   │   ├── alternarMenu.js
-│   │   │   ├── manipuladorFormulario.js
-│   │   │   └── clienteApi.js
 │   │   └── utils/
-│   │       ├── formatadores.js
-│   │       └── validadores.js
 │   └── images/
 │
-├── ouvidoria/                        # legado — migrar para src/ gradualmente
-│   ├── index.html
-│   ├── script.js
-│   ├── styles.css
-│   └── config.js
+├── scripts/
+│   ├── build.js                      # gera dist/
+│   └── preview.js                    # serve dist/
 │
-├── tests/
-│   ├── unit/
-│   └── integration/
-│
-├── .env
-├── .gitignore
-├── package.json
-├── server.js                         # require('./src/app') + listen
-└── README.md
+├── tests/unit/
+├── dist/                             # artefato de deploy (gitignored)
+├── CNAME                             # portal.pontoagil.com.br
+├── server.js
+└── package.json
 ```
 
 ---
 
-## Mapeamento do legado
+## Fluxos de requisição
 
-| Arquivo atual | Destino na migração |
-|---------------|---------------------|
-| `index.html` | `src/views/pages/index.ejs` + partials |
-| `privacidade.html` | `src/views/pages/privacidade.ejs` |
-| `style.css` | `public/css/style.css` |
-| `script.js` | `public/js/modules/*` + lógica de planos em `PlanoServico` |
-| `ouvidoria/*` | `src/views/pages/ouvidoria.ejs` + `ManifestacaoControlador` + `ManifestacaoServico` |
-| `ouvidoria/config.js` | `src/config/api.js` |
-| `images/` | `public/images/` |
-
-### Observações de alinhamento
-
-- **Homepage única:** hoje `index.html` concentra início, recursos e planos em seções (`#inicio`, `#recursos`, `#planos`). Na migração, pode permanecer uma única view `index.ejs` — não é obrigatório separar em `planos.ejs` e `recursos.ejs` enquanto forem âncoras na mesma página.
-- **API no cliente:** `script.js` e `ouvidoria/script.js` chamam a API Ponto Ágil via `fetch`. Na migração, a lógica vai para **Services**; o JS do cliente fica apenas para interação de UI (menu, slider, formulário).
-- **Parceiro:** hoje salvo em `localStorage` via hash `?partner=` — `ParceiroControlador` + `Parceiro.js` centralizam esse fluxo.
-- **Ouvidoria:** manter como módulo de rotas (`routes/ouvidoria.js`) isolado facilita evolução sem impactar o site principal.
-
----
-
-## Fluxo de uma requisição (exemplo: homepage)
+### Homepage — `GET /`
 
 ```text
 GET /
-  → routes/web.js                    router.get('/', PaginaControlador.inicio)
-  → PaginaControlador.inicio         const planos = await PlanoServico.listarPublicos()
-  → PlanoServico                     fetch(baseUrl + '/plano/publico')
-  → res.render('pages/index', { planos, titulo: '...' })
-  → views/layouts/main.ejs + pages/index.ejs + partials
+  → routes/web.js
+  → pagina_controlador.exibirInicio
+  → plano_servico.listarPublicos()        # GET {API}/plano/publico
+  → plano_servico.montarPrecificacao()
+  → parceiro_controlador.obterDaRequisicao(req)
+  → res.render('layouts/main', { planos, precificacao, parceiro, ... })
+  → layouts/main.ejs + pages/index.ejs + partials
 ```
+
+Dados injetados no HTML para o cliente:
+
+- `window.__PLANOS__` — planos renderizados no servidor
+- `window.__PARCEIRO__` — parceiro da query `?partner=`
+- `window.__CONFIG__.apiBaseUrl` — URL da API
+
+O JS em `public/js/app.js` cuida apenas de interação (menu, slider, planos, animações).
+
+### Privacidade — `GET /privacidade`
+
+```text
+GET /privacidade
+  → routes/web.js
+  → pagina_controlador.exibirPrivacidade
+  → res.render('layouts/main', { pagina: 'privacidade', estiloPagina: 'privacidade', ... })
+```
+
+### Ouvidoria — `GET /ouvidoria`
+
+```text
+GET /ouvidoria
+  → routes/ouvidoria.js
+  → manifestacao_controlador.exibirFormulario
+  → manifestacao_servico.montarConfigCliente()
+  → res.render('layouts/ouvidoria', { configOuvidoria, tipoManifestacao, ... })
+```
+
+Config injetada em `window.PONTO_AGIL_CONFIG` (baseUrl, endpoints, tipos de manifestação). O formulário roda inteiramente no cliente (`public/js/modules/ouvidoria/`), chamando a API externa via `fetch`.
+
+### API interna — `GET /api/planos`
+
+```text
+GET /api/planos
+  → routes/api.js
+  → plano_controlador.listarPublicosJson
+  → plano_servico.listarPublicos()
+  → res.json(planos)
+```
+
+Disponível apenas com Express em dev. No GitHub Pages o cliente usa `window.__PLANOS__` (build) ou `fetch` direto à API.
+
+### Build estático — `npm run build`
+
+```text
+scripts/build.js
+  → busca planos na API (PONTO_AGIL_API_BUILD)
+  → renderiza layouts/main e layouts/ouvidoria via EJS
+  → grava dist/index.html, dist/privacidade/index.html, dist/ouvidoria/index.html
+  → copia public/css, public/js, public/images
+  → copia CNAME (se INCLUIR_CNAME ≠ false)
+```
+
+---
+
+## API externa (Ponto Ágil)
+
+Centralizada em `src/config/api.js`. Consumida pelos services (servidor) e injetada no cliente (ouvidoria e homepage).
+
+| Uso | Endpoint |
+|-----|----------|
+| Planos públicos | `GET /plano/publico` |
+| Enviar manifestação | `POST /ouvidoria/public/enviar` |
+| Categorias | `GET /ouvidoria/public/categorias` |
+| Prazo de resposta | `GET /ouvidoria/public/prazo-resposta` |
+| Acompanhamento | `GET /ouvidoria/public/acompanhamento/:uuid` |
+| Departamentos por token | `GET /departamento/por-token/listar` |
+
+Em dev: `PONTO_AGIL_API=http://localhost:8080`. No build de produção: `PONTO_AGIL_API_BUILD` aponta para a API real.
 
 ---
 
@@ -177,43 +233,43 @@ GET /
 
 ### Nomenclatura em português (pt-BR)
 
-Todo identificador do projeto deve estar em **português do Brasil**:
+Identificadores de domínio em português:
 
-- arquivos e pastas de domínio (`PaginaControlador.js`, `PlanoServico.js`, `sobre.ejs`)
-- classes, funções, variáveis e parâmetros (`listarPublicos`, `descricao`, `paginaAtiva`)
-- comentários e textos de commit relacionados ao código
+- arquivos: `pagina_controlador.js`, `plano_servico.js`, `manipulador_formulario.js`
+- funções: `exibirInicio`, `listarPublicos`, `montarPrecificacao`
+- variáveis: `tipoManifestacao`, `conteudoParcial`
 
-**Única exceção:** termos de **frameworks** ou **padrões conhecidos**, quando já são convenção universal e trocar prejudica o entendimento. Exemplos permitidos em inglês:
+**Exceções** (termos de framework ou padrão universal):
 
 | Categoria | Exemplos |
 |-----------|----------|
-| Frameworks / libs | `Express`, `EJS`, `fetch`, `module.exports` |
-| Padrão MVC | pastas `controllers/`, `models/`, `views/`, `routes/`, `services/`, sufixos `Controlador`, `Servico`, `Model` |
+| Frameworks | `Express`, `EJS`, `fetch`, `module.exports` |
+| MVC | pastas `controllers/`, `models/`, `views/`, `routes/`, `services/` |
 | HTTP / Node | `req`, `res`, `next`, `GET`, `POST`, `middleware`, `router` |
-| Siglas estabelecidas | `API`, `URL`, `CSS`, `LGPD` |
-| Contratos externos | paths da API backend (`/plano/publico`) — definidos fora deste repositório |
+| Siglas | `API`, `URL`, `CSS`, `LGPD` |
+| Contratos externos | paths da API backend (`/plano/publico`) |
 
 ```text
-✅ PaginaControlador.js     → exporta função exibirSobre
-✅ PlanoServico.js          → exporta listarPublicos
-✅ alternarMenu.js          → módulo de UI no cliente
-❌ PageController.js        → nome de domínio em inglês
-❌ formHandler.js           → preferir manipuladorFormulario.js
+✅ pagina_controlador.js    → exibirInicio
+✅ plano_servico.js         → listarPublicos
+✅ alternar_menu.js           → módulo de UI
+❌ PageController.js
+❌ formHandler.js
 ```
 
-### Demais convenções
+### Case e organização
 
-- **Case:** PascalCase para classes/models/controladores/serviços; camelCase para funções e variáveis; kebab-case para classes CSS e rotas URL (`/sobre-nos`).
-- **Views:** uma pasta `pages/` por rota GET; partials reutilizáveis em `partials/`.
-- **Rotas:** prefixo `/api` para JSON; demais paths em `web.js`.
-- **Config:** nunca commitar `.env`; `config.js` lê `process.env`.
-- **CSS:** global em `style.css`; específico de página em `public/css/pages/<pagina>.css`.
+- **Arquivos de domínio:** `snake_case` (`plano_servico.js`, `card_plano.ejs`)
+- **Funções e variáveis:** `camelCase`
+- **Classes CSS e rotas URL:** `kebab-case` (`/privacidade`, `.nav-link--active`)
+- **Views:** uma `pages/<nome>.ejs` por rota GET; partials em `partials/`
+- **Rotas JSON:** prefixo `/api` em `routes/api.js`
+- **CSS global:** `public/css/style.css`; por página em `public/css/pages/<pagina>.css`
+- **Config:** `.env` local; `src/config/config.js` lê `process.env`
 
 ---
 
 ## Exemplo: adicionar a página "Sobre"
-
-Passo a passo para incluir `GET /sobre` seguindo o MVC.
 
 ### 1. View — `src/views/pages/sobre.ejs`
 
@@ -226,17 +282,20 @@ Passo a passo para incluir `GET /sobre` seguindo o MVC.
 </section>
 ```
 
-### 2. Controlador — método em `src/controllers/PaginaControlador.js`
+### 2. Controlador — `src/controllers/pagina_controlador.js`
 
 ```js
-// PaginaControlador.js
-const exibirSobre = (req, res) => {
-  res.render('pages/sobre', {
+function exibirSobre(req, res) {
+  res.render('layouts/main', {
     titulo: 'Sobre o Ponto Ágil',
+    pagina: 'sobre',
+    conteudoParcial: 'pages/sobre',
+    estiloPagina: 'sobre',
+    exibirWhatsapp: false,
     descricao: 'Gestão de ponto eletrônico e RH para empresas de todos os portes.',
-    pagina: 'sobre', // útil para marcar item ativo na navbar
+    apiBaseUrl: api.baseUrl,
   });
-};
+}
 
 module.exports = { exibirInicio, exibirPrivacidade, exibirSobre };
 ```
@@ -244,102 +303,52 @@ module.exports = { exibirInicio, exibirPrivacidade, exibirSobre };
 ### 3. Rota — `src/routes/web.js`
 
 ```js
-const express = require('express');
-const PaginaControlador = require('../controllers/PaginaControlador');
-
-const router = express.Router();
-
-router.get('/', PaginaControlador.exibirInicio);
-router.get('/privacidade', PaginaControlador.exibirPrivacidade);
-router.get('/sobre', PaginaControlador.exibirSobre);   // ← nova rota
-
-module.exports = router;
+router.get('/sobre', PaginaControlador.exibirSobre);
 ```
 
-### 4. Layout e navbar — `src/views/partials/navbar.ejs`
+### 4. Navbar — `src/views/partials/navbar.ejs`
 
 ```ejs
-<a href="/sobre" class="nav-link<%= pagina === 'sobre' ? ' nav-link--active' : '' %>">
-  Sobre
-</a>
+<a href="/sobre" class="nav-link">Sobre</a>
 ```
 
 ### 5. CSS — `public/css/pages/sobre.css`
 
-```css
-.page-sobre { padding: 6rem 0 4rem; }
-```
-
-Incluir no layout (`main.ejs`) condicionalmente ou sempre:
+O layout `main.ejs` já carrega `estiloPagina` automaticamente:
 
 ```ejs
-<% if (pagina === 'sobre') { %>
-  <link rel="stylesheet" href="/css/pages/sobre.css">
-<% } %>
+<link rel="stylesheet" href="/css/pages/<%= estiloPagina %>.css">
 ```
 
-### 6. (Opcional) Serviço — só se a página consumir API
+### 6. Build estático
 
-Se "Sobre" precisar de dados dinâmicos (ex.: contagem de clientes):
+Incluir a nova página em `scripts/build.js` (renderizar e gravar `dist/sobre/index.html`), seguindo o padrão de `privacidade`.
 
-```js
-// src/services/EmpresaServico.js
-const IntegracaoApiServico = require('./IntegracaoApiServico');
+### Checklist
 
-async function obterEstatisticas() {
-  return IntegracaoApiServico.get('/empresa/publico/estatisticas');
-}
-
-module.exports = { obterEstatisticas };
-```
-
-```js
-// PaginaControlador.exibirSobre
-const EmpresaServico = require('../services/EmpresaServico');
-
-const exibirSobre = async (req, res, next) => {
-  try {
-    const estatisticas = await EmpresaServico.obterEstatisticas();
-    res.render('pages/sobre', { titulo: '...', estatisticas, pagina: 'sobre' });
-  } catch (err) {
-    next(err);
-  }
-};
-```
-
-### Checklist da nova página
-
-- [ ] View em `src/views/pages/<nome>.ejs`
-- [ ] Método no controlador correspondente
-- [ ] Rota registrada em `src/routes/web.js`
-- [ ] Link na navbar/footer (partials)
+- [ ] `src/views/pages/<nome>.ejs`
+- [ ] Método no controlador
+- [ ] Rota em `src/routes/web.js`
+- [ ] Link em navbar/footer
 - [ ] CSS em `public/css/pages/` (se necessário)
-- [ ] Serviço + Model (somente se houver dados de API)
+- [ ] Entrada em `scripts/build.js` (deploy estático)
+- [ ] Service + model (somente se consumir API)
 
 ---
 
-## Ordem sugerida de migração
+## Rotas publicadas
 
-1. `package.json` + Express + EJS + `server.js` / `src/app.js`
-2. Layout (`main.ejs`) + partials extraídos de `index.html`
-3. `PaginaControlador` + rota `/` (homepage)
-4. Migrar `privacidade.html`
-5. Extrair `PlanoServico` a partir de `script.js`
-6. Migrar módulo `ouvidoria/` para controladores/serviços/views
-7. Mover assets para `public/` e ajustar paths
-8. Testes em `tests/` para services e rotas críticas
+| Rota | Tipo | Saída |
+|------|------|-------|
+| `GET /` | HTML | Homepage |
+| `GET /privacidade` | HTML | Política de privacidade |
+| `GET /ouvidoria` | HTML | Formulário de ouvidoria |
+| `GET /api/planos` | JSON | Lista de planos (somente dev) |
 
----
+No artefato estático (`dist/`):
 
-## Referência rápida — endpoints da API (legado)
-
-Definidos hoje em `ouvidoria/config.js` e usados em `script.js`:
-
-| Uso | Endpoint |
-|-----|----------|
-| Planos públicos | `GET /plano/publico` |
-| Enviar manifestação | `POST /ouvidoria/public/enviar` |
-| Categorias | `GET /ouvidoria/public/categorias` |
-| Acompanhamento | `GET /ouvidoria/public/acompanhamento/:uuid` |
-
-Centralizar em `src/config/api.js` e consumir via `IntegracaoApiServico`.
+| URL | Arquivo |
+|-----|---------|
+| `/` | `index.html` |
+| `/privacidade/` | `privacidade/index.html` |
+| `/ouvidoria/` | `ouvidoria/index.html` |
