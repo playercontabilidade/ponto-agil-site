@@ -32,7 +32,23 @@
     </a>
   <% } %>
 
-  <script src="/js/script.js"></script>
+  <%
+    const urlApi =
+      typeof apiBaseUrl !== 'undefined' && apiBaseUrl ? apiBaseUrl : '';
+    const scriptPagina = [];
+
+    if (typeof planos !== 'undefined' && Array.isArray(planos) && planos.length) {
+      scriptPagina.push('window.__PLANOS__=' + JSON.stringify(planos));
+    }
+    if (typeof parceiro !== 'undefined' && parceiro) {
+      scriptPagina.push('window.__PARCEIRO__=' + JSON.stringify(parceiro));
+    }
+    scriptPagina.push(
+      'window.__CONFIG__=' + JSON.stringify({ apiBaseUrl: urlApi }),
+    );
+  %>
+  <%- '<script>' + scriptPagina.join(';') + ';</' + 'script>' %>
+  <script type="module" src="/js/app.js"></script>
 </body>
 
 </html>

@@ -226,18 +226,7 @@
         </div>
     </section>
 
-    <section class="pricing" id="planos">
-        <div class="container">
-            <h2 class="section-title" data-scroll-reveal>Planos feitos para o seu porte</h2>
-            <p class="section-subtitle" data-scroll-reveal>Compare opções e encontre o nível de gestão ideal para sua
-                equipe.</p>
-            <div class="pricing-compare">
-                <div class="pricing-toggle" id="pricing-toggle" role="tablist" aria-label="Faixa de colaboradores"></div>
-                <div class="pricing-panel-wrap" id="pricing-panel-wrap"></div>
-            </div>
-            <p class="pricing-disclaimer">Valores meramente informativos e sujeitos a alteração sem aviso prévio. O pagamento da primeira mensalidade é realizado em ambiente seguro do provedor de pagamentos (checkout), após o preenchimento dos seus dados no formulário disponibilizado ao clicar em “Assinar”</p>
-        </div>
-    </section>
+    <%- include('../partials/secao_planos', { precificacao: typeof precificacao !== 'undefined' ? precificacao : null }) %>
     <!-- Trust Bar -->
     <div class="trust-bar">
         <div class="container">
