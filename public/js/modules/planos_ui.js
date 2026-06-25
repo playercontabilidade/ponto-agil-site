@@ -19,7 +19,7 @@ function obterBaseUrl() {
   if (window.__CONFIG__?.apiBaseUrl) {
     return String(window.__CONFIG__.apiBaseUrl).replace(/\/$/, '');
   }
-  return 'https://pontoagil.playercontabilidade.com';
+  return 'http://localhost:8080';
 }
 
 function criarPainelEnterprise(nomeFaixa, ativo) {

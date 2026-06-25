@@ -8,6 +8,7 @@ const endpoints = {
   cobrancas: '/cobrancas',
   ouvidoriaEnviar: '/ouvidoria/public/enviar',
   ouvidoriaCategorias: '/ouvidoria/public/categorias',
+  ouvidoriaPrazoResposta: '/ouvidoria/public/prazo-resposta',
   departamentoPorTokenListar: '/departamento/por-token/listar',
   ouvidoriaAcompanhamento: (uuid) =>
     `/ouvidoria/public/acompanhamento/${encodeURIComponent(String(uuid ?? '').trim())}`,

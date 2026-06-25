@@ -15,7 +15,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/css', express.static(path.join(raizProjeto, 'public', 'css')));
 app.use('/images', express.static(path.join(raizProjeto, 'public', 'images')));
 app.use('/js', express.static(path.join(raizProjeto, 'public', 'js')));
-app.use('/ouvidoria', express.static(path.join(raizProjeto, 'ouvidoria')));
 
 app.get('/mock.png', (req, res) => {
   res.sendFile(path.join(raizProjeto, 'mock.png'));
