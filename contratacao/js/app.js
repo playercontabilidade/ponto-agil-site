@@ -749,40 +749,89 @@
     if (els.contractZoomLabel) els.contractZoomLabel.textContent = `${contractZoom}%`;
   }
 
-  function downloadContractHtml() {
+  function getContractHtmlForExport() {
     const html = contractHtmlCache || els.contractContent?.innerHTML || "";
-    if (!html || html.includes("Carregando contrato")) return;
-
-    const blob = new Blob(
-      [
-        `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Contrato - Ponto Ágil</title></head><body>${html}</body></html>`,
-      ],
-      { type: "text/html;charset=utf-8" },
-    );
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "contrato-ponto-agil.html";
-    link.click();
-    URL.revokeObjectURL(url);
+    if (!html || html.includes("Carregando contrato")) return null;
+    return html;
   }
 
-  async function downloadSignedContract() {
-    if (contractHtmlCache) {
-      downloadContractHtml();
-      return;
-    }
+  async function ensureContractHtml() {
+    const cached = getContractHtmlForExport();
+    if (cached) return cached;
 
     const state = State.load();
-    if (!state.contratacaoId) return;
+    if (!state.contratacaoId) return null;
 
     try {
       const data = await Api.getContrato(state.contratacaoId);
       contractHtmlCache = data.conteudoHtml || "";
-      downloadContractHtml();
+      return getContractHtmlForExport();
     } catch (_) {
-      /* contrato indisponível */
+      return null;
     }
+  }
+
+  function printContractAsPdf(html) {
+    const printStyles = `
+      @page { margin: 2cm; }
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 12pt;
+        line-height: 1.6;
+        color: #111;
+        margin: 0;
+        padding: 0;
+      }
+      img { max-width: 100%; height: auto; }
+      table { width: 100%; border-collapse: collapse; }
+      h1, h2, h3 { page-break-after: avoid; }
+      p, li { orphans: 3; widows: 3; }
+    `;
+
+    const docHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Contrato - Ponto Ágil</title>
+  <style>${printStyles}</style>
+</head>
+<body>${html}</body>
+</html>`;
+
+    let iframe = document.getElementById("contract-print-frame");
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "contract-print-frame";
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.style.cssText =
+        "position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none";
+      document.body.appendChild(iframe);
+    }
+
+    const win = iframe.contentWindow;
+    if (!win) return;
+
+    const doc = win.document;
+    doc.open();
+    doc.write(docHtml);
+    doc.close();
+
+    const triggerPrint = () => {
+      win.focus();
+      win.print();
+    };
+
+    if (doc.readyState === "complete") {
+      setTimeout(triggerPrint, 150);
+    } else {
+      win.addEventListener("load", () => setTimeout(triggerPrint, 150), { once: true });
+    }
+  }
+
+  async function downloadContractPdf() {
+    const html = await ensureContractHtml();
+    if (!html) return;
+    printContractAsPdf(html);
   }
 
   function toggleContractFullscreen() {
@@ -1203,9 +1252,9 @@
       applyContractZoom();
     });
 
-    els.btnContractDownload?.addEventListener("click", downloadContractHtml);
+    els.btnContractDownload?.addEventListener("click", downloadContractPdf);
     els.btnContractFullscreen?.addEventListener("click", toggleContractFullscreen);
-    els.btnBaixarContrato?.addEventListener("click", downloadSignedContract);
+    els.btnBaixarContrato?.addEventListener("click", downloadContractPdf);
 
     els.btnContinuarContratacao?.addEventListener("click", () => {
       continuarContratacao(els.responsavelMessage);
