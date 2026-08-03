@@ -38,6 +38,7 @@
   let statusPollId = null;
   let contractLoaded = false;
   let contractZoom = 100;
+  let contractModalZoom = 100;
   let contractHtmlCache = "";
   let isSubmitting = false;
   let checkoutOpened = false;
@@ -63,6 +64,13 @@
     btnContractZoomOut: document.getElementById("btnContractZoomOut"),
     btnContractDownload: document.getElementById("btnContractDownload"),
     btnContractFullscreen: document.getElementById("btnContractFullscreen"),
+    contractModal: document.getElementById("contractModal"),
+    contractContentModal: document.getElementById("contractContentModal"),
+    modalZoomLabel: document.getElementById("modalZoomLabel"),
+    btnModalZoomIn: document.getElementById("btnModalZoomIn"),
+    btnModalZoomOut: document.getElementById("btnModalZoomOut"),
+    btnModalDownload: document.getElementById("btnModalDownload"),
+    btnCloseContractModal: document.getElementById("btnCloseContractModal"),
     hashDocumento: document.getElementById("hashDocumento"),
     aceiteContrato: document.getElementById("aceiteContrato"),
     btnAceitarContrato: document.getElementById("btnAceitarContrato"),
@@ -106,6 +114,10 @@
   }
 
   function showStep(step) {
+    if (currentStep === STEPS.CONTRATO && step !== STEPS.CONTRATO) {
+      closeContractModal();
+    }
+
     currentStep = step;
     document.querySelectorAll(".ctr-step").forEach((section) => {
       section.hidden = section.id !== `step-${step}`;
@@ -749,6 +761,33 @@
     if (els.contractZoomLabel) els.contractZoomLabel.textContent = `${contractZoom}%`;
   }
 
+  function applyModalZoom() {
+    if (!els.contractContentModal) return;
+    els.contractContentModal.style.transform = `scale(${contractModalZoom / 100})`;
+    if (els.modalZoomLabel) els.modalZoomLabel.textContent = `${contractModalZoom}%`;
+  }
+
+  function openContractModal() {
+    const html = getContractHtmlForExport();
+    if (!html || !els.contractModal || !els.contractContentModal) return;
+
+    els.contractContentModal.innerHTML = html;
+    els.contractContentModal.scrollTop = 0;
+    contractModalZoom = contractZoom;
+    applyModalZoom();
+
+    els.contractModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    els.btnCloseContractModal?.focus();
+  }
+
+  function closeContractModal() {
+    if (!els.contractModal) return;
+    els.contractModal.hidden = true;
+    document.body.style.overflow = "";
+    els.btnContractFullscreen?.focus();
+  }
+
   function getContractHtmlForExport() {
     const html = contractHtmlCache || els.contractContent?.innerHTML || "";
     if (!html || html.includes("Carregando contrato")) return null;
@@ -835,14 +874,11 @@
   }
 
   function toggleContractFullscreen() {
-    const viewer = els.contractViewer;
-    if (!viewer) return;
-
-    if (!document.fullscreenElement) {
-      viewer.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
+    if (els.contractModal && !els.contractModal.hidden) {
+      closeContractModal();
+      return;
     }
+    openContractModal();
   }
 
   async function loadContract() {
@@ -868,6 +904,7 @@
       const data = await Api.getContrato(state.contratacaoId);
       contractHtmlCache = data.conteudoHtml || "";
       els.contractContent.innerHTML = contractHtmlCache || "<p>Contrato indisponível.</p>";
+      els.contractContent.scrollTop = 0;
       contractLoaded = Boolean(data.conteudoHtml);
       contractZoom = 100;
       applyContractZoom();
@@ -1252,9 +1289,27 @@
       applyContractZoom();
     });
 
+    els.btnModalZoomIn?.addEventListener("click", () => {
+      contractModalZoom = Math.min(150, contractModalZoom + 10);
+      applyModalZoom();
+    });
+
+    els.btnModalZoomOut?.addEventListener("click", () => {
+      contractModalZoom = Math.max(70, contractModalZoom - 10);
+      applyModalZoom();
+    });
+
     els.btnContractDownload?.addEventListener("click", downloadContractPdf);
+    els.btnModalDownload?.addEventListener("click", downloadContractPdf);
     els.btnContractFullscreen?.addEventListener("click", toggleContractFullscreen);
+    els.btnCloseContractModal?.addEventListener("click", closeContractModal);
     els.btnBaixarContrato?.addEventListener("click", downloadContractPdf);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && els.contractModal && !els.contractModal.hidden) {
+        closeContractModal();
+      }
+    });
 
     els.btnContinuarContratacao?.addEventListener("click", () => {
       continuarContratacao(els.responsavelMessage);
@@ -1322,6 +1377,9 @@
           break;
         case "voltar-contrato":
           showStep(STEPS.CONTRATO);
+          break;
+        case "close-contract-modal":
+          closeContractModal();
           break;
         default:
           break;

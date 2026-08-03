@@ -333,7 +333,6 @@
             <span class="legal-badge legal-badge--blue">Lei 14.063/2020</span>
             <span class="legal-badge legal-badge--green">MP 2.200-2/2001</span>
             <span class="legal-badge legal-badge--purple">LGPD 13.709/2018</span>
-            <span class="legal-badge legal-badge--orange">ICP-Brasil</span>
           </div>
 
           <div class="contract-viewer" id="contractViewer">
@@ -350,7 +349,7 @@
                 <button type="button" class="contract-tool" id="btnContractDownload" title="Baixar PDF" aria-label="Baixar PDF">
                   <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="contract-tool" id="btnContractFullscreen" title="Tela cheia" aria-label="Tela cheia">
+                <button type="button" class="contract-tool" id="btnContractFullscreen" title="Abrir em tela cheia" aria-label="Abrir contrato em tela cheia">
                   <i class="fa-solid fa-expand" aria-hidden="true"></i>
                 </button>
               </div>
@@ -473,10 +472,6 @@
               <dt>Colaboradores</dt>
               <dd id="sidebarFaixa">—</dd>
             </div>
-            <div>
-              <dt>Teste grátis</dt>
-              <dd class="text-success">14 dias</dd>
-            </div>
           </dl>
           <div class="sidebar-summary__price">
             <span>Valor mensal</span>
@@ -494,6 +489,33 @@
         </section>
       </aside>
     </main>
+
+    <div class="contract-modal" id="contractModal" hidden role="dialog" aria-modal="true" aria-label="Contrato em tela cheia">
+      <div class="contract-modal__backdrop" data-action="close-contract-modal"></div>
+      <div class="contract-modal__dialog">
+        <div class="contract-viewer contract-viewer--modal" id="contractViewerModal">
+          <div class="contract-viewer__toolbar">
+            <span class="contract-viewer__title">Contrato de Prestação de Serviços — Ponto Ágil</span>
+            <div class="contract-viewer__tools">
+              <button type="button" class="contract-tool" id="btnModalZoomOut" title="Diminuir zoom" aria-label="Diminuir zoom">
+                <i class="fa-solid fa-minus" aria-hidden="true"></i>
+              </button>
+              <span class="contract-tool__zoom" id="modalZoomLabel">100%</span>
+              <button type="button" class="contract-tool" id="btnModalZoomIn" title="Aumentar zoom" aria-label="Aumentar zoom">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="contract-tool" id="btnModalDownload" title="Baixar PDF" aria-label="Baixar PDF">
+                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="contract-tool" id="btnCloseContractModal" title="Fechar" aria-label="Fechar contrato">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+          <div id="contractContentModal" class="contract-viewer__body" aria-label="Conteúdo do contrato"></div>
+        </div>
+      </div>
+    </div>
 
     <script src="./config.js"></script>
     <script src="./js/utils.js"></script>

@@ -49,9 +49,11 @@ body {
 }
 
 .ctr-logo img {
-  height: 36px;
+  height: 40px;
   width: auto;
   display: block;
+  filter: brightness(0) saturate(100%) invert(14%) sepia(88%) saturate(2472%) hue-rotate(212deg)
+    brightness(0.92) contrast(1.05);
 }
 
 .ctr-secure {
@@ -621,6 +623,48 @@ body {
 .contract-viewer:fullscreen .contract-viewer__body {
   max-height: none;
   height: calc(100vh - 52px);
+}
+
+/* Contract modal */
+.contract-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.contract-modal[hidden] {
+  display: none;
+}
+
+.contract-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.65);
+}
+
+.contract-modal__dialog {
+  position: relative;
+  width: min(920px, 100%);
+  max-height: calc(100vh - 48px);
+  z-index: 1;
+}
+
+.contract-viewer--modal {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+}
+
+.contract-viewer--modal .contract-viewer__body {
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+  height: min(72vh, 720px);
 }
 
 .contract-hash {
