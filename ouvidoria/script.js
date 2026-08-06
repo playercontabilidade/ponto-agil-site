@@ -1,4 +1,5 @@
-const { baseUrl, API_ENDPOINTS, ALLOWED_MIME_TYPES, ALLOWED_FILE_EXTENSIONS } = window.PONTO_AGIL_CONFIG || {};
+const { baseUrl, API_ENDPOINTS, ALLOWED_MIME_TYPES, ALLOWED_FILE_EXTENSIONS } =
+  window.PONTO_AGIL_OUVIDORIA_CONFIG || {};
 if (!baseUrl || !API_ENDPOINTS) {
   throw new Error(
     "Configuração ausente: carregue ./config.js antes de ./script.js",
