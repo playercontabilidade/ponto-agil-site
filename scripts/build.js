@@ -1,6 +1,6 @@
-const fs = require('fs/promises');
+const sistemaArquivos = require('fs/promises');
 const path = require('path');
-const ejs = require('ejs');
+const motorTemplates = require('ejs');
 
 const RAIZ = path.join(__dirname, '..');
 const DIST = path.join(RAIZ, 'dist');
@@ -16,19 +16,19 @@ if (process.env.PONTO_AGIL_API_BUILD) {
   delete process.env.PONTO_AGIL_API;
 }
 
-const api = require('../src/config/api');
+const configuracaoApi = require('../src/config/api');
 const planoServico = require('../src/services/plano_servico');
 const manifestacaoServico = require('../src/services/manifestacao_servico');
 const manifestacaoModel = require('../src/models/manifestacao');
 
 async function limparDist() {
-  await fs.rm(DIST, { recursive: true, force: true });
-  await fs.mkdir(DIST, { recursive: true });
+  await sistemaArquivos.rm(DIST, { recursive: true, force: true });
+  await sistemaArquivos.mkdir(DIST, { recursive: true });
 }
 
 async function copiarDiretorio(origem, destino) {
-  await fs.mkdir(destino, { recursive: true });
-  const entradas = await fs.readdir(origem, { withFileTypes: true });
+  await sistemaArquivos.mkdir(destino, { recursive: true });
+  const entradas = await sistemaArquivos.readdir(origem, { withFileTypes: true });
 
   for (const entrada of entradas) {
     const origemEntrada = path.join(origem, entrada.name);
@@ -37,7 +37,7 @@ async function copiarDiretorio(origem, destino) {
     if (entrada.isDirectory()) {
       await copiarDiretorio(origemEntrada, destinoEntrada);
     } else {
-      await fs.copyFile(origemEntrada, destinoEntrada);
+      await sistemaArquivos.copyFile(origemEntrada, destinoEntrada);
     }
   }
 }
@@ -51,7 +51,7 @@ async function copiarAssets() {
   const cname = path.join(RAIZ, 'CNAME');
   if (incluirCname) {
     try {
-      await fs.copyFile(cname, path.join(DIST, 'CNAME'));
+      await sistemaArquivos.copyFile(cname, path.join(DIST, 'CNAME'));
     } catch {
       /* CNAME opcional */
     }
@@ -59,7 +59,7 @@ async function copiarAssets() {
 
   const mock = path.join(RAIZ, 'mock.png');
   try {
-    await fs.copyFile(mock, path.join(DIST, 'mock.png'));
+    await sistemaArquivos.copyFile(mock, path.join(DIST, 'mock.png'));
   } catch {
     /* mock opcional */
   }
@@ -67,7 +67,7 @@ async function copiarAssets() {
 
 function renderizar(template, locals) {
   return new Promise((resolve, reject) => {
-    ejs.renderFile(path.join(VIEWS, `${template}.ejs`), locals, (erro, html) => {
+    motorTemplates.renderFile(path.join(VIEWS, `${template}.ejs`), locals, (erro, html) => {
       if (erro) reject(erro);
       else resolve(html);
     });
@@ -94,7 +94,7 @@ async function montarHtmlInicio() {
     planos,
     precificacao,
     parceiro: null,
-    apiBaseUrl: api.baseUrl,
+    apiBaseUrl: configuracaoApi.baseUrl,
   });
 }
 
@@ -105,7 +105,7 @@ function montarHtmlPrivacidade() {
     conteudoParcial: 'pages/privacidade',
     estiloPagina: 'privacidade',
     exibirWhatsapp: false,
-    apiBaseUrl: api.baseUrl,
+    apiBaseUrl: configuracaoApi.baseUrl,
   });
 }
 
@@ -122,7 +122,7 @@ function montarHtmlOuvidoria(tipoManifestacao) {
 
 function montarHtmlContratacao() {
   return renderizar('pages/contratacao', {
-    apiBaseUrl: api.baseUrl,
+    apiBaseUrl: configuracaoApi.baseUrl,
   });
 }
 
@@ -134,24 +134,24 @@ async function gravarPaginas() {
     montarHtmlContratacao(),
   ]);
 
-  await fs.writeFile(path.join(DIST, 'index.html'), htmlInicio, 'utf8');
+  await sistemaArquivos.writeFile(path.join(DIST, 'index.html'), htmlInicio, 'utf8');
 
-  await fs.mkdir(path.join(DIST, 'privacidade'), { recursive: true });
-  await fs.writeFile(
+  await sistemaArquivos.mkdir(path.join(DIST, 'privacidade'), { recursive: true });
+  await sistemaArquivos.writeFile(
     path.join(DIST, 'privacidade', 'index.html'),
     htmlPrivacidade,
     'utf8',
   );
 
-  await fs.mkdir(path.join(DIST, 'ouvidoria'), { recursive: true });
-  await fs.writeFile(
+  await sistemaArquivos.mkdir(path.join(DIST, 'ouvidoria'), { recursive: true });
+  await sistemaArquivos.writeFile(
     path.join(DIST, 'ouvidoria', 'index.html'),
     htmlOuvidoria,
     'utf8',
   );
 
-  await fs.mkdir(path.join(DIST, 'contratacao'), { recursive: true });
-  await fs.writeFile(
+  await sistemaArquivos.mkdir(path.join(DIST, 'contratacao'), { recursive: true });
+  await sistemaArquivos.writeFile(
     path.join(DIST, 'contratacao', 'index.html'),
     htmlContratacao,
     'utf8',
@@ -159,7 +159,7 @@ async function gravarPaginas() {
 }
 
 async function executar() {
-  console.log(`Build estático → dist/ (API: ${api.baseUrl})`);
+  console.log(`Build estático → dist/ (API: ${configuracaoApi.baseUrl})`);
 
   await limparDist();
   await gravarPaginas();

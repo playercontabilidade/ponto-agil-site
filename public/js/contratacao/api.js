@@ -3,15 +3,15 @@
   const { parseApiError, parseApiBody } = window.ContratacaoUtils;
 
   function createApiError(response, body, message) {
-    const err = new Error(message || `Erro HTTP ${response.status}`);
-    err.status = response.status;
-    err.body = body;
-    return err;
+    const erroApi = new Error(message || `Erro HTTP ${response.status}`);
+    erroApi.status = response.status;
+    erroApi.body = body;
+    return erroApi;
   }
 
   async function request(path, options) {
-    const url = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
-    const response = await fetch(url, {
+    const urlRequisicao = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+    const response = await fetch(urlRequisicao, {
       ...options,
       headers: {
         Accept: "application/json",

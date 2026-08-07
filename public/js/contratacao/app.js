@@ -1,1395 +1,445 @@
-(function () {
-  const {
-    EMAIL_CODE_LENGTH,
-    EMAIL_MAX_ATTEMPTS,
-    EMAIL_EXPIRY_MS,
-    STATUS_POLL_INTERVAL_MS,
-  } = window.PONTO_AGIL_CONTRATACAO_CONFIG;
-
-  const U = window.ContratacaoUtils;
-  const State = window.ContratacaoState;
-  const Api = window.ContratacaoApi;
-  const S = window.ContratacaoStatus;
-
-  const STEPS = {
-    PLANO: "plano",
-    EMPRESA: "empresa",
-    RESPONSAVEL: "responsavel",
-    EMAIL: "email",
-    CONTRATO: "contrato",
-    PAGAMENTO: "pagamento",
-    ACOMPANHAMENTO: "acompanhamento",
-  };
-
-  const STEPPER_MAP = {
-    [STEPS.EMPRESA]: "empresa",
-    [STEPS.RESPONSAVEL]: "responsavel",
-    [STEPS.EMAIL]: "responsavel",
-    [STEPS.CONTRATO]: "contrato",
-    [STEPS.PAGAMENTO]: "pagamento",
-    [STEPS.ACOMPANHAMENTO]: "enviado",
-  };
-
-  const STEPPER_ORDER = ["empresa", "responsavel", "contrato", "pagamento", "enviado"];
-
-  let currentStep = STEPS.PLANO;
-  let planosCache = [];
-  let emailTimerId = null;
-  let statusPollId = null;
-  let contractLoaded = false;
-  let contractZoom = 100;
-  let contractModalZoom = 100;
-  let contractHtmlCache = "";
-  let isSubmitting = false;
-  let checkoutOpened = false;
-
-  const els = {
-    stepper: document.getElementById("stepper"),
-    planosContainer: document.getElementById("planosContainer"),
-    planoMessage: document.getElementById("planoMessage"),
-    formEmpresa: document.getElementById("formEmpresa"),
-    formResponsavel: document.getElementById("formResponsavel"),
-    formEmail: document.getElementById("formEmail"),
-    empresaMessage: document.getElementById("empresaMessage"),
-    responsavelMessage: document.getElementById("responsavelMessage"),
-    emailMessage: document.getElementById("emailMessage"),
-    contratoMessage: document.getElementById("contratoMessage"),
-    emailDestino: document.getElementById("emailDestino"),
-    emailTimer: document.getElementById("emailTimer"),
-    emailAttemptsLeft: document.getElementById("emailAttemptsLeft"),
-    contractContent: document.getElementById("contractContent"),
-    contractViewer: document.getElementById("contractViewer"),
-    contractZoomLabel: document.getElementById("contractZoomLabel"),
-    btnContractZoomIn: document.getElementById("btnContractZoomIn"),
-    btnContractZoomOut: document.getElementById("btnContractZoomOut"),
-    btnContractDownload: document.getElementById("btnContractDownload"),
-    btnContractFullscreen: document.getElementById("btnContractFullscreen"),
-    contractModal: document.getElementById("contractModal"),
-    contractContentModal: document.getElementById("contractContentModal"),
-    modalZoomLabel: document.getElementById("modalZoomLabel"),
-    btnModalZoomIn: document.getElementById("btnModalZoomIn"),
-    btnModalZoomOut: document.getElementById("btnModalZoomOut"),
-    btnModalDownload: document.getElementById("btnModalDownload"),
-    btnCloseContractModal: document.getElementById("btnCloseContractModal"),
-    hashDocumento: document.getElementById("hashDocumento"),
-    aceiteContrato: document.getElementById("aceiteContrato"),
-    btnAceitarContrato: document.getElementById("btnAceitarContrato"),
-    btnAbrirCheckout: document.getElementById("btnAbrirCheckout"),
-    btnAtualizarStatus: document.getElementById("btnAtualizarStatus"),
-    pagamentoDescricao: document.getElementById("pagamentoDescricao"),
-    pagamentoStatusChip: document.getElementById("pagamentoStatusChip"),
-    statusTracker: document.getElementById("statusTracker"),
-    acompanhamentoIcon: document.getElementById("acompanhamentoIcon"),
-    acompanhamentoTitulo: document.getElementById("acompanhamentoTitulo"),
-    acompanhamentoDescricao: document.getElementById("acompanhamentoDescricao"),
-    acompanhamentoStatusChip: document.getElementById("acompanhamentoStatusChip"),
-    acompanhamentoId: document.getElementById("acompanhamentoId"),
-    btnAtualizarAcompanhamento: document.getElementById("btnAtualizarAcompanhamento"),
-    btnIrLogin: document.getElementById("btnIrLogin"),
-    btnBaixarContrato: document.getElementById("btnBaixarContrato"),
-    successPanel: document.getElementById("successPanel"),
-    processingPanel: document.getElementById("processingPanel"),
-    ctrSidebar: document.getElementById("ctrSidebar"),
-    ctrFooterNote: document.getElementById("ctrFooterNote"),
-    ctrIntro: document.getElementById("ctrIntro"),
-    ctrShell: document.querySelector(".ctr-shell"),
-    sidebarPlanoNome: document.getElementById("sidebarPlanoNome"),
-    sidebarFaixa: document.getElementById("sidebarFaixa"),
-    sidebarPreco: document.getElementById("sidebarPreco"),
-    sidebarRecommended: document.getElementById("sidebarRecommended"),
-    conflictPanel: document.getElementById("conflictPanel"),
-    conflictMessage: document.getElementById("conflictMessage"),
-    conflictEmail: document.getElementById("conflictEmail"),
-    btnContinuarContratacao: document.getElementById("btnContinuarContratacao"),
-    btnReenviarCodigoConflict: document.getElementById("btnReenviarCodigoConflict"),
-    btnCancelarContratacao: document.getElementById("btnCancelarContratacao"),
-    responsavelActions: document.getElementById("responsavelActions"),
-    btnReenviarCodigoEmail: document.getElementById("btnReenviarCodigoEmail"),
-    btnCancelarRecomecar: document.getElementById("btnCancelarRecomecar"),
-    btnRecomecarLocal: document.getElementById("btnRecomecarLocal"),
-  };
-
-  function $(id) {
-    return document.getElementById(id);
-  }
-
-  function showStep(step) {
-    if (currentStep === STEPS.CONTRATO && step !== STEPS.CONTRATO) {
-      closeContractModal();
-    }
-
-    currentStep = step;
-    document.querySelectorAll(".ctr-step").forEach((section) => {
-      section.hidden = section.id !== `step-${step}`;
-    });
-
-    const hideStepper = step === STEPS.PLANO;
-    els.stepper.classList.toggle("is-hidden", hideStepper);
-    updateStepper(step);
-    updateLayoutForStep(step);
-
-    if (step === STEPS.EMAIL) updateEmailActionButtons();
-
-    if (step === STEPS.PAGAMENTO || step === STEPS.ACOMPANHAMENTO) {
-      startStatusPolling();
-    } else {
-      stopStatusPolling();
-    }
-  }
-
-  function updateLayoutForStep(step) {
-    const showSidebar =
-      step !== STEPS.PLANO &&
-      step !== STEPS.ACOMPANHAMENTO &&
-      State.hasPlanoSelecionado();
-    if (els.ctrSidebar) els.ctrSidebar.hidden = !showSidebar;
-    if (els.ctrIntro) els.ctrIntro.hidden = step !== STEPS.PLANO;
-    if (els.ctrFooterNote) {
-      els.ctrFooterNote.hidden = step === STEPS.ACOMPANHAMENTO;
-    }
-    if (els.ctrShell) {
-      els.ctrShell.classList.toggle("ctr-shell--single", !showSidebar);
-    }
-    if (showSidebar) renderSidebarSummary();
-  }
-
-  function updateStepper(step) {
-    const activeKey = STEPPER_MAP[step];
-    const activeIndex = STEPPER_ORDER.indexOf(activeKey);
-
-    document.querySelectorAll("[data-stepper]").forEach((item) => {
-      const key = item.getAttribute("data-stepper");
-      const index = STEPPER_ORDER.indexOf(key);
-      item.classList.remove("is-active", "is-done");
-
-      if (index < activeIndex) item.classList.add("is-done");
-      else if (index === activeIndex) item.classList.add("is-active");
-    });
-
-    if (step === STEPS.EMAIL) {
-      document.querySelector('[data-stepper="responsavel"]')?.classList.remove("is-done");
-      document.querySelector('[data-stepper="responsavel"]')?.classList.add("is-active");
-    }
-
-    if (step === STEPS.ACOMPANHAMENTO) {
-      const state = State.load();
-      const concluida =
-        Boolean(state.concluida) || S.normalizeStatus(state.status) === S.STATUS.CONCLUIDA;
-      document.querySelectorAll("[data-stepper]").forEach((item) => {
-        item.classList.remove("is-active", "is-done");
-        if (concluida) item.classList.add("is-done");
-        else if (item.getAttribute("data-stepper") === "enviado") item.classList.add("is-active");
-        else if (STEPPER_ORDER.indexOf(item.getAttribute("data-stepper")) < 4) {
-          item.classList.add("is-done");
-        }
-      });
-    }
-  }
-
-  function renderSidebarSummary() {
-    const state = State.load();
-    if (!State.hasPlanoSelecionado()) return;
-
-    if (els.sidebarPlanoNome) els.sidebarPlanoNome.textContent = state.planoNome || "—";
-    if (els.sidebarFaixa) els.sidebarFaixa.textContent = state.faixaNome || "—";
-    if (els.sidebarPreco) {
-      els.sidebarPreco.textContent = `R$ ${U.formatCurrencyBRL(state.planoPreco)}`;
-    }
-
-    const nome = String(state.planoNome || "").toLowerCase();
-    const isRecommended =
-      nome.includes("essencial") || nome.includes("profissional") || nome.includes("recomend");
-    if (els.sidebarRecommended) els.sidebarRecommended.hidden = !isRecommended;
-  }
-
-  function applyStatusPayload(payload) {
-    const status = S.normalizeStatus(payload?.status);
-    const checkoutUrl = payload?.checkoutUrl ?? payload?.checkout_url ?? null;
-    return State.save({
-      status,
-      concluida: Boolean(payload?.concluida),
-      checkoutUrl: checkoutUrl || State.load().checkoutUrl,
-    });
-  }
-
-  function renderStatusTracker(status, concluida) {
-    const steps = S.getTrackerProgress(status, concluida);
-    els.statusTracker.innerHTML = steps
-      .map((step) => {
-        const icon =
-          step.state === "done"
-            ? '<i class="fa-solid fa-check" aria-hidden="true"></i>'
-            : step.state === "active"
-              ? '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>'
-              : '<i class="fa-solid fa-circle" aria-hidden="true"></i>';
-        return `
-          <div class="status-tracker__item is-${step.state}">
-            <span class="status-tracker__dot">${icon}</span>
-            <span>${step.label}</span>
-          </div>
-        `;
-      })
-      .join("");
-  }
-
-  function renderPagamentoStep(state) {
-    const status = S.normalizeStatus(state.status);
-    els.pagamentoStatusChip.hidden = false;
-    els.pagamentoStatusChip.textContent = S.getLabel(status);
-    els.pagamentoStatusChip.className = "status-chip";
-
-    const hasCheckout = Boolean(state.checkoutUrl);
-    els.btnAbrirCheckout.hidden = !hasCheckout;
-    els.btnAtualizarStatus.hidden = false;
-
-    if (hasCheckout) {
-      els.btnAbrirCheckout.textContent = checkoutOpened ? "Abrir pagamento novamente" : "Ir para pagamento";
-      els.btnAbrirCheckout.onclick = () => openCheckout(state.checkoutUrl);
-    }
-
-    els.pagamentoDescricao.textContent = hasCheckout
-      ? "Conclua o pagamento no ambiente seguro do Asaas. Assim que for confirmado, seguiremos com a ativação da sua empresa."
-      : "Aguardando geração do link de pagamento. Atualize o status em instantes.";
-  }
-
-  function renderAcompanhamentoStep(state) {
-    const status = S.normalizeStatus(state.status);
-    const concluida = Boolean(state.concluida) || status === S.STATUS.CONCLUIDA;
-
-    if (concluida) {
-      if (els.successPanel) els.successPanel.hidden = false;
-      if (els.processingPanel) els.processingPanel.hidden = true;
-      if (els.btnIrLogin) els.btnIrLogin.hidden = false;
-      stopStatusPolling();
-      return;
-    }
-
-    if (els.successPanel) els.successPanel.hidden = true;
-    if (els.processingPanel) els.processingPanel.hidden = false;
-
-    renderStatusTracker(status, concluida);
-
-    els.acompanhamentoStatusChip.textContent = S.getLabel(status);
-    els.acompanhamentoStatusChip.className = "status-chip";
-
-    if (state.contratacaoId) {
-      els.acompanhamentoId.hidden = false;
-      els.acompanhamentoId.textContent = `Contratação: ${state.contratacaoId}`;
-    }
-
-    els.acompanhamentoIcon.className = "payment-wait__icon";
-    els.acompanhamentoIcon.innerHTML = '<i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>';
-    els.btnIrLogin.hidden = true;
-    els.btnAtualizarAcompanhamento.hidden = false;
-
-    if (status === S.STATUS.PAGAMENTO_CONFIRMADO) {
-      els.acompanhamentoTitulo.textContent = "Pagamento confirmado";
-      els.acompanhamentoDescricao.textContent =
-        "Estamos criando sua empresa e enviando o acesso. Isso pode levar alguns instantes.";
-    } else {
-      els.acompanhamentoTitulo.textContent = "Processando contratação";
-      els.acompanhamentoDescricao.textContent =
-        "Estamos finalizando sua contratação. Você receberá as credenciais por e-mail assim que tudo estiver pronto.";
-    }
-  }
-
-  function openCheckout(checkoutUrl) {
-    if (!checkoutUrl) return;
-    checkoutOpened = true;
-    window.open(checkoutUrl, "_blank", "noopener,noreferrer");
-  }
-
-  async function syncWithServer() {
-    const state = State.load();
-    if (!state.contratacaoId) return null;
-
-    const payload = await Api.getStatus(state.contratacaoId);
-    return applyStatusPayload(payload);
-  }
-
-  async function navigateByStatus(preferredStep) {
-    const state = State.load();
-    const status = S.normalizeStatus(state.status);
-    const concluida = Boolean(state.concluida);
-
-    if (S.isExpired(status)) {
-      handleExpiredContratacao(
-        status === S.STATUS.CANCELADA
-          ? "Esta contratação foi cancelada. Inicie uma nova contratação."
-          : "Esta contratação expirou. Inicie uma nova contratação.",
-      );
-      return;
-    }
-
-    if (concluida || status === S.STATUS.CONCLUIDA) {
-      renderAcompanhamentoStep(state);
-      showStep(STEPS.ACOMPANHAMENTO);
-      return;
-    }
-
-    const step = preferredStep || S.resolveStep(status, concluida);
-    if (!step) return;
-
-    switch (step) {
-      case "email":
-        els.emailDestino.textContent =
-          state.responsavel.responsavelEmail ||
-          state.responsavelEmailMascarado ||
-          state.empresa.emailCorporativo;
-        if (S.canValidateEmail(status)) {
-          if (!state.podeReenviarCodigo && !state.podeCancelar) {
-            State.save({ podeReenviarCodigo: true, podeCancelar: true });
-          }
-          startEmailTimer();
-        }
-        showStep(STEPS.EMAIL);
-        break;
-
-      case "contrato":
-        if (!S.canViewContract(status)) {
-          showStep(STEPS.EMAIL);
-          break;
-        }
-        showStep(STEPS.CONTRATO);
-        await loadContract();
-        break;
-
-      case "pagamento":
-        renderPagamentoStep(state);
-        showStep(STEPS.PAGAMENTO);
-        if (state.checkoutUrl && !checkoutOpened) {
-          openCheckout(state.checkoutUrl);
-        }
-        break;
-
-      case "acompanhamento":
-        renderAcompanhamentoStep(state);
-        showStep(STEPS.ACOMPANHAMENTO);
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  function startStatusPolling() {
-    stopStatusPolling();
-    const state = State.load();
-    if (!state.contratacaoId) return;
-    if (!S.shouldPollStatus(state.status, state.concluida)) return;
-
-    statusPollId = setInterval(async () => {
-      try {
-        const updated = await syncWithServer();
-        if (!updated) return;
-
-        const status = S.normalizeStatus(updated.status);
-        if (S.isExpired(status)) {
-          handleExpiredContratacao();
-          return;
-        }
-
-        if (updated.concluida || status === S.STATUS.CONCLUIDA) {
-          renderAcompanhamentoStep(updated);
-          showStep(STEPS.ACOMPANHAMENTO);
-          return;
-        }
-
-        if (status === S.STATUS.PAGAMENTO_CONFIRMADO && currentStep === STEPS.PAGAMENTO) {
-          renderAcompanhamentoStep(updated);
-          showStep(STEPS.ACOMPANHAMENTO);
-          return;
-        }
-
-        if (currentStep === STEPS.PAGAMENTO) {
-          renderPagamentoStep(updated);
-        } else if (currentStep === STEPS.ACOMPANHAMENTO) {
-          renderAcompanhamentoStep(updated);
-        }
-      } catch (_) {
-        /* mantém último estado conhecido */
-      }
-    }, STATUS_POLL_INTERVAL_MS);
-  }
-
-  function stopStatusPolling() {
-    if (statusPollId) {
-      clearInterval(statusPollId);
-      statusPollId = null;
-    }
-  }
-
-  function readEmpresaForm() {
-    return {
-      razaoSocial: $("razaoSocial").value.trim(),
-      cnpj: $("cnpj").value.trim(),
-      emailCorporativo: $("emailCorporativo").value.trim(),
-      telefoneEmpresa: U.onlyDigits($("telefoneEmpresa").value),
-      cep: $("cep").value.trim(),
-    };
-  }
-
-  function readResponsavelForm() {
-    return {
-      responsavelNome: $("responsavelNome").value.trim(),
-      responsavelCpf: $("responsavelCpf").value.trim(),
-      responsavelEmail: $("responsavelEmail").value.trim(),
-      responsavelTelefone: U.onlyDigits($("responsavelTelefone").value),
-    };
-  }
-
-  function fillEmpresaForm(data) {
-    $("razaoSocial").value = data.razaoSocial || "";
-    $("cnpj").value = data.cnpj || "";
-    $("emailCorporativo").value = data.emailCorporativo || "";
-    $("telefoneEmpresa").value = data.telefoneEmpresa ? U.maskPhone(data.telefoneEmpresa) : "";
-    $("cep").value = data.cep || "";
-  }
-
-  function fillResponsavelForm(data) {
-    $("responsavelNome").value = data.responsavelNome || "";
-    $("responsavelCpf").value = data.responsavelCpf || "";
-    $("responsavelEmail").value = data.responsavelEmail || "";
-    $("responsavelTelefone").value = data.responsavelTelefone
-      ? U.maskPhone(data.responsavelTelefone)
-      : "";
-  }
-
-  function validateEmpresa(data) {
-    if (!data.razaoSocial) return "Informe a razão social.";
-    if (!U.isValidCnpj(data.cnpj)) return "Informe um CNPJ válido.";
-    if (!U.isValidEmail(data.emailCorporativo)) return "Informe um e-mail corporativo válido.";
-    if (!U.isValidPhone(data.telefoneEmpresa)) return "Informe um telefone válido.";
-    if (!U.isValidCep(data.cep)) return "Informe um CEP válido.";
-    return null;
-  }
-
-  function validateResponsavel(data) {
-    if (!data.responsavelNome) return "Informe o nome completo do responsável.";
-    if (!U.isValidCpf(data.responsavelCpf)) return "Informe um CPF válido.";
-    if (!U.isValidEmail(data.responsavelEmail)) return "Informe um e-mail válido.";
-    if (!U.isValidPhone(data.responsavelTelefone)) return "Informe um telefone válido.";
-    return null;
-  }
-
-  function hideConflictPanel() {
-    if (!els.conflictPanel) return;
-    els.conflictPanel.hidden = true;
-    if (els.responsavelActions) els.responsavelActions.hidden = false;
-  }
-
-  function showConflictPanel(body, mensagem) {
-    if (!els.conflictPanel) return;
-
-    const data = body || {};
-    els.conflictPanel.hidden = false;
-    if (els.responsavelActions) els.responsavelActions.hidden = true;
-
-    els.conflictMessage.textContent =
-      mensagem || data.mensagem || "Já existe uma contratação em andamento para este CNPJ.";
-
-    if (data.responsavelEmail) {
-      els.conflictEmail.hidden = false;
-      els.conflictEmail.textContent = `Código enviado para ${data.responsavelEmail}`;
-    } else {
-      els.conflictEmail.hidden = true;
-    }
-
-    const podeContinuar = data.podeContinuar !== false;
-    els.btnContinuarContratacao.hidden = !podeContinuar;
-    els.btnReenviarCodigoConflict.hidden = !data.podeReenviarCodigo;
-    els.btnCancelarContratacao.hidden = !data.podeCancelar;
-  }
-
-  function handleConflict409(err) {
-    const body = err.body || {};
-    State.applyConflictPayload(body);
-
-    if (body.responsavelEmail) {
-      els.emailDestino.textContent = body.responsavelEmail;
-    }
-
-    showConflictPanel(body, err.message);
-    U.showMessage(els.responsavelMessage, "", "");
-  }
-
-  function updateEmailActionButtons() {
-    const state = State.load();
-    const podeReenviar =
-      Boolean(state.podeReenviarCodigo) && S.canValidateEmail(S.normalizeStatus(state.status));
-    els.btnReenviarCodigoEmail.hidden = !podeReenviar;
-    els.btnCancelarRecomecar.hidden = !state.podeCancelar;
-    els.btnRecomecarLocal.hidden = Boolean(state.contratacaoId);
-  }
-
-  function resetParaNovaContratacao() {
-    stopStatusPolling();
-    stopEmailTimer();
-    hideConflictPanel();
-    State.clearContratacao();
-    contractLoaded = false;
-    contractHtmlCache = "";
-    checkoutOpened = false;
-    els.aceiteContrato.checked = false;
-    $("codigoEmail").value = "";
-  }
-
-  async function continuarContratacao(messageEl) {
-    hideConflictPanel();
-    const state = State.load();
-    if (!state.contratacaoId) return;
-
-    if (messageEl) U.showMessage(messageEl, "", "");
-
+async function resumeFromState() {
+  const state = EstadoContratacao.load();
+  fillEmpresaForm(state.empresa);
+  fillResponsavelForm(state.responsavel);
+
+  if (state.contratacaoId) {
     try {
       await syncWithServer();
       await navigateByStatus();
-    } catch (err) {
-      U.showMessage(
-        messageEl || els.responsavelMessage,
-        err instanceof Error ? err.message : "Não foi possível continuar a contratação.",
+      return true;
+    } catch (erro) {
+      UtilitariosContratacao.showMessage(
+        elementos.planoMessage,
+        erro instanceof Error ? erro.message : "Não foi possível recuperar a contratação.",
         "error",
       );
+      if (EstadoContratacao.hasPlanoSelecionado()) {
+        showStep(ETAPAS.EMPRESA);
+        return true;
+      }
+      return false;
     }
   }
 
-  async function reenviarCodigo(messageEl) {
-    const state = State.load();
-    if (!state.contratacaoId || isSubmitting) return;
-
-    isSubmitting = true;
-    if (messageEl) U.showMessage(messageEl, "", "");
-
-    try {
-      await Api.reenviarCodigo(state.contratacaoId);
-      State.save({
-        contratacaoCreatedAt: Date.now(),
-        emailAttempts: 0,
-        podeReenviarCodigo: true,
-      });
-      U.showMessage(messageEl || els.emailMessage, "Novo código enviado por e-mail.", "success");
-      $("codigoEmail").value = "";
-
-      const updated = State.load();
-      els.emailDestino.textContent =
-        updated.responsavel.responsavelEmail || updated.responsavelEmailMascarado || els.emailDestino.textContent;
-
-      if (currentStep !== STEPS.EMAIL) showStep(STEPS.EMAIL);
-      startEmailTimer();
-      updateEmailActionButtons();
-    } catch (err) {
-      U.showMessage(
-        messageEl || els.emailMessage,
-        err instanceof Error ? err.message : "Não foi possível reenviar o código.",
-        "error",
-      );
-    } finally {
-      isSubmitting = false;
-    }
+  if (EstadoContratacao.hasPlanoSelecionado()) {
+    showStep(ETAPAS.EMPRESA);
+    return true;
   }
 
-  async function cancelarERecomecar(messageEl) {
-    const state = State.load();
+  return false;
+}
 
-    if (!state.contratacaoId) {
-      resetParaNovaContratacao();
-      showStep(State.hasPlanoSelecionado() ? STEPS.EMPRESA : STEPS.PLANO);
-      if (!State.hasPlanoSelecionado()) renderPlanos();
-      return;
-    }
+async function init() {
+  UtilitariosContratacao.bindMask($("cnpj"), UtilitariosContratacao.maskCnpj);
+  UtilitariosContratacao.bindMask($("responsavelCpf"), UtilitariosContratacao.maskCpf);
+  UtilitariosContratacao.bindMask($("cep"), UtilitariosContratacao.maskCep);
+  UtilitariosContratacao.bindMask($("telefoneEmpresa"), UtilitariosContratacao.maskPhone);
+  UtilitariosContratacao.bindMask($("responsavelTelefone"), UtilitariosContratacao.maskPhone);
 
-    if (!state.podeCancelar) {
-      U.showMessage(
-        messageEl || els.emailMessage,
-        "Não é possível cancelar esta contratação pelo portal. Entre em contato com o suporte.",
-        "error",
-      );
-      return;
-    }
+  $("codigoEmail")?.addEventListener("input", (e) => {
+    e.target.value = UtilitariosContratacao.onlyDigits(e.target.value).slice(0, EMAIL_CODE_LENGTH);
+  });
 
-    if (isSubmitting) return;
-    isSubmitting = true;
-    if (messageEl) U.showMessage(messageEl, "", "");
-
-    try {
-      await Api.cancelarContratacao(state.contratacaoId);
-      resetParaNovaContratacao();
-      U.showMessage(
-        messageEl || els.responsavelMessage,
-        "Contratação cancelada. Você pode iniciar uma nova.",
-        "success",
-      );
-      showStep(State.hasPlanoSelecionado() ? STEPS.EMPRESA : STEPS.PLANO);
-      if (!State.hasPlanoSelecionado()) renderPlanos();
-    } catch (err) {
-      U.showMessage(
-        messageEl || els.responsavelMessage,
-        err instanceof Error ? err.message : "Não foi possível cancelar a contratação.",
-        "error",
-      );
-    } finally {
-      isSubmitting = false;
-    }
-  }
-
-  function handleExpiredContratacao(message) {
-    stopStatusPolling();
-    stopEmailTimer();
-    hideConflictPanel();
-    State.clearContratacao();
-    contractLoaded = false;
-    contractHtmlCache = "";
-    checkoutOpened = false;
-    els.aceiteContrato.checked = false;
-    U.showMessage(
-      els.emailMessage,
-      message || "A contratação expirou. Selecione o plano novamente para recomeçar.",
+  try {
+    await loadPlanos();
+  } catch (erro) {
+    UtilitariosContratacao.showMessage(
+      elementos.planoMessage,
+      erro instanceof Error ? erro.message : "Erro ao carregar planos.",
       "error",
     );
-    showStep(STEPS.PLANO);
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const planoParam = params.get("planoId");
+  const faixaParam = params.get("faixaId");
+
+  if (planoParam && faixaParam && applyPlanoFromParams(planoParam, faixaParam)) {
+    if (!(await resumeFromState())) showStep(ETAPAS.EMPRESA);
+  } else if (!(await resumeFromState())) {
+    showStep(ETAPAS.PLANO);
     renderPlanos();
   }
 
-  function getEmailRemainingMs(state) {
-    const created = state.contratacaoCreatedAt || Date.now();
-    return EMAIL_EXPIRY_MS - (Date.now() - created);
-  }
+  bindEvents();
+}
 
-  function updateEmailTimer() {
-    const state = State.load();
-    const remaining = getEmailRemainingMs(state);
+function bindEvents() {
+  elementos.planosContainer.addEventListener("click", (e) => {
+    const botao = e.target.closest(".faixa-option");
+    if (!botao) return;
 
-    if (remaining <= 0) {
-      stopEmailTimer();
+    const planoId = botao.getAttribute("data-plan-id");
+    const faixaId = botao.getAttribute("data-faixa-id");
+    if (!applyPlanoFromParams(planoId, faixaId)) {
+      UtilitariosContratacao.showMessage(elementos.planoMessage, "Plano ou faixa inválidos.", "error");
+      return;
+    }
+
+    UtilitariosContratacao.showMessage(elementos.planoMessage, "", "");
+    showStep(ETAPAS.EMPRESA);
+  });
+
+  elementos.formEmpresa.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const data = readEmpresaForm();
+    const error = validateEmpresa(data);
+    if (error) {
+      UtilitariosContratacao.showMessage(elementos.empresaMessage, error, "error");
+      return;
+    }
+
+    EstadoContratacao.setEmpresa(data);
+    UtilitariosContratacao.showMessage(elementos.empresaMessage, "", "");
+    showStep(ETAPAS.RESPONSAVEL);
+  });
+
+  elementos.formResponsavel.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (envioEmAndamento) return;
+
+    const empresa = readEmpresaForm();
+    const responsavel = readResponsavelForm();
+    const empresaError = validateEmpresa(empresa);
+    const responsavelError = validateResponsavel(responsavel);
+
+    if (empresaError) {
+      UtilitariosContratacao.showMessage(elementos.responsavelMessage, empresaError, "error");
+      showStep(ETAPAS.EMPRESA);
+      return;
+    }
+    if (responsavelError) {
+      UtilitariosContratacao.showMessage(elementos.responsavelMessage, responsavelError, "error");
+      return;
+    }
+
+    const state = EstadoContratacao.load();
+    if (!EstadoContratacao.hasPlanoSelecionado()) {
+      UtilitariosContratacao.showMessage(elementos.responsavelMessage, "Selecione um plano antes de continuar.", "error");
+      showStep(ETAPAS.PLANO);
+      renderPlanos();
+      return;
+    }
+
+    if (state.contratacaoId && !StatusContratacao.isTerminal(state.status)) {
+      try {
+        await syncWithServer();
+        const synced = EstadoContratacao.load();
+        if (synced.contratacaoId && !StatusContratacao.isTerminal(synced.status)) {
+          await navigateByStatus();
+          return;
+        }
+      } catch {
+        /* tenta criar nova ou trata conflito abaixo */
+      }
+    }
+
+    hideConflictPanel();
+    EstadoContratacao.setEmpresa(empresa);
+    EstadoContratacao.setResponsavel(responsavel);
+
+    const botao = $("btnCriarContratacao");
+    envioEmAndamento = true;
+    botao.disabled = true;
+    UtilitariosContratacao.showMessage(elementos.responsavelMessage, "", "");
+
+    try {
+      const payload = {
+        planoId: Number(state.planoId),
+        faixaId: Number(state.faixaId),
+        razaoSocial: empresa.razaoSocial,
+        cnpj: empresa.cnpj,
+        emailCorporativo: empresa.emailCorporativo,
+        telefoneEmpresa: empresa.telefoneEmpresa,
+        cep: empresa.cep,
+        responsavelNome: responsavel.responsavelNome,
+        responsavelCpf: responsavel.responsavelCpf,
+        responsavelEmail: responsavel.responsavelEmail,
+        responsavelTelefone: responsavel.responsavelTelefone,
+      };
+
+      const result = await ApiContratacao.criarContratacao(payload);
+      const contratacaoId = result.contratacaoId;
+      if (!contratacaoId) throw new Error("Resposta da API sem identificador da contratação.");
+
+      EstadoContratacao.setContratacao(
+        contratacaoId,
+        StatusContratacao.normalizeStatus(result.status) || StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL,
+      );
+      EstadoContratacao.save({ podeReenviarCodigo: true, podeCancelar: true });
+      checkoutAberto = false;
+      hideConflictPanel();
+      elementos.emailDestino.textContent = responsavel.responsavelEmail;
+      $("codigoEmail").value = "";
+      elementos.aceiteContrato.checked = false;
+      UtilitariosContratacao.showMessage(elementos.emailMessage, "", "");
+      showStep(ETAPAS.EMAIL);
+      startEmailTimer();
+      updateEmailActionButtons();
+    } catch (erro) {
+      if (erro?.status === 409 && erro.body) {
+        EstadoContratacao.setEmpresa(empresa);
+        EstadoContratacao.setResponsavel(responsavel);
+        handleConflict409(erro);
+        return;
+      }
+      UtilitariosContratacao.showMessage(
+        elementos.responsavelMessage,
+        erro instanceof Error ? erro.message : "Erro ao criar contratação.",
+        "error",
+      );
+    } finally {
+      envioEmAndamento = false;
+      botao.disabled = false;
+    }
+  });
+
+  elementos.formEmail.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (envioEmAndamento) return;
+
+    const state = EstadoContratacao.load();
+    const codigo = $("codigoEmail").value.trim();
+
+    if (!StatusContratacao.canValidateEmail(state.status)) {
+      try {
+        await syncWithServer();
+        await navigateByStatus();
+      } catch (erro) {
+        UtilitariosContratacao.showMessage(
+          elementos.emailMessage,
+          erro instanceof Error ? erro.message : "Não foi possível validar o status.",
+          "error",
+        );
+      }
+      return;
+    }
+
+    if (getEmailRemainingMs(state) <= 0) {
       handleExpiredContratacao("O código expirou. Inicie uma nova contratação.");
       return;
     }
 
-    els.emailTimer.textContent = U.formatCountdown(remaining);
-    els.emailAttemptsLeft.textContent = String(
-      Math.max(0, EMAIL_MAX_ATTEMPTS - (state.emailAttempts || 0)),
-    );
-  }
-
-  function startEmailTimer() {
-    clearInterval(emailTimerId);
-    updateEmailTimer();
-    emailTimerId = setInterval(updateEmailTimer, 1000);
-  }
-
-  function stopEmailTimer() {
-    clearInterval(emailTimerId);
-    emailTimerId = null;
-  }
-
-  async function loadPlanos() {
-    planosCache = await Api.getPlanosPublicos();
-    if (!Array.isArray(planosCache)) planosCache = [];
-    planosCache.sort((a, b) => U.getPlanWeight(a.nome) - U.getPlanWeight(b.nome));
-    return planosCache;
-  }
-
-  function findPlanoDetails(planoId, faixaId) {
-    const pid = Number(planoId);
-    const fid = Number(faixaId);
-    const plano = planosCache.find((p) => Number(p.id) === pid);
-    const faixa = plano?.faixas?.find((f) => Number(f.id) === fid);
-    return { plano, faixa };
-  }
-
-  function applyPlanoFromParams(planoId, faixaId) {
-    const { plano, faixa } = findPlanoDetails(planoId, faixaId);
-    if (!plano || !faixa) return false;
-
-    State.setPlano(Number(planoId), Number(faixaId), {
-      planoNome: plano.nome || "",
-      faixaNome: faixa.nome || "",
-      planoPreco: faixa.preco || 0,
-      planoFuncionalidades: Array.isArray(plano.funcionalidades)
-        ? plano.funcionalidades.map((f) => f.nome).filter(Boolean)
-        : [],
-    });
-    renderSidebarSummary();
-    return true;
-  }
-
-  function renderPlanos() {
-    if (!planosCache.length) {
-      els.planosContainer.innerHTML =
-        '<p class="ctr-step__hint">Nenhum plano disponível no momento.</p>';
+    if ((state.emailAttempts || 0) >= EMAIL_MAX_ATTEMPTS) {
+      handleExpiredContratacao("Número máximo de tentativas atingido. Inicie uma nova contratação.");
       return;
     }
 
-    els.planosContainer.innerHTML = planosCache
-      .map((plano) => {
-        const faixas = Array.isArray(plano.faixas) ? plano.faixas : [];
-        const funcs = Array.isArray(plano.funcionalidades)
-          ? plano.funcionalidades.map((f) => `<li>${f.nome || ""}</li>`).join("")
-          : "";
+    if (!UtilitariosContratacao.isValidEmailCode(codigo)) {
+      UtilitariosContratacao.showMessage(elementos.emailMessage, `Informe um código de ${EMAIL_CODE_LENGTH} dígitos.`, "error");
+      return;
+    }
 
-        return `
-          <article class="plano-picker">
-            <h3>${plano.nome || ""}</h3>
-            ${plano.descricao ? `<p class="ctr-step__hint">${plano.descricao}</p>` : ""}
-            <div class="faixa-options">
-              ${faixas
-                .map(
-                  (faixa) => `
-                <button
-                  type="button"
-                  class="faixa-option"
-                  data-plan-id="${plano.id}"
-                  data-faixa-id="${faixa.id}"
-                >
-                  <span>${faixa.nome || ""}</span>
-                  <span class="faixa-option__price">R$ ${U.formatCurrencyBRL(faixa.preco)}/mês</span>
-                </button>
-              `,
-                )
-                .join("")}
-            </div>
-            ${funcs ? `<ul class="plan-features">${funcs}</ul>` : ""}
-          </article>
-        `;
-      })
-      .join("");
-  }
+    const botao = $("btnValidarEmail");
+    envioEmAndamento = true;
+    botao.disabled = true;
+    UtilitariosContratacao.showMessage(elementos.emailMessage, "", "");
 
-  function applyContractZoom() {
-    if (!els.contractContent) return;
-    els.contractContent.style.transform = `scale(${contractZoom / 100})`;
-    if (els.contractZoomLabel) els.contractZoomLabel.textContent = `${contractZoom}%`;
-  }
+    try {
+      const result = await ApiContratacao.validarEmail(state.contratacaoId, codigo);
+      EstadoContratacao.save({ status: StatusContratacao.normalizeStatus(result.status) || StatusContratacao.STATUS.AGUARDANDO_ASSINATURA });
+      stopEmailTimer();
+      elementos.aceiteContrato.checked = false;
+      showStep(ETAPAS.CONTRATO);
+      await loadContract();
+    } catch (erro) {
+      const mensagem = erro instanceof Error ? erro.message : "Código inválido.";
+      const attempts = EstadoContratacao.incrementEmailAttempts();
 
-  function applyModalZoom() {
-    if (!els.contractContentModal) return;
-    els.contractContentModal.style.transform = `scale(${contractModalZoom / 100})`;
-    if (els.modalZoomLabel) els.modalZoomLabel.textContent = `${contractModalZoom}%`;
-  }
+      if (
+        attempts.emailAttempts >= EMAIL_MAX_ATTEMPTS ||
+        /expir/i.test(mensagem) ||
+        /cancel/i.test(mensagem)
+      ) {
+        handleExpiredContratacao(mensagem);
+        return;
+      }
 
-  function openContractModal() {
-    const html = getContractHtmlForExport();
-    if (!html || !els.contractModal || !els.contractContentModal) return;
+      UtilitariosContratacao.showMessage(elementos.emailMessage, mensagem, "error");
+    } finally {
+      envioEmAndamento = false;
+      botao.disabled = false;
+    }
+  });
 
-    els.contractContentModal.innerHTML = html;
-    els.contractContentModal.scrollTop = 0;
-    contractModalZoom = contractZoom;
+  elementos.aceiteContrato.addEventListener("change", updateAceiteButton);
+
+  elementos.btnAceitarContrato.addEventListener("click", async () => {
+    if (envioEmAndamento) return;
+
+    const state = EstadoContratacao.load();
+    if (!state.contratacaoId) {
+      UtilitariosContratacao.showMessage(elementos.contratoMessage, "Contratação não encontrada. Recomece o processo.", "error");
+      return;
+    }
+
+    if (!contratoCarregado || !elementos.aceiteContrato.checked) return;
+
+    if (!StatusContratacao.canAcceptContract(state.status) && !StatusContratacao.canOpenCheckout(state.status)) {
+      try {
+        await syncWithServer();
+      } catch {
+        /* segue */
+      }
+    }
+
+    const current = EstadoContratacao.load();
+    if (StatusContratacao.canOpenCheckout(current.status) && current.checkoutUrl) {
+      goToPayment(current.checkoutUrl);
+      return;
+    }
+
+    if (!StatusContratacao.canAcceptContract(current.status)) {
+      UtilitariosContratacao.showMessage(
+        elementos.contratoMessage,
+        "O contrato só pode ser assinado após a validação do e-mail.",
+        "error",
+      );
+      await navigateByStatus();
+      return;
+    }
+
+    envioEmAndamento = true;
+    elementos.btnAceitarContrato.disabled = true;
+    UtilitariosContratacao.showMessage(elementos.contratoMessage, "", "");
+
+    try {
+      const result = await ApiContratacao.aceitarContrato(state.contratacaoId);
+      const normalized = applyStatusPayload(result);
+      const checkoutUrl = normalized.checkoutUrl;
+
+      if (!checkoutUrl && !StatusContratacao.canOpenCheckout(normalized.status)) {
+        throw new Error("Não foi possível obter o link de pagamento. Tente novamente.");
+      }
+
+      if (checkoutUrl) {
+        goToPayment(checkoutUrl);
+      } else {
+        await navigateByStatus();
+      }
+    } catch (erro) {
+      UtilitariosContratacao.showMessage(
+        elementos.contratoMessage,
+        erro instanceof Error ? erro.message : "Erro ao assinar contrato.",
+        "error",
+      );
+    } finally {
+      envioEmAndamento = false;
+      updateAceiteButton();
+    }
+  });
+
+  elementos.btnContractZoomIn?.addEventListener("click", () => {
+    zoomContrato = Math.min(150, zoomContrato + 10);
+    applyContractZoom();
+  });
+
+  elementos.btnContractZoomOut?.addEventListener("click", () => {
+    zoomContrato = Math.max(70, zoomContrato - 10);
+    applyContractZoom();
+  });
+
+  elementos.btnModalZoomIn?.addEventListener("click", () => {
+    zoomModalContrato = Math.min(150, zoomModalContrato + 10);
     applyModalZoom();
+  });
 
-    els.contractModal.hidden = false;
-    document.body.style.overflow = "hidden";
-    els.btnCloseContractModal?.focus();
-  }
+  elementos.btnModalZoomOut?.addEventListener("click", () => {
+    zoomModalContrato = Math.max(70, zoomModalContrato - 10);
+    applyModalZoom();
+  });
 
-  function closeContractModal() {
-    if (!els.contractModal) return;
-    els.contractModal.hidden = true;
-    document.body.style.overflow = "";
-    els.btnContractFullscreen?.focus();
-  }
+  elementos.btnContractDownload?.addEventListener("click", downloadContractPdf);
+  elementos.btnModalDownload?.addEventListener("click", downloadContractPdf);
+  elementos.btnContractFullscreen?.addEventListener("click", toggleContractFullscreen);
+  elementos.btnCloseContractModal?.addEventListener("click", closeContractModal);
+  elementos.btnBaixarContrato?.addEventListener("click", downloadContractPdf);
 
-  function getContractHtmlForExport() {
-    const html = contractHtmlCache || els.contractContent?.innerHTML || "";
-    if (!html || html.includes("Carregando contrato")) return null;
-    return html;
-  }
-
-  async function ensureContractHtml() {
-    const cached = getContractHtmlForExport();
-    if (cached) return cached;
-
-    const state = State.load();
-    if (!state.contratacaoId) return null;
-
-    try {
-      const data = await Api.getContrato(state.contratacaoId);
-      contractHtmlCache = data.conteudoHtml || "";
-      return getContractHtmlForExport();
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function printContractAsPdf(html) {
-    const printStyles = `
-      @page { margin: 2cm; }
-      body {
-        font-family: Georgia, "Times New Roman", serif;
-        font-size: 12pt;
-        line-height: 1.6;
-        color: #111;
-        margin: 0;
-        padding: 0;
-      }
-      img { max-width: 100%; height: auto; }
-      table { width: 100%; border-collapse: collapse; }
-      h1, h2, h3 { page-break-after: avoid; }
-      p, li { orphans: 3; widows: 3; }
-    `;
-
-    const docHtml = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Contrato - Ponto Ágil</title>
-  <style>${printStyles}</style>
-</head>
-<body>${html}</body>
-</html>`;
-
-    let iframe = document.getElementById("contract-print-frame");
-    if (!iframe) {
-      iframe = document.createElement("iframe");
-      iframe.id = "contract-print-frame";
-      iframe.setAttribute("aria-hidden", "true");
-      iframe.style.cssText =
-        "position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none";
-      document.body.appendChild(iframe);
-    }
-
-    const win = iframe.contentWindow;
-    if (!win) return;
-
-    const doc = win.document;
-    doc.open();
-    doc.write(docHtml);
-    doc.close();
-
-    const triggerPrint = () => {
-      win.focus();
-      win.print();
-    };
-
-    if (doc.readyState === "complete") {
-      setTimeout(triggerPrint, 150);
-    } else {
-      win.addEventListener("load", () => setTimeout(triggerPrint, 150), { once: true });
-    }
-  }
-
-  async function downloadContractPdf() {
-    const html = await ensureContractHtml();
-    if (!html) return;
-    printContractAsPdf(html);
-  }
-
-  function toggleContractFullscreen() {
-    if (els.contractModal && !els.contractModal.hidden) {
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && elementos.contractModal && !elementos.contractModal.hidden) {
       closeContractModal();
-      return;
     }
-    openContractModal();
-  }
+  });
 
-  async function loadContract() {
-    const state = State.load();
-    if (!state.contratacaoId) return;
+  elementos.btnContinuarContratacao?.addEventListener("click", () => {
+    continuarContratacao(elementos.responsavelMessage);
+  });
 
-    if (!S.canViewContract(state.status)) {
-      U.showMessage(
-        els.contratoMessage,
-        "Valide o e-mail antes de visualizar o contrato.",
-        "error",
-      );
-      showStep(STEPS.EMAIL);
-      return;
-    }
+  elementos.btnReenviarCodigoConflict?.addEventListener("click", async () => {
+    await reenviarCodigo(elementos.responsavelMessage);
+    hideConflictPanel();
+    showStep(ETAPAS.EMAIL);
+  });
 
-    U.showMessage(els.contratoMessage, "", "");
-    els.contractContent.innerHTML = '<p class="ctr-step__hint">Carregando contrato...</p>';
-    contractLoaded = false;
-    updateAceiteButton();
+  elementos.btnCancelarContratacao?.addEventListener("click", () => {
+    cancelarERecomecar(elementos.responsavelMessage);
+  });
 
+  elementos.btnReenviarCodigoEmail?.addEventListener("click", () => {
+    reenviarCodigo(elementos.emailMessage);
+  });
+
+  elementos.btnAtualizarStatus?.addEventListener("click", async () => {
     try {
-      const data = await Api.getContrato(state.contratacaoId);
-      contractHtmlCache = data.conteudoHtml || "";
-      els.contractContent.innerHTML = contractHtmlCache || "<p>Contrato indisponível.</p>";
-      els.contractContent.scrollTop = 0;
-      contractLoaded = Boolean(data.conteudoHtml);
-      contractZoom = 100;
-      applyContractZoom();
-
-      if (data.hashDocumento) {
-        els.hashDocumento.hidden = false;
-        els.hashDocumento.textContent = `Identificador do documento: ${data.hashDocumento}`;
-        State.save({ hashDocumento: data.hashDocumento });
-      }
-    } catch (err) {
-      els.contractContent.innerHTML = "";
-      const msg = err instanceof Error ? err.message : "Não foi possível carregar o contrato.";
-      if (/valid/i.test(msg) || /e-?mail/i.test(msg)) {
-        showStep(STEPS.EMAIL);
-      }
-      U.showMessage(els.contratoMessage, msg, "error");
+      await syncWithServer();
+      await navigateByStatus();
+    } catch (erro) {
+      elementos.pagamentoDescricao.textContent =
+        erro instanceof Error ? erro.message : "Erro ao atualizar status.";
     }
+  });
 
-    updateAceiteButton();
-  }
-
-  function updateAceiteButton() {
-    const state = State.load();
-    const checked = els.aceiteContrato.checked;
-    const canProceed =
-      contractLoaded &&
-      checked &&
-      !isSubmitting &&
-      S.canAcceptContract(state.status);
-    els.btnAceitarContrato.disabled = !canProceed;
-  }
-
-  function goToPayment(checkoutUrl) {
-    const updated = State.save({
-      checkoutUrl,
-      status: S.STATUS.AGUARDANDO_PAGAMENTO,
-    });
-    renderPagamentoStep(updated);
-    showStep(STEPS.PAGAMENTO);
-    if (checkoutUrl) openCheckout(checkoutUrl);
-  }
-
-  async function resumeFromState() {
-    const state = State.load();
-    fillEmpresaForm(state.empresa);
-    fillResponsavelForm(state.responsavel);
-
-    if (state.contratacaoId) {
-      try {
-        await syncWithServer();
-        await navigateByStatus();
-        return true;
-      } catch (err) {
-        U.showMessage(
-          els.planoMessage,
-          err instanceof Error ? err.message : "Não foi possível recuperar a contratação.",
-          "error",
-        );
-        if (State.hasPlanoSelecionado()) {
-          showStep(STEPS.EMPRESA);
-          return true;
-        }
-        return false;
-      }
-    }
-
-    if (State.hasPlanoSelecionado()) {
-      showStep(STEPS.EMPRESA);
-      return true;
-    }
-
-    return false;
-  }
-
-  async function init() {
-    U.bindMask($("cnpj"), U.maskCnpj);
-    U.bindMask($("responsavelCpf"), U.maskCpf);
-    U.bindMask($("cep"), U.maskCep);
-    U.bindMask($("telefoneEmpresa"), U.maskPhone);
-    U.bindMask($("responsavelTelefone"), U.maskPhone);
-
-    $("codigoEmail")?.addEventListener("input", (e) => {
-      e.target.value = U.onlyDigits(e.target.value).slice(0, EMAIL_CODE_LENGTH);
-    });
-
+  elementos.btnAtualizarAcompanhamento?.addEventListener("click", async () => {
     try {
-      await loadPlanos();
-    } catch (err) {
-      U.showMessage(
-        els.planoMessage,
-        err instanceof Error ? err.message : "Erro ao carregar planos.",
-        "error",
-      );
+      const updated = await syncWithServer();
+      if (updated) renderAcompanhamentoStep(updated);
+      await navigateByStatus();
+    } catch (erro) {
+      elementos.acompanhamentoDescricao.textContent =
+        erro instanceof Error ? erro.message : "Erro ao atualizar status.";
     }
+  });
 
-    const params = new URLSearchParams(window.location.search);
-    const planoParam = params.get("planoId");
-    const faixaParam = params.get("faixaId");
+  document.addEventListener("click", (e) => {
+    const action = e.target.closest("[data-action]");
+    if (!action) return;
 
-    if (planoParam && faixaParam && applyPlanoFromParams(planoParam, faixaParam)) {
-      if (!(await resumeFromState())) showStep(STEPS.EMPRESA);
-    } else if (!(await resumeFromState())) {
-      showStep(STEPS.PLANO);
-      renderPlanos();
-    }
-
-    bindEvents();
-  }
-
-  function bindEvents() {
-    els.planosContainer.addEventListener("click", (e) => {
-      const btn = e.target.closest(".faixa-option");
-      if (!btn) return;
-
-      const planoId = btn.getAttribute("data-plan-id");
-      const faixaId = btn.getAttribute("data-faixa-id");
-      if (!applyPlanoFromParams(planoId, faixaId)) {
-        U.showMessage(els.planoMessage, "Plano ou faixa inválidos.", "error");
-        return;
-      }
-
-      U.showMessage(els.planoMessage, "", "");
-      showStep(STEPS.EMPRESA);
-    });
-
-    els.formEmpresa.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = readEmpresaForm();
-      const error = validateEmpresa(data);
-      if (error) {
-        U.showMessage(els.empresaMessage, error, "error");
-        return;
-      }
-
-      State.setEmpresa(data);
-      U.showMessage(els.empresaMessage, "", "");
-      showStep(STEPS.RESPONSAVEL);
-    });
-
-    els.formResponsavel.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (isSubmitting) return;
-
-      const empresa = readEmpresaForm();
-      const responsavel = readResponsavelForm();
-      const empresaError = validateEmpresa(empresa);
-      const responsavelError = validateResponsavel(responsavel);
-
-      if (empresaError) {
-        U.showMessage(els.responsavelMessage, empresaError, "error");
-        showStep(STEPS.EMPRESA);
-        return;
-      }
-      if (responsavelError) {
-        U.showMessage(els.responsavelMessage, responsavelError, "error");
-        return;
-      }
-
-      const state = State.load();
-      if (!State.hasPlanoSelecionado()) {
-        U.showMessage(els.responsavelMessage, "Selecione um plano antes de continuar.", "error");
-        showStep(STEPS.PLANO);
-        renderPlanos();
-        return;
-      }
-
-      if (state.contratacaoId && !S.isTerminal(state.status)) {
-        try {
-          await syncWithServer();
-          const synced = State.load();
-          if (synced.contratacaoId && !S.isTerminal(synced.status)) {
-            await navigateByStatus();
-            return;
-          }
-        } catch (_) {
-          /* tenta criar nova ou trata conflito abaixo */
-        }
-      }
-
-      hideConflictPanel();
-      State.setEmpresa(empresa);
-      State.setResponsavel(responsavel);
-
-      const btn = $("btnCriarContratacao");
-      isSubmitting = true;
-      btn.disabled = true;
-      U.showMessage(els.responsavelMessage, "", "");
-
-      try {
-        const payload = {
-          planoId: Number(state.planoId),
-          faixaId: Number(state.faixaId),
-          razaoSocial: empresa.razaoSocial,
-          cnpj: empresa.cnpj,
-          emailCorporativo: empresa.emailCorporativo,
-          telefoneEmpresa: empresa.telefoneEmpresa,
-          cep: empresa.cep,
-          responsavelNome: responsavel.responsavelNome,
-          responsavelCpf: responsavel.responsavelCpf,
-          responsavelEmail: responsavel.responsavelEmail,
-          responsavelTelefone: responsavel.responsavelTelefone,
-        };
-
-        const result = await Api.criarContratacao(payload);
-        const contratacaoId = result.contratacaoId;
-        if (!contratacaoId) throw new Error("Resposta da API sem identificador da contratação.");
-
-        State.setContratacao(
-          contratacaoId,
-          S.normalizeStatus(result.status) || S.STATUS.AGUARDANDO_VALIDACAO_EMAIL,
-        );
-        State.save({ podeReenviarCodigo: true, podeCancelar: true });
-        checkoutOpened = false;
+    switch (action.getAttribute("data-action")) {
+      case "voltar-empresa":
         hideConflictPanel();
-        els.emailDestino.textContent = responsavel.responsavelEmail;
-        $("codigoEmail").value = "";
-        els.aceiteContrato.checked = false;
-        U.showMessage(els.emailMessage, "", "");
-        showStep(STEPS.EMAIL);
-        startEmailTimer();
-        updateEmailActionButtons();
-      } catch (err) {
-        if (err?.status === 409 && err.body) {
-          State.setEmpresa(empresa);
-          State.setResponsavel(responsavel);
-          handleConflict409(err);
-          return;
-        }
-        U.showMessage(
-          els.responsavelMessage,
-          err instanceof Error ? err.message : "Erro ao criar contratação.",
+        showStep(ETAPAS.EMPRESA);
+        break;
+      case "voltar-responsavel":
+        showStep(ETAPAS.RESPONSAVEL);
+        break;
+      case "cancelar-recomecar":
+        cancelarERecomecar(elementos.emailMessage);
+        break;
+      case "reiniciar":
+        resetParaNovaContratacao();
+        showStep(ETAPAS.PLANO);
+        renderPlanos();
+        UtilitariosContratacao.showMessage(
+          elementos.emailMessage,
+          "Para usar o mesmo CNPJ, cancele a contratação anterior ou continue de onde parou.",
           "error",
         );
-      } finally {
-        isSubmitting = false;
-        btn.disabled = false;
-      }
-    });
-
-    els.formEmail.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (isSubmitting) return;
-
-      const state = State.load();
-      const codigo = $("codigoEmail").value.trim();
-
-      if (!S.canValidateEmail(state.status)) {
-        try {
-          await syncWithServer();
-          await navigateByStatus();
-        } catch (err) {
-          U.showMessage(
-            els.emailMessage,
-            err instanceof Error ? err.message : "Não foi possível validar o status.",
-            "error",
-          );
-        }
-        return;
-      }
-
-      if (getEmailRemainingMs(state) <= 0) {
-        handleExpiredContratacao("O código expirou. Inicie uma nova contratação.");
-        return;
-      }
-
-      if ((state.emailAttempts || 0) >= EMAIL_MAX_ATTEMPTS) {
-        handleExpiredContratacao("Número máximo de tentativas atingido. Inicie uma nova contratação.");
-        return;
-      }
-
-      if (!U.isValidEmailCode(codigo)) {
-        U.showMessage(els.emailMessage, `Informe um código de ${EMAIL_CODE_LENGTH} dígitos.`, "error");
-        return;
-      }
-
-      const btn = $("btnValidarEmail");
-      isSubmitting = true;
-      btn.disabled = true;
-      U.showMessage(els.emailMessage, "", "");
-
-      try {
-        const result = await Api.validarEmail(state.contratacaoId, codigo);
-        State.save({ status: S.normalizeStatus(result.status) || S.STATUS.AGUARDANDO_ASSINATURA });
-        stopEmailTimer();
-        els.aceiteContrato.checked = false;
-        showStep(STEPS.CONTRATO);
-        await loadContract();
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Código inválido.";
-        const attempts = State.incrementEmailAttempts();
-
-        if (
-          attempts.emailAttempts >= EMAIL_MAX_ATTEMPTS ||
-          /expir/i.test(msg) ||
-          /cancel/i.test(msg)
-        ) {
-          handleExpiredContratacao(msg);
-          return;
-        }
-
-        U.showMessage(els.emailMessage, msg, "error");
-      } finally {
-        isSubmitting = false;
-        btn.disabled = false;
-      }
-    });
-
-    els.aceiteContrato.addEventListener("change", updateAceiteButton);
-
-    els.btnAceitarContrato.addEventListener("click", async () => {
-      if (isSubmitting) return;
-
-      const state = State.load();
-      if (!state.contratacaoId) {
-        U.showMessage(els.contratoMessage, "Contratação não encontrada. Recomece o processo.", "error");
-        return;
-      }
-
-      if (!contractLoaded || !els.aceiteContrato.checked) return;
-
-      if (!S.canAcceptContract(state.status) && !S.canOpenCheckout(state.status)) {
-        try {
-          await syncWithServer();
-        } catch (_) {
-          /* segue */
-        }
-      }
-
-      const current = State.load();
-      if (S.canOpenCheckout(current.status) && current.checkoutUrl) {
-        goToPayment(current.checkoutUrl);
-        return;
-      }
-
-      if (!S.canAcceptContract(current.status)) {
-        U.showMessage(
-          els.contratoMessage,
-          "O contrato só pode ser assinado após a validação do e-mail.",
-          "error",
-        );
-        await navigateByStatus();
-        return;
-      }
-
-      isSubmitting = true;
-      els.btnAceitarContrato.disabled = true;
-      U.showMessage(els.contratoMessage, "", "");
-
-      try {
-        const result = await Api.aceitarContrato(state.contratacaoId);
-        const normalized = applyStatusPayload(result);
-        const checkoutUrl = normalized.checkoutUrl;
-
-        if (!checkoutUrl && !S.canOpenCheckout(normalized.status)) {
-          throw new Error("Não foi possível obter o link de pagamento. Tente novamente.");
-        }
-
-        if (checkoutUrl) {
-          goToPayment(checkoutUrl);
-        } else {
-          await navigateByStatus();
-        }
-      } catch (err) {
-        U.showMessage(
-          els.contratoMessage,
-          err instanceof Error ? err.message : "Erro ao assinar contrato.",
-          "error",
-        );
-      } finally {
-        isSubmitting = false;
-        updateAceiteButton();
-      }
-    });
-
-    els.btnContractZoomIn?.addEventListener("click", () => {
-      contractZoom = Math.min(150, contractZoom + 10);
-      applyContractZoom();
-    });
-
-    els.btnContractZoomOut?.addEventListener("click", () => {
-      contractZoom = Math.max(70, contractZoom - 10);
-      applyContractZoom();
-    });
-
-    els.btnModalZoomIn?.addEventListener("click", () => {
-      contractModalZoom = Math.min(150, contractModalZoom + 10);
-      applyModalZoom();
-    });
-
-    els.btnModalZoomOut?.addEventListener("click", () => {
-      contractModalZoom = Math.max(70, contractModalZoom - 10);
-      applyModalZoom();
-    });
-
-    els.btnContractDownload?.addEventListener("click", downloadContractPdf);
-    els.btnModalDownload?.addEventListener("click", downloadContractPdf);
-    els.btnContractFullscreen?.addEventListener("click", toggleContractFullscreen);
-    els.btnCloseContractModal?.addEventListener("click", closeContractModal);
-    els.btnBaixarContrato?.addEventListener("click", downloadContractPdf);
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && els.contractModal && !els.contractModal.hidden) {
+        break;
+      case "voltar-contrato":
+        showStep(ETAPAS.CONTRATO);
+        break;
+      case "close-contract-modal":
         closeContractModal();
-      }
-    });
+        break;
+      default:
+        break;
+    }
+  });
+}
 
-    els.btnContinuarContratacao?.addEventListener("click", () => {
-      continuarContratacao(els.responsavelMessage);
-    });
-
-    els.btnReenviarCodigoConflict?.addEventListener("click", async () => {
-      await reenviarCodigo(els.responsavelMessage);
-      hideConflictPanel();
-      showStep(STEPS.EMAIL);
-    });
-
-    els.btnCancelarContratacao?.addEventListener("click", () => {
-      cancelarERecomecar(els.responsavelMessage);
-    });
-
-    els.btnReenviarCodigoEmail?.addEventListener("click", () => {
-      reenviarCodigo(els.emailMessage);
-    });
-
-    els.btnAtualizarStatus?.addEventListener("click", async () => {
-      try {
-        await syncWithServer();
-        await navigateByStatus();
-      } catch (err) {
-        els.pagamentoDescricao.textContent =
-          err instanceof Error ? err.message : "Erro ao atualizar status.";
-      }
-    });
-
-    els.btnAtualizarAcompanhamento?.addEventListener("click", async () => {
-      try {
-        const updated = await syncWithServer();
-        if (updated) renderAcompanhamentoStep(updated);
-        await navigateByStatus();
-      } catch (err) {
-        els.acompanhamentoDescricao.textContent =
-          err instanceof Error ? err.message : "Erro ao atualizar status.";
-      }
-    });
-
-    document.addEventListener("click", (e) => {
-      const action = e.target.closest("[data-action]");
-      if (!action) return;
-
-      switch (action.getAttribute("data-action")) {
-        case "voltar-empresa":
-          hideConflictPanel();
-          showStep(STEPS.EMPRESA);
-          break;
-        case "voltar-responsavel":
-          showStep(STEPS.RESPONSAVEL);
-          break;
-        case "cancelar-recomecar":
-          cancelarERecomecar(els.emailMessage);
-          break;
-        case "reiniciar":
-          resetParaNovaContratacao();
-          showStep(STEPS.PLANO);
-          renderPlanos();
-          U.showMessage(
-            els.emailMessage,
-            "Para usar o mesmo CNPJ, cancele a contratação anterior ou continue de onde parou.",
-            "error",
-          );
-          break;
-        case "voltar-contrato":
-          showStep(STEPS.CONTRATO);
-          break;
-        case "close-contract-modal":
-          closeContractModal();
-          break;
-        default:
-          break;
-      }
-    });
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
-})();
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}

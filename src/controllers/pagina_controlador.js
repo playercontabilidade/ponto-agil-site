@@ -1,4 +1,4 @@
-const api = require('../config/api');
+const configuracaoApi = require('../config/api');
 const planoServico = require('../services/plano_servico');
 const parceiroControlador = require('./parceiro_controlador');
 
@@ -23,7 +23,7 @@ async function exibirInicio(req, res, next) {
       planos,
       precificacao,
       parceiro: parceiroControlador.obterDaRequisicao(req),
-      apiBaseUrl: api.baseUrl,
+      apiBaseUrl: configuracaoApi.baseUrl,
     });
   } catch (erro) {
     next(erro);
@@ -37,13 +37,13 @@ const exibirPrivacidade = (req, res) => {
     conteudoParcial: 'pages/privacidade',
     estiloPagina: 'privacidade',
     exibirWhatsapp: false,
-    apiBaseUrl: api.baseUrl,
+    apiBaseUrl: configuracaoApi.baseUrl,
   });
 };
 
 const exibirContratacao = (req, res) => {
   res.render('pages/contratacao', {
-    apiBaseUrl: api.baseUrl,
+    apiBaseUrl: configuracaoApi.baseUrl,
   });
 };
 

@@ -35,10 +35,10 @@
 
   function load() {
     try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (!raw) return defaultState();
-      return { ...defaultState(), ...JSON.parse(raw) };
-    } catch (_) {
+      const estadoSerializado = sessionStorage.getItem(STORAGE_KEY);
+      if (!estadoSerializado) return defaultState();
+      return { ...defaultState(), ...JSON.parse(estadoSerializado) };
+    } catch (erroLeitura) {
       return defaultState();
     }
   }

@@ -42,13 +42,13 @@
   }
 
   function isTerminal(status) {
-    const s = normalizeStatus(status);
-    return s === STATUS.CONCLUIDA || s === STATUS.CANCELADA || s === STATUS.EXPIRADA;
+    const statusNormalizado = normalizeStatus(status);
+    return statusNormalizado === STATUS.CONCLUIDA || statusNormalizado === STATUS.CANCELADA || statusNormalizado === STATUS.EXPIRADA;
   }
 
   function isExpired(status) {
-    const s = normalizeStatus(status);
-    return s === STATUS.CANCELADA || s === STATUS.EXPIRADA;
+    const statusNormalizado = normalizeStatus(status);
+    return statusNormalizado === STATUS.CANCELADA || statusNormalizado === STATUS.EXPIRADA;
   }
 
   function canValidateEmail(status) {
@@ -56,19 +56,19 @@
   }
 
   function canViewContract(status) {
-    const s = normalizeStatus(status);
+    const statusNormalizado = normalizeStatus(status);
     return [
       STATUS.AGUARDANDO_ASSINATURA,
       STATUS.CONTRATO_ASSINADO,
       STATUS.AGUARDANDO_PAGAMENTO,
       STATUS.PAGAMENTO_CONFIRMADO,
       STATUS.CONCLUIDA,
-    ].includes(s);
+    ].includes(statusNormalizado);
   }
 
   function canAcceptContract(status) {
-    const s = normalizeStatus(status);
-    return s === STATUS.AGUARDANDO_ASSINATURA || s === STATUS.CONTRATO_ASSINADO;
+    const statusNormalizado = normalizeStatus(status);
+    return statusNormalizado === STATUS.AGUARDANDO_ASSINATURA || statusNormalizado === STATUS.CONTRATO_ASSINADO;
   }
 
   function canOpenCheckout(status) {
@@ -77,15 +77,15 @@
 
   function shouldPollStatus(status, concluida) {
     if (concluida) return false;
-    const s = normalizeStatus(status);
-    return s === STATUS.AGUARDANDO_PAGAMENTO || s === STATUS.PAGAMENTO_CONFIRMADO;
+    const statusNormalizado = normalizeStatus(status);
+    return statusNormalizado === STATUS.AGUARDANDO_PAGAMENTO || statusNormalizado === STATUS.PAGAMENTO_CONFIRMADO;
   }
 
   function resolveStep(status, concluida) {
     if (concluida || normalizeStatus(status) === STATUS.CONCLUIDA) return "acompanhamento";
-    const s = normalizeStatus(status);
+    const statusNormalizado = normalizeStatus(status);
 
-    switch (s) {
+    switch (statusNormalizado) {
       case STATUS.AGUARDANDO_VALIDACAO_EMAIL:
         return "email";
       case STATUS.AGUARDANDO_ASSINATURA:
@@ -113,22 +113,29 @@
   ];
 
   function getTrackerProgress(status, concluida) {
-    const s = normalizeStatus(status);
-    if (concluida || s === STATUS.CONCLUIDA) {
+    const statusNormalizado = normalizeStatus(status);
+    if (concluida || statusNormalizado === STATUS.CONCLUIDA) {
       return TRACKER_STEPS.map((step) => ({ ...step, state: "done" }));
     }
 
-    const order = ["dados", "email", "contrato", "pagamento", "concluida"];
-    let activeIndex = 0;
+    let indiceEtapaAtiva = 0;
 
-    if (s === STATUS.AGUARDANDO_VALIDACAO_EMAIL) activeIndex = 1;
-    else if (s === STATUS.AGUARDANDO_ASSINATURA) activeIndex = 2;
-    else if (s === STATUS.CONTRATO_ASSINADO || s === STATUS.AGUARDANDO_PAGAMENTO) activeIndex = 3;
-    else if (s === STATUS.PAGAMENTO_CONFIRMADO) activeIndex = 4;
+    if (statusNormalizado === STATUS.AGUARDANDO_VALIDACAO_EMAIL) indiceEtapaAtiva = 1;
+    else if (statusNormalizado === STATUS.AGUARDANDO_ASSINATURA) indiceEtapaAtiva = 2;
+    else if (
+      statusNormalizado === STATUS.CONTRATO_ASSINADO ||
+      statusNormalizado === STATUS.AGUARDANDO_PAGAMENTO
+    ) indiceEtapaAtiva = 3;
+    else if (statusNormalizado === STATUS.PAGAMENTO_CONFIRMADO) indiceEtapaAtiva = 4;
 
     return TRACKER_STEPS.map((step, index) => ({
       ...step,
-      state: index < activeIndex ? "done" : index === activeIndex ? "active" : "pending",
+      state:
+        index < indiceEtapaAtiva
+          ? "done"
+          : index === indiceEtapaAtiva
+            ? "active"
+            : "pending",
     }));
   }
 

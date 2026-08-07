@@ -90,12 +90,12 @@ function fecharModalCheckout() {
 }
 
 function obterRotuloCheckout(planoId, faixaId) {
-  const pid = Number(planoId);
-  const fid = Number(faixaId);
-  const plano = cachePlanos.find((item) => Number(item.id) === pid);
+  const identificadorPlano = Number(planoId);
+  const identificadorFaixa = Number(faixaId);
+  const plano = cachePlanos.find((item) => Number(item.id) === identificadorPlano);
   const faixa =
     plano && Array.isArray(plano.faixas)
-      ? plano.faixas.find((item) => Number(item.id) === fid)
+      ? plano.faixas.find((item) => Number(item.id) === identificadorFaixa)
       : null;
 
   if (plano && faixa) {
@@ -330,9 +330,9 @@ function vincularFormularioLead() {
 
       window.location.href = checkoutUrl;
     } catch (erro) {
-      const msg = erro instanceof Error ? erro.message : 'Erro inesperado. Tente novamente.';
+      const mensagemErro = erro instanceof Error ? erro.message : 'Erro inesperado. Tente novamente.';
       if (mensagem) {
-        mensagem.textContent = msg;
+        mensagem.textContent = mensagemErro;
         mensagem.style.display = 'block';
         mensagem.className = 'form-message error';
       }

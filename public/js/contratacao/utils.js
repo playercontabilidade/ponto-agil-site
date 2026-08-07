@@ -17,7 +17,7 @@
     if (!text) return null;
     try {
       return JSON.parse(text);
-    } catch (_) {
+    } catch {
       return { mensagem: text };
     }
   }
@@ -30,8 +30,8 @@
   }
 
   function maskCnpj(value) {
-    const d = onlyDigits(value).slice(0, 14);
-    return d
+    const somenteNumeros = onlyDigits(value).slice(0, 14);
+    return somenteNumeros
       .replace(/^(\d{2})(\d)/, "$1.$2")
       .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
       .replace(/\.(\d{3})(\d)/, ".$1/$2")
@@ -39,26 +39,28 @@
   }
 
   function maskCpf(value) {
-    const d = onlyDigits(value).slice(0, 11);
-    return d
+    const somenteNumeros = onlyDigits(value).slice(0, 11);
+    return somenteNumeros
       .replace(/^(\d{3})(\d)/, "$1.$2")
       .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
       .replace(/\.(\d{3})(\d)/, ".$1-$2");
   }
 
   function maskCep(value) {
-    const d = onlyDigits(value).slice(0, 8);
-    return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+    const somenteNumeros = onlyDigits(value).slice(0, 8);
+    return somenteNumeros.length > 5
+      ? `${somenteNumeros.slice(0, 5)}-${somenteNumeros.slice(5)}`
+      : somenteNumeros;
   }
 
   function maskPhone(value) {
-    const d = onlyDigits(value).slice(0, 11);
-    if (d.length <= 10) {
-      return d
+    const somenteNumeros = onlyDigits(value).slice(0, 11);
+    if (somenteNumeros.length <= 10) {
+      return somenteNumeros
         .replace(/^(\d{2})(\d)/, "($1) $2")
         .replace(/(\d{4})(\d)/, "$1-$2");
     }
-    return d
+    return somenteNumeros
       .replace(/^(\d{2})(\d)/, "($1) $2")
       .replace(/(\d{5})(\d)/, "$1-$2");
   }
@@ -66,11 +68,14 @@
   function bindMask(input, maskFn) {
     if (!input) return;
     input.addEventListener("input", () => {
-      const pos = input.selectionStart;
-      const before = input.value;
-      input.value = maskFn(before);
-      const diff = input.value.length - before.length;
-      input.setSelectionRange(pos + diff, pos + diff);
+      const posicaoCursor = input.selectionStart;
+      const valorAnterior = input.value;
+      input.value = maskFn(valorAnterior);
+      const diferencaTamanho = input.value.length - valorAnterior.length;
+      input.setSelectionRange(
+        posicaoCursor + diferencaTamanho,
+        posicaoCursor + diferencaTamanho,
+      );
     });
   }
 
@@ -91,8 +96,8 @@
   }
 
   function isValidPhone(value) {
-    const len = onlyDigits(value).length;
-    return len >= 10 && len <= 11;
+    const quantidadeDigitos = onlyDigits(value).length;
+    return quantidadeDigitos >= 10 && quantidadeDigitos <= 11;
   }
 
   function isValidEmailCode(value) {
@@ -101,9 +106,9 @@
 
   function formatCountdown(ms) {
     const total = Math.max(0, Math.floor(ms / 1000));
-    const min = Math.floor(total / 60);
-    const sec = total % 60;
-    return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    const minutos = Math.floor(total / 60);
+    const segundos = total % 60;
+    return `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
   }
 
   function getPlanWeight(name) {
