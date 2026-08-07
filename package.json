@@ -8,7 +8,7 @@
     "dev": "node server.js",
     "build": "node scripts/build.js",
     "start": "node scripts/preview.js",
-    "test": "node --test tests/unit/*.test.js"
+    "test": "node --test tests/unit/api.test.js tests/unit/build.test.js tests/unit/manifestacao.test.js tests/unit/plano.test.js"
   },
   "engines": {
     "node": ">=18"

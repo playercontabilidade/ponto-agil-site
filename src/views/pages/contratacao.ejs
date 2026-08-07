@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contratar - Ponto Ágil</title>
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/pages/contratacao.css" />
+  </head>
+  <body>
+    <header class="ctr-header">
+      <a href="/" class="ctr-logo" aria-label="Ponto Ágil - Início">
+        <img src="/images/logo.png" alt="Ponto Ágil" />
+      </a>
+      <span class="ctr-secure">
+        <span class="ctr-secure__dot" aria-hidden="true"></span>
+        Ambiente seguro
+        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+      </span>
+    </header>
+
+    <main class="ctr-shell">
+      <section class="ctr-main-card">
+        <div class="ctr-intro" id="ctrIntro" hidden>
+          <h1>Contrate o Ponto Ágil</h1>
+          <p>Comece sua gestão de ponto em poucos minutos.</p>
+        </div>
+
+        <nav class="ctr-stepper" id="stepper" aria-label="Etapas da contratação">
+          <div class="ctr-stepper__track">
+            <div class="ctr-stepper__item" data-stepper="empresa">
+              <span class="ctr-stepper__circle">1</span>
+              <span class="ctr-stepper__label">Dados da Empresa</span>
+            </div>
+            <div class="ctr-stepper__item" data-stepper="responsavel">
+              <span class="ctr-stepper__circle">2</span>
+              <span class="ctr-stepper__label">Responsável Legal</span>
+            </div>
+            <div class="ctr-stepper__item" data-stepper="contrato">
+              <span class="ctr-stepper__circle">3</span>
+              <span class="ctr-stepper__label">Contrato Digital</span>
+            </div>
+            <div class="ctr-stepper__item" data-stepper="pagamento">
+              <span class="ctr-stepper__circle">4</span>
+              <span class="ctr-stepper__label">Pagamento</span>
+            </div>
+            <div class="ctr-stepper__item" data-stepper="enviado">
+              <span class="ctr-stepper__circle">5</span>
+              <span class="ctr-stepper__label">Enviado</span>
+            </div>
+          </div>
+        </nav>
+
+        <!-- Etapa 0: Seleção de plano -->
+        <section class="ctr-step" id="step-plano" hidden>
+          <header class="ctr-step__head">
+            <span class="ctr-step__icon"><i class="fa-solid fa-cube" aria-hidden="true"></i></span>
+            <div>
+              <h2>Escolha seu plano</h2>
+              <p class="ctr-step__subtitle">Selecione o plano e a faixa de colaboradores para iniciar a contratação.</p>
+            </div>
+          </header>
+          <div id="planosContainer" class="planos-grid" aria-live="polite"></div>
+          <p id="planoMessage" class="form-message" hidden></p>
+        </section>
+
+        <!-- Etapa 1: Dados da empresa -->
+        <section class="ctr-step" id="step-empresa" hidden>
+          <header class="ctr-step__head">
+            <span class="ctr-step__icon"><i class="fa-solid fa-building" aria-hidden="true"></i></span>
+            <div>
+              <h2>Dados da Empresa</h2>
+              <p class="ctr-step__subtitle">Preencha as informações da sua empresa para iniciar a contratação.</p>
+            </div>
+          </header>
+          <form id="formEmpresa" class="ctr-form" novalidate>
+            <p class="ctr-form__section">Informações da Empresa</p>
+            <div class="ctr-form__grid">
+              <div class="field field--full">
+                <label class="label" for="razaoSocial">Razão Social</label>
+                <input
+                  class="control"
+                  type="text"
+                  id="razaoSocial"
+                  name="razaoSocial"
+                  placeholder="Nome da empresa"
+                  required
+                  autocomplete="organization"
+                />
+              </div>
+              <div class="field">
+                <label class="label" for="cnpj">CNPJ</label>
+                <input
+                  class="control"
+                  type="text"
+                  id="cnpj"
+                  name="cnpj"
+                  placeholder="00.000.000/0001-00"
+                  inputmode="numeric"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label class="label" for="emailCorporativo">E-mail Corporativo</label>
+                <input
+                  class="control"
+                  type="email"
+                  id="emailCorporativo"
+                  name="emailCorporativo"
+                  placeholder="contato@empresa.com.br"
+                  required
+                  autocomplete="email"
+                />
+              </div>
+              <div class="field">
+                <label class="label" for="telefoneEmpresa">Telefone Principal</label>
+                <input
+                  class="control"
+                  type="tel"
+                  id="telefoneEmpresa"
+                  name="telefoneEmpresa"
+                  placeholder="(11) 99999-9999"
+                  inputmode="tel"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label class="label" for="cep">CEP</label>
+                <input
+                  class="control"
+                  type="text"
+                  id="cep"
+                  name="cep"
+                  placeholder="00000-000"
+                  inputmode="numeric"
+                  required
+                />
+              </div>
+            </div>
+            <p id="empresaMessage" class="form-message" hidden></p>
+            <div class="ctr-actions">
+              <a href="/" class="btn btn-link">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar
+              </a>
+              <button class="btn btn-primary btn-grow" type="submit">
+                Continuar para Responsável Legal
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Etapa 2: Responsável legal -->
+        <section class="ctr-step" id="step-responsavel" hidden>
+          <header class="ctr-step__head">
+            <span class="ctr-step__icon"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
+            <div>
+              <h2>Responsável Legal</h2>
+              <p class="ctr-step__subtitle">Informe os dados do representante que assinará o contrato digitalmente.</p>
+            </div>
+          </header>
+          <form id="formResponsavel" class="ctr-form" novalidate>
+            <p class="ctr-form__section">Dados Pessoais</p>
+            <div class="ctr-form__grid">
+              <div class="field field--full">
+                <label class="label" for="responsavelNome">Nome Completo</label>
+                <input
+                  class="control"
+                  type="text"
+                  id="responsavelNome"
+                  name="responsavelNome"
+                  placeholder="Seu nome completo"
+                  required
+                  autocomplete="name"
+                />
+              </div>
+              <div class="field">
+                <label class="label" for="responsavelCpf">CPF</label>
+                <input
+                  class="control"
+                  type="text"
+                  id="responsavelCpf"
+                  name="responsavelCpf"
+                  placeholder="000.000.000-00"
+                  inputmode="numeric"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label class="label" for="responsavelEmail">E-mail Pessoal</label>
+                <input
+                  class="control"
+                  type="email"
+                  id="responsavelEmail"
+                  name="responsavelEmail"
+                  placeholder="voce@empresa.com.br"
+                  required
+                  autocomplete="email"
+                />
+              </div>
+              <div class="field field--full">
+                <label class="label" for="responsavelTelefone">Telefone / WhatsApp</label>
+                <input
+                  class="control"
+                  type="tel"
+                  id="responsavelTelefone"
+                  name="responsavelTelefone"
+                  placeholder="(11) 99999-9999"
+                  inputmode="tel"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="info-box">
+              <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+              <p>
+                De acordo com a Lei n.º 14.063/2020, a assinatura eletrônica realizada nesta plataforma
+                possui validade jurídica equivalente à assinatura manuscrita para contratos
+                celebrados por meios eletrônicos.
+              </p>
+            </div>
+
+            <p id="responsavelMessage" class="form-message" hidden></p>
+
+            <div id="conflictPanel" class="conflict-panel" hidden>
+              <p class="conflict-panel__title">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                Contratação em andamento
+              </p>
+              <p id="conflictMessage" class="conflict-panel__text"></p>
+              <p id="conflictEmail" class="conflict-panel__email" hidden></p>
+              <div class="conflict-panel__actions">
+                <button class="btn btn-primary btn-full" type="button" id="btnContinuarContratacao">
+                  Continuar contratação
+                </button>
+                <button class="btn btn-secondary btn-full" type="button" id="btnReenviarCodigoConflict" hidden>
+                  Reenviar código
+                </button>
+                <button class="btn btn-ghost btn-full" type="button" id="btnCancelarContratacao" hidden>
+                  Cancelar e começar de novo
+                </button>
+              </div>
+            </div>
+
+            <div class="ctr-actions" id="responsavelActions">
+              <button class="btn btn-link" type="button" data-action="voltar-empresa">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar
+              </button>
+              <button class="btn btn-primary btn-grow" type="submit" id="btnCriarContratacao">
+                Continuar para Contrato Digital
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Etapa 3: Validar e-mail -->
+        <section class="ctr-step" id="step-email" hidden>
+          <header class="ctr-step__head">
+            <span class="ctr-step__icon"><i class="fa-solid fa-envelope-circle-check" aria-hidden="true"></i></span>
+            <div>
+              <h2>Validar e-mail</h2>
+              <p class="ctr-step__subtitle">
+                Enviamos um código de <strong>6 dígitos</strong> para
+                <span id="emailDestino" class="ctr-highlight"></span>.
+                Insira abaixo para continuar.
+              </p>
+            </div>
+          </header>
+          <form id="formEmail" class="ctr-form" novalidate>
+            <div class="field">
+              <label class="label" for="codigoEmail">Código de verificação</label>
+              <input
+                class="control control--code"
+                type="text"
+                id="codigoEmail"
+                name="codigoEmail"
+                placeholder="000000"
+                inputmode="numeric"
+                maxlength="6"
+                pattern="\d{6}"
+                autocomplete="one-time-code"
+                required
+              />
+              <span class="help">
+                Expira em <span id="emailTimer">10:00</span>
+                · Tentativas restantes: <span id="emailAttemptsLeft">5</span>
+              </span>
+            </div>
+            <p id="emailMessage" class="form-message" hidden></p>
+            <div class="ctr-actions">
+              <button class="btn btn-link" type="button" data-action="voltar-responsavel">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar
+              </button>
+              <button class="btn btn-ghost" type="button" id="btnReenviarCodigoEmail" hidden>
+                Reenviar código
+              </button>
+              <button class="btn btn-ghost" type="button" data-action="cancelar-recomecar" id="btnCancelarRecomecar" hidden>
+                Cancelar e começar de novo
+              </button>
+              <button class="btn btn-ghost" type="button" data-action="reiniciar" id="btnRecomecarLocal" hidden>
+                Recomeçar
+              </button>
+              <button class="btn btn-primary btn-grow" type="submit" id="btnValidarEmail">
+                Validar código
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Etapa 4: Contrato digital -->
+        <section class="ctr-step" id="step-contrato" hidden>
+          <header class="ctr-step__head">
+            <span class="ctr-step__icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
+            <div>
+              <h2>Contrato Digital</h2>
+              <p class="ctr-step__subtitle">Leia e assine eletronicamente o contrato de prestação de serviços.</p>
+            </div>
+          </header>
+
+          <div class="legal-badges" aria-label="Referências legais">
+            <span class="legal-badge legal-badge--blue">Lei 14.063/2020</span>
+            <span class="legal-badge legal-badge--green">MP 2.200-2/2001</span>
+            <span class="legal-badge legal-badge--purple">LGPD 13.709/2018</span>
+          </div>
+
+          <div class="contract-viewer" id="contractViewer">
+            <div class="contract-viewer__toolbar">
+              <span class="contract-viewer__title">Contrato de Prestação de Serviços — Ponto Ágil</span>
+              <div class="contract-viewer__tools">
+                <button type="button" class="contract-tool" id="btnContractZoomOut" title="Diminuir zoom" aria-label="Diminuir zoom">
+                  <i class="fa-solid fa-minus" aria-hidden="true"></i>
+                </button>
+                <span class="contract-tool__zoom" id="contractZoomLabel">100%</span>
+                <button type="button" class="contract-tool" id="btnContractZoomIn" title="Aumentar zoom" aria-label="Aumentar zoom">
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="contract-tool" id="btnContractDownload" title="Baixar PDF" aria-label="Baixar PDF">
+                  <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="contract-tool" id="btnContractFullscreen" title="Abrir em tela cheia" aria-label="Abrir contrato em tela cheia">
+                  <i class="fa-solid fa-expand" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+            <div
+              id="contractContent"
+              class="contract-viewer__body"
+              aria-label="Conteúdo do contrato"
+            ></div>
+          </div>
+
+          <p id="hashDocumento" class="contract-hash" hidden></p>
+
+          <label class="accept-check">
+            <input type="checkbox" id="aceiteContrato" />
+            <span>
+              Li e concordo com os termos deste contrato, reconhecendo que esta assinatura eletrônica
+              possui validade jurídica nos termos da Lei n.º 14.063/2020 e equivale à assinatura manuscrita.
+            </span>
+          </label>
+
+          <p id="contratoMessage" class="form-message" hidden></p>
+          <div class="ctr-actions">
+            <button class="btn btn-link" type="button" data-action="voltar-email" disabled>
+              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar
+            </button>
+            <button class="btn btn-primary btn-grow" type="button" id="btnAceitarContrato" disabled>
+              Assinar e Prosseguir para Pagamento
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </section>
+
+        <!-- Etapa 5: Pagamento -->
+        <section class="ctr-step" id="step-pagamento" hidden>
+          <div class="payment-wait">
+            <div class="payment-wait__icon payment-wait__icon--pending">
+              <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+            </div>
+            <h2>Pagamento</h2>
+            <p id="pagamentoDescricao">
+              Realize o pagamento de forma segura. Após a confirmação, suas credenciais serão enviadas por e-mail.
+            </p>
+            <p class="status-chip" id="pagamentoStatusChip" hidden></p>
+            <button class="btn btn-primary" type="button" id="btnAbrirCheckout" hidden>
+              Ir para pagamento
+            </button>
+            <button class="btn btn-secondary" type="button" id="btnAtualizarStatus" hidden>
+              Atualizar status
+            </button>
+          </div>
+        </section>
+
+        <!-- Etapa 6: Acompanhamento / Enviado -->
+        <section class="ctr-step" id="step-acompanhamento" hidden>
+          <div class="success-panel" id="successPanel" hidden>
+            <div class="success-panel__icon">
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+            </div>
+            <h2>Contratação Concluída!</h2>
+            <p>
+              Sua empresa foi ativada com sucesso. Verifique seu e-mail para receber as credenciais
+              de acesso ao sistema.
+            </p>
+            <div class="success-panel__actions">
+              <a
+                href="https://www.pontoagil.com.br/login"
+                class="btn btn-primary"
+                id="btnIrLogin"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                Acessar o Sistema
+              </a>
+              <button class="btn btn-outline" type="button" id="btnBaixarContrato">
+                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+                Baixar Contrato em PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="processing-panel" id="processingPanel">
+            <div class="status-tracker" id="statusTracker" aria-live="polite"></div>
+            <div class="payment-wait">
+              <div class="payment-wait__icon" id="acompanhamentoIcon">
+                <i class="fa-solid fa-hourglass-half" aria-hidden="true"></i>
+              </div>
+              <h2 id="acompanhamentoTitulo">Processando contratação</h2>
+              <p id="acompanhamentoDescricao">
+                Estamos finalizando sua contratação. Você receberá as credenciais por e-mail assim que tudo estiver pronto.
+              </p>
+              <p class="status-chip" id="acompanhamentoStatusChip"></p>
+              <p class="status-id" id="acompanhamentoId" hidden></p>
+              <button class="btn btn-secondary" type="button" id="btnAtualizarAcompanhamento">
+                Atualizar status
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <p class="ctr-footer-note" id="ctrFooterNote">
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+          Seus dados estão protegidos e serão utilizados apenas para a contratação.
+        </p>
+      </section>
+
+      <aside class="ctr-sidebar" id="ctrSidebar" aria-label="Resumo da contratação" hidden>
+        <section class="sidebar-summary">
+          <h3>Resumo da Contratação</h3>
+          <div class="sidebar-summary__plan">
+            <span class="sidebar-summary__plan-label">Plano</span>
+            <div class="sidebar-summary__plan-row">
+              <strong id="sidebarPlanoNome">—</strong>
+              <span class="badge-recommended" id="sidebarRecommended" hidden>Recomendado</span>
+            </div>
+          </div>
+          <dl class="sidebar-summary__details">
+            <div>
+              <dt>Colaboradores</dt>
+              <dd id="sidebarFaixa">—</dd>
+            </div>
+          </dl>
+          <div class="sidebar-summary__price">
+            <span>Valor mensal</span>
+            <strong id="sidebarPreco">—</strong>
+          </div>
+        </section>
+
+        <section class="sidebar-guarantees">
+          <h3>Garantias Inclusas</h3>
+          <ul>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Assinatura eletrônica com validade jurídica.</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Ativação automática após pagamento.</li>
+            <li><i class="fa-solid fa-check" aria-hidden="true"></i> Suporte especializado em todo o processo.</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+
+    <div class="contract-modal" id="contractModal" hidden role="dialog" aria-modal="true" aria-label="Contrato em tela cheia">
+      <div class="contract-modal__backdrop" data-action="close-contract-modal"></div>
+      <div class="contract-modal__dialog">
+        <div class="contract-viewer contract-viewer--modal" id="contractViewerModal">
+          <div class="contract-viewer__toolbar">
+            <span class="contract-viewer__title">Contrato de Prestação de Serviços — Ponto Ágil</span>
+            <div class="contract-viewer__tools">
+              <button type="button" class="contract-tool" id="btnModalZoomOut" title="Diminuir zoom" aria-label="Diminuir zoom">
+                <i class="fa-solid fa-minus" aria-hidden="true"></i>
+              </button>
+              <span class="contract-tool__zoom" id="modalZoomLabel">100%</span>
+              <button type="button" class="contract-tool" id="btnModalZoomIn" title="Aumentar zoom" aria-label="Aumentar zoom">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="contract-tool" id="btnModalDownload" title="Baixar PDF" aria-label="Baixar PDF">
+                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="contract-tool" id="btnCloseContractModal" title="Fechar" aria-label="Fechar contrato">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+          <div id="contractContentModal" class="contract-viewer__body" aria-label="Conteúdo do contrato"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.PONTO_AGIL_CONFIG = <%- JSON.stringify({ api: apiBaseUrl }).replace(/</g, '\\u003c') %>;
+    </script>
+    <script src="/js/contratacao/config.js"></script>
+    <script src="/js/contratacao/utils.js"></script>
+    <script src="/js/contratacao/status.js"></script>
+    <script src="/js/contratacao/state.js"></script>
+    <script src="/js/contratacao/api.js"></script>
+    <script src="/js/contratacao/nucleo.js"></script>
+    <script src="/js/contratacao/formularios.js"></script>
+    <script src="/js/contratacao/email_planos.js"></script>
+    <script src="/js/contratacao/contrato.js"></script>
+    <script src="/js/contratacao/app.js"></script>
+  </body>
+</html>
