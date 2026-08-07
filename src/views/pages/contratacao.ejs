@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Contratar - Ponto Ágil</title>
-    <link rel="icon" type="image/png" href="../images/favicon.png" />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,12 +15,12 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="/css/pages/contratacao.css" />
   </head>
   <body>
     <header class="ctr-header">
-      <a href="../index.html" class="ctr-logo" aria-label="Ponto Ágil - Início">
-        <img src="../images/logo.png" alt="Ponto Ágil" />
+      <a href="/" class="ctr-logo" aria-label="Ponto Ágil - Início">
+        <img src="/images/logo.png" alt="Ponto Ágil" />
       </a>
       <span class="ctr-secure">
         <span class="ctr-secure__dot" aria-hidden="true"></span>
@@ -149,7 +149,7 @@
             </div>
             <p id="empresaMessage" class="form-message" hidden></p>
             <div class="ctr-actions">
-              <a href="../index.html" class="btn btn-link">
+              <a href="/" class="btn btn-link">
                 <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar
               </a>
               <button class="btn btn-primary btn-grow" type="submit">
@@ -517,12 +517,14 @@
       </div>
     </div>
 
-    <script src="../config.js"></script>
-    <script src="./config.js"></script>
-    <script src="./js/utils.js"></script>
-    <script src="./js/status.js"></script>
-    <script src="./js/state.js"></script>
-    <script src="./js/api.js"></script>
-    <script src="./js/app.js"></script>
+    <script>
+      window.PONTO_AGIL_CONFIG = <%- JSON.stringify({ api: apiBaseUrl }).replace(/</g, '\\u003c') %>;
+    </script>
+    <script src="/js/contratacao/config.js"></script>
+    <script src="/js/contratacao/utils.js"></script>
+    <script src="/js/contratacao/status.js"></script>
+    <script src="/js/contratacao/state.js"></script>
+    <script src="/js/contratacao/api.js"></script>
+    <script src="/js/contratacao/app.js"></script>
   </body>
 </html>
