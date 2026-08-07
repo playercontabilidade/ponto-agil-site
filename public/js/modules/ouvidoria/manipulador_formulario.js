@@ -1,17 +1,31 @@
-const {
-  baseUrl,
-  API_ENDPOINTS,
-  ALLOWED_MIME_TYPES,
-  ALLOWED_FILE_EXTENSIONS,
-  TIPOS_MANIFESTACAO,
-  TIPO_MANIFESTACAO_PADRAO,
-  TIPO_MANIFESTACAO,
-  ROTULOS_TIPO_MANIFESTACAO,
-} = window.PONTO_AGIL_CONFIG || {};
-if (!baseUrl || !API_ENDPOINTS) {
-  throw new Error(
-    "Configuração ausente: carregue ./config.js antes de ./script.js",
-  );
+import { hidratarEndpointsOuvidoria } from './endpoints_ouvidoria.js';
+
+const configBruta = window.PONTO_AGIL_CONFIG || {};
+const baseUrl = configBruta.baseUrl;
+const API_ENDPOINTS = hidratarEndpointsOuvidoria(configBruta.API_ENDPOINTS);
+const ALLOWED_MIME_TYPES = configBruta.ALLOWED_MIME_TYPES;
+const ALLOWED_FILE_EXTENSIONS = configBruta.ALLOWED_FILE_EXTENSIONS;
+const TIPOS_MANIFESTACAO = configBruta.TIPOS_MANIFESTACAO;
+const TIPO_MANIFESTACAO_PADRAO = configBruta.TIPO_MANIFESTACAO_PADRAO;
+const TIPO_MANIFESTACAO = configBruta.TIPO_MANIFESTACAO;
+const ROTULOS_TIPO_MANIFESTACAO = configBruta.ROTULOS_TIPO_MANIFESTACAO;
+
+function obterConfigOuvidoria() {
+  if (!baseUrl || !API_ENDPOINTS) {
+    throw new Error(
+      "Configuração ausente: dados da ouvidoria não foram injetados na página.",
+    );
+  }
+  return {
+    baseUrl,
+    API_ENDPOINTS,
+    ALLOWED_MIME_TYPES,
+    ALLOWED_FILE_EXTENSIONS,
+    TIPOS_MANIFESTACAO,
+    TIPO_MANIFESTACAO_PADRAO,
+    TIPO_MANIFESTACAO,
+    ROTULOS_TIPO_MANIFESTACAO,
+  };
 }
 
 /** tipoManifestacao na URL (?tipoManifestacao=...) ou fallback do config. */
@@ -1651,7 +1665,7 @@ function isFileBlocked(file) {
   return false;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function executarInicializacaoPrincipal() {
   const pageTitleEl = document.querySelector("main.card h1");
   const messageEl = document.getElementById("message");
   const btnNovaOuvidoria = document.getElementById("btnNovaOuvidoria");
@@ -2507,7 +2521,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await consultarProtocolo();
     });
   }
-});
+}
 
 function validarAnexosNovoAcompanhamento(files) {
   const list = Array.from(files || []);
@@ -2548,7 +2562,7 @@ function setNovoAcompanhamentoErro(el, on, message) {
   el.classList.add("is-visible");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function executarInicializacaoAcompanhamento() {
   const inputAnexosNovo = document.getElementById(
     "protocoloNovoAcompanhamentoAnexos",
   );
@@ -2707,4 +2721,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-});
+}
+
+export function inicializarManipuladorFormulario() {
+  obterConfigOuvidoria();
+  executarInicializacaoPrincipal();
+  executarInicializacaoAcompanhamento();
+}

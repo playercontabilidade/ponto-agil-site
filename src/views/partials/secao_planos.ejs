@@ -1,0 +1,50 @@
+<section class="pricing" id="planos">
+  <div class="container">
+    <h2 class="section-title" data-scroll-reveal>Planos feitos para o seu porte</h2>
+    <p class="section-subtitle" data-scroll-reveal>Compare opções e encontre o nível de gestão ideal para sua equipe.</p>
+    <div class="pricing-compare">
+      <div class="pricing-toggle" id="pricing-toggle" role="tablist" aria-label="Faixa de colaboradores">
+        <% if (precificacao && precificacao.paineis) { %>
+          <% precificacao.paineis.forEach((painel) => { %>
+            <button
+              type="button"
+              class="pricing-toggle-btn<%= painel.ativo ? ' active' : '' %>"
+              role="tab"
+              data-band="<%= painel.chave %>"
+            ><%= painel.nomeFaixa %></button>
+          <% }) %>
+        <% } %>
+      </div>
+      <div class="pricing-panel-wrap" id="pricing-panel-wrap">
+        <% if (precificacao && precificacao.paineis) { %>
+          <% precificacao.paineis.forEach((painel) => { %>
+            <% if (painel.acimaDe100) { %>
+              <div class="pricing-panel pricing-panel--large<%= painel.ativo ? ' active' : '' %>" data-band="<%= painel.chave %>">
+                <article class="plan-enterprise-card">
+                  <h4 class="plan-enterprise-title">Proposta especial</h4>
+                  <p class="plan-enterprise-text">
+                    Para empresas com <strong><%= painel.nomeFaixa %></strong>, elaboramos um plano sob medida.
+                    Entre em contato pelo WhatsApp e nossa equipe prepara a melhor proposta para você.
+                  </p>
+                  <a
+                    href="https://wa.me/5563993124723?text=<%= encodeURIComponent('Olá! Tenho interesse em uma proposta especial para a faixa ' + painel.nomeFaixa + '.') %>"
+                    class="btn btn-primary"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >Falar no WhatsApp</a>
+                </article>
+              </div>
+            <% } else { %>
+              <div class="pricing-panel pricing-panel-grid<%= painel.ativo ? ' active' : '' %>" data-band="<%= painel.chave %>">
+                <% painel.cards.forEach((card) => { %>
+                  <%- include('cards/card_plano', card) %>
+                <% }) %>
+              </div>
+            <% } %>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+    <p class="pricing-disclaimer">Valores meramente informativos e sujeitos a alteração sem aviso prévio. O pagamento da primeira mensalidade é realizado em ambiente seguro do provedor de pagamentos (checkout), após o preenchimento dos seus dados no formulário disponibilizado ao clicar em “Assinar”</p>
+  </div>
+</section>
