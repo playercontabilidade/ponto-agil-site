@@ -1,0 +1,23 @@
+<article class="plan-detail-card<%= emDestaque ? ' plan-detail-card--highlight' : '' %>">
+  <h4 class="plan-detail-name"><%= plano.nome || '' %></h4>
+  <p class="plan-detail-audience"><%= faixa.nome || '' %></p>
+  <p class="plan-detail-price">
+    R$&nbsp;<span><%= Number(faixa.preco || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %></span><small>/mês</small>
+  </p>
+  <ul class="plan-detail-list">
+    <% (Array.isArray(plano.funcionalidades) ? plano.funcionalidades : []).forEach((item) => { %>
+      <li><%= item.nome || '' %></li>
+    <% }) %>
+  </ul>
+  <% if (plano.id != null && faixa.id != null) { %>
+    <button
+      type="button"
+      class="<%= emDestaque ? 'plan-detail-cta plan-detail-cta--primary' : 'plan-detail-cta' %> plan-checkout-btn"
+      data-plan-id="<%= plano.id %>"
+      data-faixa-id="<%= faixa.id %>"
+      aria-label="Assinar <%= plano.nome || '' %> <%= faixa.nome || '' %>"
+    >Assinar</button>
+  <% } else { %>
+    <button type="button" class="<%= emDestaque ? 'plan-detail-cta plan-detail-cta--primary' : 'plan-detail-cta' %> open-lead-modal-btn">Falar com a equipe</button>
+  <% } %>
+</article>

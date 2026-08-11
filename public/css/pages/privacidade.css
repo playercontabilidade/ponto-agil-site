@@ -1,0 +1,150 @@
+.privacy-page {
+  padding-top: 100px;
+  padding-bottom: 80px;
+  background: var(--white);
+  min-height: 100vh;
+}
+
+.privacy-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  padding-top: 2rem;
+}
+
+.privacy-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 1rem;
+}
+
+.privacy-subtitle {
+  font-size: 1.125rem;
+  color: var(--gray-600);
+}
+
+.privacy-content {
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--white);
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--gray-200);
+}
+
+.privacy-section {
+  margin-bottom: 3rem;
+}
+
+.privacy-section:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-blue);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--secondary-color);
+}
+
+.privacy-section-text {
+  color: var(--gray-700);
+  line-height: 1.8;
+  margin-bottom: 1rem;
+}
+
+.privacy-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 1rem 0;
+}
+
+.privacy-list li {
+  padding: 0.75rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  color: var(--gray-700);
+  line-height: 1.7;
+}
+
+.privacy-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--secondary-color);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.privacy-highlight {
+  background: rgba(113, 198, 58, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid var(--secondary-color);
+  margin: 1.5rem 0;
+}
+
+.privacy-highlight-text {
+  color: var(--gray-800);
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.privacy-contact {
+  background: var(--very-light-blue);
+  padding: 2rem;
+  border-radius: 16px;
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.privacy-contact-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.privacy-contact-text {
+  color: var(--gray-600);
+}
+
+.privacy-contact-link {
+  color: var(--primary-blue);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.privacy-contact-link:hover {
+  color: var(--secondary-color);
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .privacy-content {
+    padding: 2rem 1.5rem;
+  }
+
+  .privacy-page {
+    padding-top: 80px;
+    padding-bottom: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .privacy-content {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  .privacy-section-title {
+    font-size: 1.25rem;
+  }
+
+  .privacy-title {
+    font-size: 1.75rem;
+  }
+}
