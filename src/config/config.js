@@ -6,7 +6,7 @@ const config = {
   apiBaseUrl:
     process.env.PONTO_AGIL_API ||
     (process.env.NODE_ENV === 'production'
-      ? 'https://pontoagil.playercontabilidade.com'
+      ? 'https://portal.pontoagil.com.br'
       : 'http://localhost:8080'),
 };
 
