@@ -98,3 +98,14 @@ test('build injeta dados da pagina como bloco JSON', () => {
     assert.match(html, new RegExp(`<script type="application/json" id="${id}">`));
   }
 });
+
+test('paginas declaram CSP sem unsafe-inline em script-src', async () => {
+  for (const pagina of ['index.html', 'ouvidoria/index.html', 'contratacao/index.html']) {
+    const html = await sistemaArquivos.promises.readFile(path.join(DIST, pagina), 'utf8');
+    const csp = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)"/);
+    assert.ok(csp, `${pagina} sem CSP`);
+    const scriptSrc = csp[1].match(/script-src([^;]*)/);
+    assert.ok(scriptSrc, `${pagina} sem script-src`);
+    assert.doesNotMatch(scriptSrc[1], /unsafe-inline/, `${pagina} tem unsafe-inline em script-src`);
+  }
+});
