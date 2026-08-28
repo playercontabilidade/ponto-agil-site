@@ -5,6 +5,7 @@ import {
   faixaEhAcimaDe100,
   interpretarErroApi,
 } from '../utils/formatadores.js';
+import { lerDadosPagina } from '../utils/dados_pagina.js';
 
 const WHATSAPP_URL = 'https://wa.me/5563993124723';
 const FAIXA_ENTERPRISE = 'Acima de 100 colaboradores';
@@ -13,12 +14,8 @@ let cachePlanos = [];
 let ultimoFocoModal = null;
 
 function obterBaseUrl() {
-  if (typeof window.PONTO_AGIL_API === 'string' && window.PONTO_AGIL_API) {
-    return window.PONTO_AGIL_API.replace(/\/$/, '');
-  }
-  if (window.__CONFIG__?.apiBaseUrl) {
-    return String(window.__CONFIG__.apiBaseUrl).replace(/\/$/, '');
-  }
+  const dados = lerDadosPagina();
+  if (dados?.apiBaseUrl) return String(dados.apiBaseUrl).replace(/\/$/, '');
   return 'http://localhost:8080';
 }
 
@@ -351,7 +348,8 @@ export async function inicializarPlanosUi() {
   vincularModalCheckout();
   vincularFormularioLead();
 
-  let planos = Array.isArray(window.__PLANOS__) ? window.__PLANOS__ : null;
+  const dadosPagina = lerDadosPagina();
+  let planos = Array.isArray(dadosPagina?.planos) ? dadosPagina.planos : null;
   if (!planos || planos.length === 0) {
     try {
       planos = await buscarPlanos();

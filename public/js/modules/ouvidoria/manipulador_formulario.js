@@ -1,6 +1,7 @@
 import { hidratarEndpointsOuvidoria } from './endpoints_ouvidoria.js';
+import { lerDadosPagina } from '../../utils/dados_pagina.js';
 
-const configBruta = window.PONTO_AGIL_CONFIG || {};
+const configBruta = lerDadosPagina('dados-ouvidoria') || {};
 const baseUrl = configBruta.baseUrl;
 const API_ENDPOINTS = hidratarEndpointsOuvidoria(configBruta.API_ENDPOINTS);
 const ALLOWED_MIME_TYPES = configBruta.ALLOWED_MIME_TYPES;

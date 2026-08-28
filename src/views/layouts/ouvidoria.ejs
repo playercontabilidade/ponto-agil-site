@@ -11,12 +11,7 @@
 
 <body>
   <%- include('../' + conteudoParcial) %>
-  <%
-    const scriptOuvidoria = [
-      'window.PONTO_AGIL_CONFIG=' + JSON.stringify(configOuvidoria),
-    ];
-  %>
-  <%- '<script>' + scriptOuvidoria.join(';') + ';</' + 'script>' %>
+  <script type="application/json" id="dados-ouvidoria"><%- JSON.stringify(configOuvidoria).replace(/</g, '\\u003c') %></script>
   <script type="module" src="/js/ouvidoria_app.js"></script>
 </body>
 
