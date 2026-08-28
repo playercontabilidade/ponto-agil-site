@@ -20,10 +20,6 @@ app.use(
   express.static(path.join(raizProjeto, 'node_modules', 'dompurify', 'dist')),
 );
 
-app.get('/mock.png', (req, res) => {
-  res.sendFile(path.join(raizProjeto, 'mock.png'));
-});
-
 app.get('/index.html', (req, res) => res.redirect(301, '/'));
 
 montarRotas(app);

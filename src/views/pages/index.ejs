@@ -45,7 +45,13 @@
                     </div>
                     <div class="hero-image">
                         <div class="prototype-placeholder">
-                            <img src="/mock.png" alt="Interface do Ponto Ágil" data-scroll-reveal>
+                            <picture>
+                                <source srcset="/images/mock.avif" type="image/avif">
+                                <source srcset="/images/mock.webp" type="image/webp">
+                                <img src="/images/mock.png" alt="Painel do Ponto Ágil mostrando registros de jornada"
+                                    width="1000" height="1000" fetchpriority="high" decoding="async"
+                                    data-scroll-reveal>
+                            </picture>
                         </div>
                     </div>
                 </div>

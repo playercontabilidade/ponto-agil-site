@@ -65,13 +65,6 @@ async function copiarAssets() {
       /* CNAME opcional */
     }
   }
-
-  const mock = path.join(RAIZ, 'mock.png');
-  try {
-    await sistemaArquivos.copyFile(mock, path.join(DIST, 'mock.png'));
-  } catch {
-    /* mock opcional */
-  }
 }
 
 function renderizar(template, locals) {

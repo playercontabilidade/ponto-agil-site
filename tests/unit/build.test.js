@@ -114,6 +114,16 @@ test('pagina de contratacao carrega o sanitizador antes do contrato', () => {
   assert.ok(posPurify < posContrato, 'purify precisa carregar antes de contrato.js');
 });
 
+test('hero usa picture com avif e dimensoes explicitas', () => {
+  const html = sistemaArquivos.readFileSync(path.join(DIST, 'index.html'), 'utf8');
+  assert.match(html, /<source[^>]+type="image\/avif"/);
+  assert.match(html, /<img[^>]+width="1000"[^>]+height="1000"/);
+  assert.match(html, /fetchpriority="high"/);
+  assert.ok(sistemaArquivos.existsSync(path.join(DIST, 'images', 'mock.avif')));
+  assert.ok(sistemaArquivos.existsSync(path.join(DIST, 'images', 'mock.webp')));
+  assert.ok(sistemaArquivos.existsSync(path.join(DIST, 'images', 'mock.png')));
+});
+
 test('paginas declaram CSP sem unsafe-inline em script-src', async () => {
   for (const pagina of ['index.html', 'ouvidoria/index.html', 'contratacao/index.html']) {
     const html = await sistemaArquivos.promises.readFile(path.join(DIST, pagina), 'utf8');
