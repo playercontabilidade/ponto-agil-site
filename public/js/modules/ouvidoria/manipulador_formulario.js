@@ -1764,6 +1764,25 @@ function executarInicializacaoPrincipal() {
 
   if (token) sessionStorage.setItem("ouvidoriaToken", token);
 
+  /**
+   * Tira o token da barra de enderecos depois de guardar na sessao.
+   * Enquanto ele fica na URL, vaza para o historico do navegador, para logs de
+   * proxy e para qualquer print ou link colado em chamado de suporte.
+   * Nao mexe nas requisicoes: elas continuam mandando o token igual.
+   */
+  function limparTokenDaUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('token')) return;
+    params.delete('token');
+    const query = params.toString();
+    const novaUrl = query
+      ? `${window.location.pathname}?${query}${window.location.hash}`
+      : `${window.location.pathname}${window.location.hash}`;
+    window.history.replaceState({}, '', novaUrl);
+  }
+
+  limparTokenDaUrl();
+
   const categoriaEl = document.getElementById("categoria");
   const departamentoEl = document.getElementById("departamento");
   const categoriaErrorEl = document.getElementById("categoriaError");
