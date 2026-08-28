@@ -134,3 +134,12 @@ test('paginas declaram CSP sem unsafe-inline em script-src', async () => {
     assert.doesNotMatch(scriptSrc[1], /unsafe-inline/, `${pagina} tem unsafe-inline em script-src`);
   }
 });
+
+test('home declara description, canonical e open graph', async () => {
+  const html = await sistemaArquivos.promises.readFile(path.join(DIST, 'index.html'), 'utf8');
+  assert.match(html, /<meta name="description" content="[^"]{50,}"/);
+  assert.match(html, /<link rel="canonical"/);
+  assert.match(html, /<meta property="og:title"/);
+  assert.match(html, /<meta property="og:image"/);
+  assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+});

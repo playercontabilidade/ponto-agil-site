@@ -93,6 +93,7 @@ async function montarHtmlInicio() {
     conteudoParcial: 'pages/index',
     estiloPagina: null,
     exibirWhatsapp: true,
+    caminhoCanonico: '/',
     planos,
     precificacao,
     parceiro: null,
@@ -107,6 +108,8 @@ function montarHtmlPrivacidade() {
     conteudoParcial: 'pages/privacidade',
     estiloPagina: 'privacidade',
     exibirWhatsapp: false,
+    descricao: 'Como o Ponto Ágil trata e protege os dados pessoais dos usuários e das empresas clientes.',
+    caminhoCanonico: '/privacidade',
     apiBaseUrl: configuracaoApi.baseUrl,
   });
 }
