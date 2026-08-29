@@ -1,0 +1,57 @@
+/* Faixa contato / atalho assinatura */
+.contact-strip {
+    padding: 72px 20px;
+    background: var(--gray-50);
+    position: relative;
+    border-top: 1px solid var(--gray-200);
+}
+
+.contact-strip__inner {
+    max-width: 920px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem 2rem;
+}
+
+.contact-strip__text {
+    flex: 1 1 280px;
+    text-align: left;
+}
+
+.contact-strip__title {
+    font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0 0 0.5rem;
+}
+
+.contact-strip__lead {
+    font-size: 1rem;
+    color: var(--gray-600);
+    line-height: 1.55;
+    margin: 0;
+    max-width: 520px;
+}
+
+.contact-strip__btn {
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .contact-strip__inner {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .contact-strip__text {
+        text-align: center;
+    }
+
+    .contact-strip__btn {
+        width: 100%;
+    }
+}

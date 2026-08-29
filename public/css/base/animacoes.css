@@ -1,0 +1,68 @@
+/* Animações Apple-style */
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section-title,
+.section-subtitle {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.section-title.animate-in,
+.section-subtitle.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.section-title[data-scroll-reveal].revealed,
+.section-subtitle[data-scroll-reveal].revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.testimonial-card[data-scroll-reveal].revealed {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.testimonial-card {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.testimonial-card.animate-in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.contact-strip__inner {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.contact-strip__inner.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+}

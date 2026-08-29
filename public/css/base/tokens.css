@@ -1,0 +1,21 @@
+:root {
+    --primary-blue: #194A92;
+    --dark-blue: #0f2d5a;
+    --medium-blue: #194A92;
+    --light-blue: #2d5ba8;
+    --accent-blue: #194A92;
+    --secondary-color: #71C63A;
+    --secondary-light: #8dd45a;
+    --secondary-dark: #5aa82e;
+    --very-light-blue: #f0f4f8;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --white: #ffffff;
+    --font-primary: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, sans-serif;
+}
