@@ -73,3 +73,54 @@ test('build injeta a API de produção na contratação', () => {
   assert.match(html, /https:\/\/pontoagil\.playercontabilidade\.com/);
   assert.doesNotMatch(html, /"api":"undefined"/);
 });
+
+test('build nao gera script inline executavel', () => {
+  for (const pagina of ['index.html', 'ouvidoria/index.html', 'contratacao/index.html']) {
+    const html = sistemaArquivos.readFileSync(path.join(DIST, pagina), 'utf8');
+    const scriptsInline =
+      html.match(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/json")[^>]*>/g) || [];
+    assert.equal(
+      scriptsInline.length,
+      0,
+      `${pagina}: esperava zero script inline executavel, achei ${scriptsInline.length}: ${scriptsInline.join(' ')}`,
+    );
+  }
+});
+
+test('build injeta dados da pagina como bloco JSON', () => {
+  const casos = [
+    { pagina: 'index.html', id: 'dados-pagina' },
+    { pagina: 'ouvidoria/index.html', id: 'dados-ouvidoria' },
+    { pagina: 'contratacao/index.html', id: 'dados-contratacao' },
+  ];
+  for (const { pagina, id } of casos) {
+    const html = sistemaArquivos.readFileSync(path.join(DIST, pagina), 'utf8');
+    assert.match(html, new RegExp(`<script type="application/json" id="${id}">`));
+  }
+});
+
+test('build publica o sanitizador em dist/js/vendor', () => {
+  assert.ok(sistemaArquivos.existsSync(path.join(DIST, 'js', 'vendor', 'purify.min.js')));
+});
+
+test('pagina de contratacao carrega o sanitizador antes do contrato', () => {
+  const html = sistemaArquivos.readFileSync(
+    path.join(DIST, 'contratacao', 'index.html'),
+    'utf8',
+  );
+  const posPurify = html.indexOf('/js/vendor/purify.min.js');
+  const posContrato = html.indexOf('/js/contratacao/contrato.js');
+  assert.ok(posPurify > -1, 'purify nao referenciado');
+  assert.ok(posPurify < posContrato, 'purify precisa carregar antes de contrato.js');
+});
+
+test('paginas declaram CSP sem unsafe-inline em script-src', async () => {
+  for (const pagina of ['index.html', 'ouvidoria/index.html', 'contratacao/index.html']) {
+    const html = await sistemaArquivos.promises.readFile(path.join(DIST, pagina), 'utf8');
+    const csp = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)"/);
+    assert.ok(csp, `${pagina} sem CSP`);
+    const scriptSrc = csp[1].match(/script-src([^;]*)/);
+    assert.ok(scriptSrc, `${pagina} sem script-src`);
+    assert.doesNotMatch(scriptSrc[1], /unsafe-inline/, `${pagina} tem unsafe-inline em script-src`);
+  }
+});
