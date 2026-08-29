@@ -29,12 +29,12 @@ e a configuração de analytics ficou em arquivo próprio. Sem essa condição a
 policy precisaria liberar inline e deixaria de bloquear coisas como
 `<img src=x onerror=...>`, que é exatamente o cenário que ela existe para impedir.
 
-Duas limitações conhecidas, registradas aqui para não virarem surpresa:
+O `style-src` também não usa `unsafe-inline`. Os atributos `style=` literais que
+existiam nas views viraram classe, e o `iframe` de impressão do contrato passou a
+receber estilo por propriedade (`elemento.style.prop`) em vez de `cssText`, que a
+policy trataria como estilo inline. Com isso a diretiva ficou fechada.
 
-`style-src` ainda precisa de `unsafe-inline` porque algumas views usam atributo
-`style=` literal. Liberar inline em estilo não permite executar JavaScript, então
-o impacto é bem menor que no caso de script. Quando esses atributos virarem
-classe, a diretiva pode apertar.
+Uma limitação conhecida fica registrada aqui para não virar surpresa:
 
 `frame-ancestors` só tem efeito como cabeçalho HTTP e é ignorado quando vem em
 meta tag. Ele está declarado assim mesmo para já estar no lugar certo caso o

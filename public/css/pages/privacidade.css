@@ -108,8 +108,18 @@
   margin-bottom: 0.5rem;
 }
 
+.privacy-highlight-title {
+  color: var(--gray-900);
+  margin-bottom: 0.75rem;
+  font-size: 1.125rem;
+}
+
 .privacy-contact-text {
   color: var(--gray-600);
+}
+
+.privacy-contact-text--espacado {
+  margin-top: 1rem;
 }
 
 .privacy-contact-link {

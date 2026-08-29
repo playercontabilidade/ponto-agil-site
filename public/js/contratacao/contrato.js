@@ -110,8 +110,12 @@ function printContractAsPdf(html) {
     iframe = document.createElement("iframe");
     iframe.id = "contract-print-frame";
     iframe.setAttribute("aria-hidden", "true");
-    iframe.style.cssText =
-      "position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none";
+    iframe.style.position = "fixed";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.opacity = "0";
+    iframe.style.pointerEvents = "none";
     document.body.appendChild(iframe);
   }
 

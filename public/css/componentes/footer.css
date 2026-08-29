@@ -102,6 +102,10 @@
     gap: 0.5rem;
 }
 
+.app-badge {
+    height: 40px;
+}
+
 .footer-bottom {
     text-align: center;
     padding-top: 2rem;
