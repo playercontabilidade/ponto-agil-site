@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://pontoagil.playercontabilidade.com; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title><%= titulo %></title>
   <link rel="icon" type="image/png" href="/images/favicon.png">
   <link rel="stylesheet" href="/css/pages/ouvidoria.css">
@@ -11,12 +14,7 @@
 
 <body>
   <%- include('../' + conteudoParcial) %>
-  <%
-    const scriptOuvidoria = [
-      'window.PONTO_AGIL_CONFIG=' + JSON.stringify(configOuvidoria),
-    ];
-  %>
-  <%- '<script>' + scriptOuvidoria.join(';') + ';</' + 'script>' %>
+  <script type="application/json" id="dados-ouvidoria"><%- JSON.stringify(configOuvidoria).replace(/</g, '\\u003c') %></script>
   <script type="module" src="/js/ouvidoria_app.js"></script>
 </body>
 

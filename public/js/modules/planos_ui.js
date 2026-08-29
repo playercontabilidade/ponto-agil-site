@@ -5,6 +5,8 @@ import {
   faixaEhAcimaDe100,
   interpretarErroApi,
 } from '../utils/formatadores.js';
+import { lerDadosPagina } from '../utils/dados_pagina.js';
+import { escaparHtml } from '../utils/escape_html.js';
 
 const WHATSAPP_URL = 'https://wa.me/5563993124723';
 const FAIXA_ENTERPRISE = 'Acima de 100 colaboradores';
@@ -13,12 +15,8 @@ let cachePlanos = [];
 let ultimoFocoModal = null;
 
 function obterBaseUrl() {
-  if (typeof window.PONTO_AGIL_API === 'string' && window.PONTO_AGIL_API) {
-    return window.PONTO_AGIL_API.replace(/\/$/, '');
-  }
-  if (window.__CONFIG__?.apiBaseUrl) {
-    return String(window.__CONFIG__.apiBaseUrl).replace(/\/$/, '');
-  }
+  const dados = lerDadosPagina();
+  if (dados?.apiBaseUrl) return String(dados.apiBaseUrl).replace(/\/$/, '');
   return 'http://localhost:8080';
 }
 
@@ -32,7 +30,7 @@ function criarPainelEnterprise(nomeFaixa, ativo) {
   painel.innerHTML = `
     <article class="plan-enterprise-card">
       <h4 class="plan-enterprise-title">Proposta especial</h4>
-      <p class="plan-enterprise-text">Para empresas com <strong>${nomeFaixa}</strong>, elaboramos um plano sob medida.
+      <p class="plan-enterprise-text">Para empresas com <strong>${escaparHtml(nomeFaixa)}</strong>, elaboramos um plano sob medida.
         Entre em contato pelo WhatsApp e nossa equipe prepara a melhor proposta para você.</p>
       <a href="${WHATSAPP_URL}?text=${textoWa}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>
     </article>
@@ -49,15 +47,15 @@ function criarCardPlano(plano, faixa, emDestaque) {
   const precoFaixa = faixa ? faixa.preco : 0;
   const botaoAssinar =
     plano.id != null && faixa && faixa.id != null
-      ? `<button type="button" class="${classeCta} plan-checkout-btn" data-plan-id="${plano.id}" data-faixa-id="${faixa.id}" aria-label="Assinar ${plano.nome || ''} ${nomeFaixa}">Assinar</button>`
+      ? `<button type="button" class="${classeCta} plan-checkout-btn" data-plan-id="${escaparHtml(plano.id)}" data-faixa-id="${escaparHtml(faixa.id)}" aria-label="Assinar ${escaparHtml(plano.nome || '')} ${escaparHtml(nomeFaixa)}">Assinar</button>`
       : `<button type="button" class="${classeCta} open-lead-modal-btn">Falar com a equipe</button>`;
 
   card.innerHTML = `
-    <h4 class="plan-detail-name">${plano.nome || ''}</h4>
-    <p class="plan-detail-audience">${nomeFaixa}</p>
+    <h4 class="plan-detail-name">${escaparHtml(plano.nome || '')}</h4>
+    <p class="plan-detail-audience">${escaparHtml(nomeFaixa)}</p>
     <p class="plan-detail-price">R$&nbsp;<span>${formatarMoedaBrl(precoFaixa)}</span><small>/mês</small></p>
     <ul class="plan-detail-list">
-      ${funcionalidades.map((item) => `<li>${item.nome || ''}</li>`).join('')}
+      ${funcionalidades.map((item) => `<li>${escaparHtml(item.nome || '')}</li>`).join('')}
     </ul>
     ${botaoAssinar}
   `;
@@ -351,7 +349,8 @@ export async function inicializarPlanosUi() {
   vincularModalCheckout();
   vincularFormularioLead();
 
-  let planos = Array.isArray(window.__PLANOS__) ? window.__PLANOS__ : null;
+  const dadosPagina = lerDadosPagina();
+  let planos = Array.isArray(dadosPagina?.planos) ? dadosPagina.planos : null;
   if (!planos || planos.length === 0) {
     try {
       planos = await buscarPlanos();

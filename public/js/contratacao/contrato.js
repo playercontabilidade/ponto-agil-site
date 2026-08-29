@@ -1,3 +1,28 @@
+// O corpo do contrato vem da API como HTML e precisa continuar sendo HTML,
+// entao escapar quebraria a funcionalidade. A saida passa por sanitizacao.
+// A lista permite so formatacao de documento: nada de script, iframe, form,
+// handler de evento ou href javascript:.
+const CONFIG_SANITIZACAO = {
+  ALLOWED_TAGS: [
+    'p', 'br', 'hr', 'span', 'div', 'strong', 'b', 'em', 'i', 'u', 's',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+    'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
+    'blockquote', 'pre', 'code', 'sup', 'sub', 'small',
+  ],
+  ALLOWED_ATTR: ['class', 'colspan', 'rowspan', 'align', 'scope'],
+  ALLOW_DATA_ATTR: false,
+};
+
+function sanitizarContrato(html) {
+  if (!html) return '';
+  if (!window.DOMPurify) {
+    // Falha fechada: sem sanitizador, nao renderiza HTML nao confiavel.
+    return '<p>Não foi possível exibir o contrato com segurança. Recarregue a página.</p>';
+  }
+  return window.DOMPurify.sanitize(html, CONFIG_SANITIZACAO);
+}
+
 function applyContractZoom() {
   if (!elementos.contractContent) return;
   elementos.contractContent.style.transform = `scale(${zoomContrato / 100})`;
@@ -14,7 +39,7 @@ function openContractModal() {
   const html = getContractHtmlForExport();
   if (!html || !elementos.contractModal || !elementos.contractContentModal) return;
 
-  elementos.contractContentModal.innerHTML = html;
+  elementos.contractContentModal.innerHTML = sanitizarContrato(html);
   elementos.contractContentModal.scrollTop = 0;
   zoomModalContrato = zoomContrato;
   applyModalZoom();
@@ -77,7 +102,7 @@ function printContractAsPdf(html) {
 <title>Contrato - Ponto Ágil</title>
 <style>${printStyles}</style>
 </head>
-<body>${html}</body>
+<body>${sanitizarContrato(html)}</body>
 </html>`;
 
   let iframe = document.getElementById("contract-print-frame");
@@ -85,8 +110,12 @@ function printContractAsPdf(html) {
     iframe = document.createElement("iframe");
     iframe.id = "contract-print-frame";
     iframe.setAttribute("aria-hidden", "true");
-    iframe.style.cssText =
-      "position:fixed;width:0;height:0;border:0;opacity:0;pointer-events:none";
+    iframe.style.position = "fixed";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.opacity = "0";
+    iframe.style.pointerEvents = "none";
     document.body.appendChild(iframe);
   }
 
@@ -146,7 +175,7 @@ async function loadContract() {
   try {
     const data = await ApiContratacao.getContrato(state.contratacaoId);
     htmlContratoEmCache = data.conteudoHtml || "";
-    elementos.contractContent.innerHTML = htmlContratoEmCache || "<p>Contrato indisponível.</p>";
+    elementos.contractContent.innerHTML = sanitizarContrato(htmlContratoEmCache) || "<p>Contrato indisponível.</p>";
     elementos.contractContent.scrollTop = 0;
     contratoCarregado = Boolean(data.conteudoHtml);
     zoomContrato = 100;

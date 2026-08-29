@@ -126,6 +126,24 @@
     el.hidden = !text;
   }
 
+  // Mesma implementacao de public/js/utils/escape_html.js, duplicada aqui porque
+  // este arquivo e um script classico (carregado via <script src>, sem import) e
+  // email_planos.js consome escaparHtml pelo global ContratacaoUtils, nao por
+  // modulo ES. Cobre tambem contexto de atributo, por isso aspas simples e
+  // duplas entram no mapa.
+  const MAPA_ENTIDADES_HTML = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+
+  function escaparHtml(valor) {
+    if (valor === null || valor === undefined) return "";
+    return String(valor).replace(/[&<>"']/g, (caractere) => MAPA_ENTIDADES_HTML[caractere]);
+  }
+
   window.ContratacaoUtils = Object.freeze({
     onlyDigits,
     formatCurrencyBRL,
@@ -145,5 +163,6 @@
     formatCountdown,
     getPlanWeight,
     showMessage,
+    escaparHtml,
   });
 })();
