@@ -1,6 +1,7 @@
 (function () {
   const { baseUrl, API_ENDPOINTS } = window.PONTO_AGIL_CONTRATACAO_CONFIG;
   const { parseApiError, parseApiBody } = window.ContratacaoUtils;
+  let sessionToken = null;
 
   function createApiError(response, body, message) {
     const erroApi = new Error(message || `Erro HTTP ${response.status}`);
@@ -15,12 +16,20 @@
       ...options,
       headers: {
         Accept: "application/json",
+        ...(sessionToken
+          ? { Authorization: `Bearer ${sessionToken}` }
+          : {}),
         ...(options?.body ? { "Content-Type": "application/json" } : {}),
         ...options?.headers,
       },
     });
 
     const body = await parseApiBody(response);
+
+    if (response.status === 401) {
+      sessionToken = null;
+      window.dispatchEvent(new CustomEvent("contratacao-sessao-expirada"));
+    }
 
     if (!response.ok) {
       const message =
@@ -80,6 +89,10 @@
     });
   }
 
+  function definirSessaoTemporaria(token) {
+    sessionToken = token || null;
+  }
+
   window.ContratacaoApi = Object.freeze({
     getPlanosPublicos,
     criarContratacao,
@@ -89,5 +102,6 @@
     getStatus,
     reenviarCodigo,
     cancelarContratacao,
+    definirSessaoTemporaria,
   });
 })();
