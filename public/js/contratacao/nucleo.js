@@ -204,11 +204,31 @@ function renderSidebarSummary() {
 function applyStatusPayload(payload) {
   const status = StatusContratacao.normalizeStatus(payload?.status);
   const checkoutUrl = payload?.checkoutUrl ?? payload?.checkout_url ?? null;
+  const current = EstadoContratacao.load();
   return EstadoContratacao.save({
     status,
     concluida: Boolean(payload?.concluida),
     checkoutUrl: checkoutUrl || EstadoContratacao.load().checkoutUrl,
+    planoNome: payload?.planoNome ?? current.planoNome,
+    faixaNome: payload?.faixaNome ?? current.faixaNome,
+    planoPreco: payload?.valorContratado ?? current.planoPreco,
+    empresa: {
+      ...current.empresa,
+      razaoSocial: payload?.razaoSocial ?? current.empresa.razaoSocial,
+      emailCorporativo: payload?.emailCorporativo ?? current.empresa.emailCorporativo,
+      telefoneEmpresa: payload?.telefoneEmpresa ?? current.empresa.telefoneEmpresa,
+      cep: payload?.cep ?? current.empresa.cep,
+    },
+    responsavel: {
+      ...current.responsavel,
+      responsavelNome: payload?.responsavelNome ?? current.responsavel.responsavelNome,
+      responsavelEmail: payload?.responsavelEmailMascarado ?? current.responsavel.responsavelEmail,
+    },
   });
+}
+
+function estaEmModoPreview() {
+  return Boolean(EstadoContratacao.load().modoPreview);
 }
 
 function renderStatusTracker(status, concluida) {
@@ -317,6 +337,18 @@ async function navigateByStatus(preferredStep) {
         ? "Esta contratação foi cancelada. Inicie uma nova contratação."
         : "Esta contratação expirou. Inicie uma nova contratação.",
     );
+    return;
+  }
+
+  if (estaEmModoPreview() && StatusContratacao.canViewContract(status)) {
+    showStep(ETAPAS.CONTRATO);
+    await loadContract();
+    return;
+  }
+
+  if (estaEmModoPreview()) {
+    renderAcompanhamentoStep(state);
+    showStep(ETAPAS.ACOMPANHAMENTO);
     return;
   }
 

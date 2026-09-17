@@ -1,7 +1,13 @@
 (function () {
   const { baseUrl, API_ENDPOINTS } = window.PONTO_AGIL_CONTRATACAO_CONFIG;
   const { parseApiError, parseApiBody } = window.ContratacaoUtils;
-  let sessionToken = null;
+  const parametrosUrl = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const publicIdDaUrl = window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1] ||
+    parametrosUrl.get("publicId") || parametrosUrl.get("contratacaoId") || "global";
+  const tokenStorageKey = `ponto_agil_contratacao_token_${publicIdDaUrl}`;
+  let sessionToken =
+    parametrosUrl.get("previewToken") || parametrosUrl.get("sessionToken") ||
+    sessionStorage.getItem(tokenStorageKey) || null;
 
   function createApiError(response, body, message) {
     const erroApi = new Error(message || `Erro HTTP ${response.status}`);
@@ -28,6 +34,7 @@
 
     if (response.status === 401) {
       sessionToken = null;
+      sessionStorage.removeItem(tokenStorageKey);
       window.dispatchEvent(new CustomEvent("contratacao-sessao-expirada"));
     }
 
@@ -91,6 +98,8 @@
 
   function definirSessaoTemporaria(token) {
     sessionToken = token || null;
+    if (sessionToken) sessionStorage.setItem(tokenStorageKey, sessionToken);
+    else sessionStorage.removeItem(tokenStorageKey);
   }
 
   window.ContratacaoApi = Object.freeze({

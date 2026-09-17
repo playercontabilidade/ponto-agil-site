@@ -27,6 +27,15 @@ aplicacao.get('/contratacao', (req, res) => {
   res.sendFile(path.join(DIST, 'contratacao', 'index.html'));
 });
 
+aplicacao.get('/contratacao/:publicId', (req, res) => {
+  res.sendFile(path.join(DIST, 'contratacao', 'index.html'));
+});
+
 aplicacao.listen(config.porta, () => {
-  console.log(`Preview estático em http://localhost:${config.porta}`);
+  console.log(`Site: http://localhost:${config.porta}`);
+  console.log(`API: ${config.apiBaseUrl}`);
+  if (config.ambiente === 'production') {
+    console.warn('ATENÇÃO: este preview usa a API DE PRODUÇÃO.');
+    console.warn('Alterações feitas no site podem afetar dados e serviços reais.');
+  }
 });

@@ -30,6 +30,40 @@ async function resumeFromState() {
   return false;
 }
 
+function aplicarSessaoDaUrl() {
+  const fragmento = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : "";
+  const parametrosFragmento = new URLSearchParams(fragmento);
+  const parametrosQuery = new URLSearchParams(window.location.search);
+  const sessionToken =
+    parametrosFragmento.get("sessionToken") || parametrosQuery.get("sessionToken");
+  const previewToken =
+    parametrosFragmento.get("previewToken") || parametrosQuery.get("previewToken");
+  const contratacaoId =
+    parametrosFragmento.get("contratacaoId") ||
+    parametrosFragmento.get("publicId") ||
+    parametrosQuery.get("contratacaoId") ||
+    parametrosQuery.get("publicId") ||
+    window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
+
+  const token = previewToken || sessionToken;
+  if (!token || !contratacaoId) return false;
+
+  ApiContratacao.definirSessaoTemporaria(token);
+  if (previewToken || sessionToken) {
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+  }
+  EstadoContratacao.save({
+    contratacaoId,
+    status: null,
+    concluida: false,
+    modoPreview: Boolean(previewToken),
+    contratacaoCreatedAt: Date.now(),
+  });
+  return true;
+}
+
 async function init() {
   window.addEventListener("contratacao-sessao-expirada", () => {
     EstadoContratacao.save({ status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL });
@@ -55,9 +89,15 @@ async function init() {
     );
   }
 
+  aplicarSessaoDaUrl();
+
   const params = new URLSearchParams(window.location.search);
   const planoParam = params.get("planoId");
   const faixaParam = params.get("faixaId");
+  const publicIdDaRota = window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
+  if (publicIdDaRota && !EstadoContratacao.load().contratacaoId) {
+    EstadoContratacao.save({ contratacaoId: publicIdDaRota });
+  }
 
   if (planoParam && faixaParam && applyPlanoFromParams(planoParam, faixaParam)) {
     if (!(await resumeFromState())) showStep(ETAPAS.EMPRESA);

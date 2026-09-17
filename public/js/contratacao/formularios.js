@@ -82,14 +82,12 @@ function showConflictPanel(body, mensagem) {
 
 function handleConflict409(erro) {
   const body = erro.body || {};
-  EstadoContratacao.applyConflictPayload(body);
-
-  if (body.responsavelEmail) {
-    elementos.emailDestino.textContent = body.responsavelEmail;
-  }
-
-  showConflictPanel(body, erro.message);
-  UtilitariosContratacao.showMessage(elementos.responsavelMessage, "", "");
+  hideConflictPanel();
+  UtilitariosContratacao.showMessage(
+    elementos.responsavelMessage,
+    body.mensagem || erro.message || "Já existe uma contratação em andamento para este CNPJ.",
+    "error",
+  );
 }
 
 function updateEmailActionButtons() {
