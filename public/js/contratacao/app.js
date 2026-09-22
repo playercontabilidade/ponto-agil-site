@@ -95,12 +95,26 @@ async function init() {
   const planoParam = params.get("planoId");
   const faixaParam = params.get("faixaId");
   const publicIdDaRota = window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
-  if (publicIdDaRota && !EstadoContratacao.load().contratacaoId) {
-    EstadoContratacao.save({ contratacaoId: publicIdDaRota });
+  const entrouPorLinkPublico = Boolean(
+    publicIdDaRota &&
+    !params.get("previewToken") &&
+    !params.get("sessionToken") &&
+    !window.location.hash,
+  );
+  if (entrouPorLinkPublico) {
+    EstadoContratacao.save({
+      contratacaoId: publicIdDaRota,
+      status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL,
+      modoPreview: false,
+      podeReenviarCodigo: true,
+      podeCancelar: true,
+    });
   }
 
   if (planoParam && faixaParam && applyPlanoFromParams(planoParam, faixaParam)) {
     if (!(await resumeFromState())) showStep(ETAPAS.EMPRESA);
+  } else if (entrouPorLinkPublico) {
+    showStep(ETAPAS.EMAIL);
   } else if (!(await resumeFromState())) {
     showStep(ETAPAS.PLANO);
     renderPlanos();
@@ -356,7 +370,11 @@ function bindEvents() {
       const normalized = applyStatusPayload(result);
       const checkoutUrl = normalized.checkoutUrl;
 
-      if (!checkoutUrl && !StatusContratacao.canOpenCheckout(normalized.status)) {
+      const aguardandoPagamento =
+        StatusContratacao.normalizeStatus(normalized.status) ===
+        StatusContratacao.STATUS.AGUARDANDO_PAGAMENTO;
+
+      if (aguardandoPagamento && !checkoutUrl) {
         throw new Error("Não foi possível obter o link de pagamento. Tente novamente.");
       }
 
@@ -425,6 +443,18 @@ function bindEvents() {
 
   elementos.btnReenviarCodigoEmail?.addEventListener("click", () => {
     reenviarCodigo(elementos.emailMessage);
+  });
+
+  elementos.btnReenviarCodigoExpirada?.addEventListener("click", async () => {
+    await reenviarCodigo(elementos.expiradaMessage);
+    const state = EstadoContratacao.load();
+    if (StatusContratacao.canValidateEmail(state.status)) showStep(ETAPAS.EMAIL);
+  });
+
+  elementos.btnNovaContratacaoExpirada?.addEventListener("click", () => {
+    resetParaNovaContratacao();
+    showStep(EstadoContratacao.hasPlanoSelecionado() ? ETAPAS.EMPRESA : ETAPAS.PLANO);
+    if (!EstadoContratacao.hasPlanoSelecionado()) renderPlanos();
   });
 
   elementos.btnAtualizarStatus?.addEventListener("click", async () => {

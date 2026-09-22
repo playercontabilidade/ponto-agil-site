@@ -16,6 +16,8 @@
       `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/reenviar-codigo`,
     CANCELAR: (id) =>
       `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/cancelar`,
+    REGULARIZAR_CORTESIA: (id) =>
+      `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/regularizar-cortesia`,
   };
 
   const STATUS_POLL_INTERVAL_MS = 10_000;

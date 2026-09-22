@@ -209,20 +209,30 @@ async function cancelarERecomecar(messageEl) {
   }
 }
 
-function handleExpiredContratacao(message) {
+function handleExpiredContratacao(message, { cancelada = false } = {}) {
   stopStatusPolling();
   stopEmailTimer();
   hideConflictPanel();
-  EstadoContratacao.clearContratacao();
+  EstadoContratacao.save({
+    status: cancelada ? StatusContratacao.STATUS.CANCELADA : StatusContratacao.STATUS.EXPIRADA,
+    concluida: false,
+    podeReenviarCodigo: !cancelada,
+    podeCancelar: false,
+  });
   contratoCarregado = false;
   htmlContratoEmCache = "";
   checkoutAberto = false;
   elementos.aceiteContrato.checked = false;
-  UtilitariosContratacao.showMessage(
-    elementos.emailMessage,
-    message || "A contratação expirou. Selecione o plano novamente para recomeçar.",
-    "error",
-  );
-  showStep(ETAPAS.PLANO);
-  renderPlanos();
+  if (elementos.expiradaMessage) {
+    elementos.expiradaMessage.textContent = message || (cancelada
+      ? "Esta contratação foi cancelada. Inicie uma nova contratação."
+      : "O código expirou. Você pode solicitar um novo código.");
+    elementos.expiradaMessage.hidden = false;
+  }
+  if (elementos.expiradaTitulo) {
+    elementos.expiradaTitulo.textContent = cancelada ? "Contratação cancelada" : "Código expirado";
+  }
+  if (elementos.btnReenviarCodigoExpirada) elementos.btnReenviarCodigoExpirada.hidden = cancelada;
+  if (elementos.btnNovaContratacaoExpirada) elementos.btnNovaContratacaoExpirada.hidden = false;
+  showStep(ETAPAS.EXPIRADA);
 }

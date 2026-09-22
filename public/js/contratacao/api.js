@@ -96,6 +96,13 @@
     });
   }
 
+  function regularizarCortesia(contratacaoId, exigePagamento) {
+    return request(API_ENDPOINTS.REGULARIZAR_CORTESIA(contratacaoId), {
+      method: "POST",
+      body: JSON.stringify({ exigePagamento: Boolean(exigePagamento) }),
+    });
+  }
+
   function definirSessaoTemporaria(token) {
     sessionToken = token || null;
     if (sessionToken) sessionStorage.setItem(tokenStorageKey, sessionToken);
@@ -111,6 +118,7 @@
     getStatus,
     reenviarCodigo,
     cancelarContratacao,
+    regularizarCortesia,
     definirSessaoTemporaria,
   });
 })();

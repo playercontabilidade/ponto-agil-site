@@ -319,6 +319,27 @@
           </form>
         </section>
 
+        <section class="ctr-step" id="step-expirada" hidden>
+          <header class="ctr-step__head">
+            <span class="ctr-step__icon"><i class="fa-solid fa-link-slash" aria-hidden="true"></i></span>
+            <div>
+              <h2 id="expiradaTitulo">Link expirado</h2>
+              <p class="ctr-step__subtitle">Este link de contratação não está mais disponível.</p>
+            </div>
+          </header>
+          <p id="expiradaMessage" class="form-message form-message--error">
+            Solicite um novo link ao responsável pela contratação.
+          </p>
+          <div class="ctr-actions">
+            <button class="btn btn-ghost" type="button" id="btnReenviarCodigoExpirada" hidden>
+              Reenviar código
+            </button>
+            <button class="btn btn-primary" type="button" id="btnNovaContratacaoExpirada">
+              Iniciar nova contratação
+            </button>
+          </div>
+        </section>
+
         <!-- Etapa 4: Contrato digital -->
         <section class="ctr-step" id="step-contrato" hidden>
           <header class="ctr-step__head">
