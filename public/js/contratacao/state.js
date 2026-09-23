@@ -15,7 +15,9 @@
     planoPreco: 0,
     planoFuncionalidades: [],
     contratacaoId: null,
+    fluxo: "CRIACAO_PORTAL",
     status: null,
+    origem: null,
     concluida: false,
     checkoutUrl: null,
     hashDocumento: null,
@@ -64,7 +66,9 @@
   function clearContratacao() {
     return save({
       contratacaoId: null,
+      fluxo: "CRIACAO_PORTAL",
       status: null,
+      origem: null,
       concluida: false,
       checkoutUrl: null,
       hashDocumento: null,
@@ -114,6 +118,7 @@
   function setContratacao(contratacaoId, status) {
     return save({
       contratacaoId,
+      fluxo: "CONTRATACAO_EXISTENTE",
       status,
       contratacaoCreatedAt: Date.now(),
       emailAttempts: 0,

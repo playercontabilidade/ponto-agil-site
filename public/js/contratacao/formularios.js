@@ -209,6 +209,12 @@ async function cancelarERecomecar(messageEl) {
   }
 }
 
+function podeIniciarNovaContratacao(state) {
+  return state?.fluxo === "CRIACAO_PORTAL" &&
+    !state?.contratacaoId &&
+    !state?.modoPreview;
+}
+
 function handleExpiredContratacao(message, { cancelada = false } = {}) {
   stopStatusPolling();
   stopEmailTimer();
@@ -223,16 +229,19 @@ function handleExpiredContratacao(message, { cancelada = false } = {}) {
   htmlContratoEmCache = "";
   checkoutAberto = false;
   elementos.aceiteContrato.checked = false;
+  const permitirNovaContratacao = !cancelada && podeIniciarNovaContratacao(EstadoContratacao.load());
   if (elementos.expiradaMessage) {
     elementos.expiradaMessage.textContent = message || (cancelada
       ? "Esta contratação foi cancelada. Inicie uma nova contratação."
-      : "O código expirou. Você pode solicitar um novo código.");
+      : permitirNovaContratacao
+        ? "O código expirou. Você pode iniciar uma nova contratação."
+        : "Este link de contratação expirou. Solicite um novo link ao seu contato comercial.");
     elementos.expiradaMessage.hidden = false;
   }
   if (elementos.expiradaTitulo) {
     elementos.expiradaTitulo.textContent = cancelada ? "Contratação cancelada" : "Código expirado";
   }
   if (elementos.btnReenviarCodigoExpirada) elementos.btnReenviarCodigoExpirada.hidden = cancelada;
-  if (elementos.btnNovaContratacaoExpirada) elementos.btnNovaContratacaoExpirada.hidden = false;
+  if (elementos.btnNovaContratacaoExpirada) elementos.btnNovaContratacaoExpirada.hidden = !permitirNovaContratacao;
   showStep(ETAPAS.EXPIRADA);
 }

@@ -157,7 +157,7 @@ function updateLayoutForStep(step) {
   if (elementos.ctrShell) {
     elementos.ctrShell.classList.toggle("ctr-shell--single", !showSidebar);
   }
-  if (showSidebar) renderSidebarSummary();
+  if (showSidebar) renderSidebarSummary(EstadoContratacao.load());
 }
 
 function updateStepper(step) {
@@ -193,19 +193,19 @@ function updateStepper(step) {
   }
 }
 
-function renderSidebarSummary() {
-  const state = EstadoContratacao.load();
-  const possuiResumo = EstadoContratacao.hasPlanoSelecionado() ||
-    state.planoNome || state.faixaNome || state.planoContinuidadeNome || state.faixaContinuidadeNome;
+function renderSidebarSummary(resumo = EstadoContratacao.load()) {
+  const possuiResumo = resumo.planoNome || resumo.faixaNome ||
+    resumo.planoContinuidadeNome || resumo.faixaContinuidadeNome;
+
   if (!possuiResumo) return;
 
-  if (elementos.sidebarPlanoNome) elementos.sidebarPlanoNome.textContent = state.planoContinuidadeNome || state.planoNome || "Não configurado";
-  if (elementos.sidebarFaixa) elementos.sidebarFaixa.textContent = state.faixaContinuidadeNome || state.faixaNome || "Não configurada";
+  if (elementos.sidebarPlanoNome) elementos.sidebarPlanoNome.textContent = resumo.planoContinuidadeNome || resumo.planoNome || "Não configurado";
+  if (elementos.sidebarFaixa) elementos.sidebarFaixa.textContent = resumo.faixaContinuidadeNome || resumo.faixaNome || "Não configurada";
   if (elementos.sidebarPreco) {
-    elementos.sidebarPreco.textContent = `R$ ${UtilitariosContratacao.formatCurrencyBRL(state.planoPreco)}`;
+    elementos.sidebarPreco.textContent = `R$ ${UtilitariosContratacao.formatCurrencyBRL(resumo.planoPreco)}`;
   }
 
-  const nome = String(state.planoNome || "").toLowerCase();
+  const nome = String(resumo.planoNome || resumo.planoContinuidadeNome || "").toLowerCase();
   const isRecommended =
     nome.includes("essencial") || nome.includes("profissional") || nome.includes("recomend");
   if (elementos.sidebarRecommended) elementos.sidebarRecommended.hidden = !isRecommended;
@@ -215,8 +215,9 @@ function applyStatusPayload(payload) {
   const status = StatusContratacao.normalizeStatus(payload?.status);
   const checkoutUrl = payload?.checkoutUrl ?? payload?.checkout_url ?? null;
   const current = EstadoContratacao.load();
-  return EstadoContratacao.save({
+  const normalized = EstadoContratacao.save({
     status,
+    origem: payload?.origem ?? current.origem,
     concluida: Boolean(payload?.concluida),
     checkoutUrl: checkoutUrl || EstadoContratacao.load().checkoutUrl,
     planoNome: payload?.planoNome ?? current.planoNome,
@@ -241,6 +242,8 @@ function applyStatusPayload(payload) {
       responsavelEmail: payload?.responsavelEmailMascarado ?? current.responsavel.responsavelEmail,
     },
   });
+  renderSidebarSummary(normalized);
+  return normalized;
 }
 
 function estaEmModoPreview() {
@@ -366,6 +369,19 @@ async function navigateByStatus(preferredStep) {
   ) {
     renderAcompanhamentoStep(state);
     showStep(ETAPAS.ACOMPANHAMENTO);
+    return;
+  }
+
+  const pagamentoPendente =
+    status === StatusContratacao.STATUS.AGUARDANDO_PAGAMENTO ||
+    (status === StatusContratacao.STATUS.CONTRATO_ASSINADO && state.exigePagamento === true);
+
+  if (pagamentoPendente) {
+    renderPagamentoStep(state);
+    showStep(ETAPAS.PAGAMENTO);
+    if (state.checkoutUrl && !checkoutAberto && !estaEmModoPreview()) {
+      openCheckout(state.checkoutUrl);
+    }
     return;
   }
 

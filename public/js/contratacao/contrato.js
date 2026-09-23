@@ -195,6 +195,11 @@ function goToPayment(checkoutUrl) {
     status: StatusContratacao.STATUS.AGUARDANDO_PAGAMENTO,
   });
   renderPagamentoStep(updated);
-  showStep(ETAPAS.PAGAMENTO);
+  const estadoAtualizado = EstadoContratacao.load();
+  if (estadoAtualizado.exigePagamento === true) {
+    showStep(ETAPAS.PAGAMENTO);
+  } else {
+    showStep(ETAPAS.ACOMPANHAMENTO);
+  }
   if (checkoutUrl) openCheckout(checkoutUrl);
 }

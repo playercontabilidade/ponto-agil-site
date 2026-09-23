@@ -56,6 +56,7 @@ function aplicarSessaoDaUrl() {
   }
   EstadoContratacao.save({
     contratacaoId,
+    fluxo: "CONTRATACAO_EXISTENTE",
     status: null,
     concluida: false,
     modoPreview: Boolean(previewToken),
@@ -104,6 +105,7 @@ async function init() {
   if (entrouPorLinkPublico) {
     EstadoContratacao.save({
       contratacaoId: publicIdDaRota,
+      fluxo: "CONTRATACAO_EXISTENTE",
       status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL,
       modoPreview: false,
       podeReenviarCodigo: true,
