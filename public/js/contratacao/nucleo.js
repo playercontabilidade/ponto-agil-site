@@ -15,6 +15,7 @@ const ETAPAS = {
   EMPRESA: "empresa",
   RESPONSAVEL: "responsavel",
   EMAIL: "email",
+  EXPIRADA: "expirada",
   CONTRATO: "contrato",
   PAGAMENTO: "pagamento",
   ACOMPANHAMENTO: "acompanhamento",
@@ -52,6 +53,8 @@ const elementos = {
   empresaMessage: document.getElementById("empresaMessage"),
   responsavelMessage: document.getElementById("responsavelMessage"),
   emailMessage: document.getElementById("emailMessage"),
+  expiradaMessage: document.getElementById("expiradaMessage"),
+  expiradaTitulo: document.getElementById("expiradaTitulo"),
   contratoMessage: document.getElementById("contratoMessage"),
   emailDestino: document.getElementById("emailDestino"),
   emailTimer: document.getElementById("emailTimer"),
@@ -106,6 +109,8 @@ const elementos = {
   btnReenviarCodigoEmail: document.getElementById("btnReenviarCodigoEmail"),
   btnCancelarRecomecar: document.getElementById("btnCancelarRecomecar"),
   btnRecomecarLocal: document.getElementById("btnRecomecarLocal"),
+  btnReenviarCodigoExpirada: document.getElementById("btnReenviarCodigoExpirada"),
+  btnNovaContratacaoExpirada: document.getElementById("btnNovaContratacaoExpirada"),
 };
 
 function $(id) {
@@ -122,7 +127,7 @@ function showStep(step) {
     section.hidden = section.id !== `step-${step}`;
   });
 
-  const hideStepper = step === ETAPAS.PLANO;
+  const hideStepper = step === ETAPAS.PLANO || step === ETAPAS.EXPIRADA;
   elementos.stepper.classList.toggle("is-hidden", hideStepper);
   updateStepper(step);
   updateLayoutForStep(step);
@@ -140,7 +145,10 @@ function updateLayoutForStep(step) {
   const showSidebar =
     step !== ETAPAS.PLANO &&
     step !== ETAPAS.ACOMPANHAMENTO &&
-    EstadoContratacao.hasPlanoSelecionado();
+    (EstadoContratacao.hasPlanoSelecionado() || (() => {
+      const state = EstadoContratacao.load();
+      return Boolean(state.contratacaoId && (state.planoNome || state.faixaNome || state.planoContinuidadeNome || state.faixaContinuidadeNome));
+    })());
   if (elementos.ctrSidebar) elementos.ctrSidebar.hidden = !showSidebar;
   if (elementos.ctrIntro) elementos.ctrIntro.hidden = step !== ETAPAS.PLANO;
   if (elementos.ctrFooterNote) {
@@ -149,7 +157,7 @@ function updateLayoutForStep(step) {
   if (elementos.ctrShell) {
     elementos.ctrShell.classList.toggle("ctr-shell--single", !showSidebar);
   }
-  if (showSidebar) renderSidebarSummary();
+  if (showSidebar) renderSidebarSummary(EstadoContratacao.load());
 }
 
 function updateStepper(step) {
@@ -185,17 +193,19 @@ function updateStepper(step) {
   }
 }
 
-function renderSidebarSummary() {
-  const state = EstadoContratacao.load();
-  if (!EstadoContratacao.hasPlanoSelecionado()) return;
+function renderSidebarSummary(resumo = EstadoContratacao.load()) {
+  const possuiResumo = resumo.planoNome || resumo.faixaNome ||
+    resumo.planoContinuidadeNome || resumo.faixaContinuidadeNome;
 
-  if (elementos.sidebarPlanoNome) elementos.sidebarPlanoNome.textContent = state.planoNome || "—";
-  if (elementos.sidebarFaixa) elementos.sidebarFaixa.textContent = state.faixaNome || "—";
+  if (!possuiResumo) return;
+
+  if (elementos.sidebarPlanoNome) elementos.sidebarPlanoNome.textContent = resumo.planoContinuidadeNome || resumo.planoNome || "Não configurado";
+  if (elementos.sidebarFaixa) elementos.sidebarFaixa.textContent = resumo.faixaContinuidadeNome || resumo.faixaNome || "Não configurada";
   if (elementos.sidebarPreco) {
-    elementos.sidebarPreco.textContent = `R$ ${UtilitariosContratacao.formatCurrencyBRL(state.planoPreco)}`;
+    elementos.sidebarPreco.textContent = `R$ ${UtilitariosContratacao.formatCurrencyBRL(resumo.planoPreco)}`;
   }
 
-  const nome = String(state.planoNome || "").toLowerCase();
+  const nome = String(resumo.planoNome || resumo.planoContinuidadeNome || "").toLowerCase();
   const isRecommended =
     nome.includes("essencial") || nome.includes("profissional") || nome.includes("recomend");
   if (elementos.sidebarRecommended) elementos.sidebarRecommended.hidden = !isRecommended;
@@ -204,11 +214,40 @@ function renderSidebarSummary() {
 function applyStatusPayload(payload) {
   const status = StatusContratacao.normalizeStatus(payload?.status);
   const checkoutUrl = payload?.checkoutUrl ?? payload?.checkout_url ?? null;
-  return EstadoContratacao.save({
+  const current = EstadoContratacao.load();
+  const normalized = EstadoContratacao.save({
     status,
+    origem: payload?.origem ?? current.origem,
     concluida: Boolean(payload?.concluida),
     checkoutUrl: checkoutUrl || EstadoContratacao.load().checkoutUrl,
+    planoNome: payload?.planoNome ?? current.planoNome,
+    faixaNome: payload?.faixaNome ?? current.faixaNome,
+    modalidade: payload?.modalidade ?? current.modalidade,
+    vigenciaInicio: payload?.vigenciaInicio ?? current.vigenciaInicio,
+    vigenciaTermino: payload?.vigenciaTermino ?? current.vigenciaTermino,
+    planoContinuidadeNome: payload?.planoContinuidadeNome ?? current.planoContinuidadeNome,
+    faixaContinuidadeNome: payload?.faixaContinuidadeNome ?? current.faixaContinuidadeNome,
+    exigePagamento: typeof payload?.exigePagamento === "boolean" ? payload.exigePagamento : current.exigePagamento,
+    planoPreco: payload?.valorContratado ?? current.planoPreco,
+    empresa: {
+      ...current.empresa,
+      razaoSocial: payload?.razaoSocial ?? current.empresa.razaoSocial,
+      emailCorporativo: payload?.emailCorporativo ?? current.empresa.emailCorporativo,
+      telefoneEmpresa: payload?.telefoneEmpresa ?? current.empresa.telefoneEmpresa,
+      cep: payload?.cep ?? current.empresa.cep,
+    },
+    responsavel: {
+      ...current.responsavel,
+      responsavelNome: payload?.responsavelNome ?? current.responsavel.responsavelNome,
+      responsavelEmail: payload?.responsavelEmailMascarado ?? current.responsavel.responsavelEmail,
+    },
   });
+  renderSidebarSummary(normalized);
+  return normalized;
+}
+
+function estaEmModoPreview() {
+  return Boolean(EstadoContratacao.load().modoPreview);
 }
 
 function renderStatusTracker(status, concluida) {
@@ -316,11 +355,43 @@ async function navigateByStatus(preferredStep) {
       status === StatusContratacao.STATUS.CANCELADA
         ? "Esta contratação foi cancelada. Inicie uma nova contratação."
         : "Esta contratação expirou. Inicie uma nova contratação.",
+      { cancelada: status === StatusContratacao.STATUS.CANCELADA },
     );
     return;
   }
 
-  if (concluida || status === StatusContratacao.STATUS.CONCLUIDA) {
+  // A contratação concluída deve abrir no acompanhamento, inclusive no
+  // preview administrativo; o contrato fica disponível para consulta, mas
+  // não deve reabrir a etapa de assinatura.
+  if (
+    concluida ||
+    status === StatusContratacao.STATUS.CONCLUIDA
+  ) {
+    renderAcompanhamentoStep(state);
+    showStep(ETAPAS.ACOMPANHAMENTO);
+    return;
+  }
+
+  const pagamentoPendente =
+    status === StatusContratacao.STATUS.AGUARDANDO_PAGAMENTO ||
+    (status === StatusContratacao.STATUS.CONTRATO_ASSINADO && state.exigePagamento === true);
+
+  if (pagamentoPendente) {
+    renderPagamentoStep(state);
+    showStep(ETAPAS.PAGAMENTO);
+    if (state.checkoutUrl && !checkoutAberto && !estaEmModoPreview()) {
+      openCheckout(state.checkoutUrl);
+    }
+    return;
+  }
+
+  if (estaEmModoPreview() && StatusContratacao.canViewContract(status)) {
+    showStep(ETAPAS.CONTRATO);
+    await loadContract();
+    return;
+  }
+
+  if (estaEmModoPreview()) {
     renderAcompanhamentoStep(state);
     showStep(ETAPAS.ACOMPANHAMENTO);
     return;
@@ -328,6 +399,15 @@ async function navigateByStatus(preferredStep) {
 
   const step = preferredStep || StatusContratacao.resolveStep(status, concluida);
   if (!step) return;
+
+  // Uma contratação sem cobrança nunca deve cair na etapa de pagamento,
+  // mesmo que uma sessão antiga ainda tenha ficado em CONTRATO_ASSINADO.
+  if (state.exigePagamento === false
+      && status === StatusContratacao.STATUS.CONTRATO_ASSINADO) {
+    renderAcompanhamentoStep({ ...state, status: StatusContratacao.STATUS.CONCLUIDA, concluida: true });
+    showStep(ETAPAS.ACOMPANHAMENTO);
+    return;
+  }
 
   switch (step) {
     case "email":

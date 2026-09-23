@@ -82,14 +82,12 @@ function showConflictPanel(body, mensagem) {
 
 function handleConflict409(erro) {
   const body = erro.body || {};
-  EstadoContratacao.applyConflictPayload(body);
-
-  if (body.responsavelEmail) {
-    elementos.emailDestino.textContent = body.responsavelEmail;
-  }
-
-  showConflictPanel(body, erro.message);
-  UtilitariosContratacao.showMessage(elementos.responsavelMessage, "", "");
+  hideConflictPanel();
+  UtilitariosContratacao.showMessage(
+    elementos.responsavelMessage,
+    body.mensagem || erro.message || "Já existe uma contratação em andamento para este CNPJ.",
+    "error",
+  );
 }
 
 function updateEmailActionButtons() {
@@ -211,20 +209,39 @@ async function cancelarERecomecar(messageEl) {
   }
 }
 
-function handleExpiredContratacao(message) {
+function podeIniciarNovaContratacao(state) {
+  return state?.fluxo === "CRIACAO_PORTAL" &&
+    !state?.contratacaoId &&
+    !state?.modoPreview;
+}
+
+function handleExpiredContratacao(message, { cancelada = false } = {}) {
   stopStatusPolling();
   stopEmailTimer();
   hideConflictPanel();
-  EstadoContratacao.clearContratacao();
+  EstadoContratacao.save({
+    status: cancelada ? StatusContratacao.STATUS.CANCELADA : StatusContratacao.STATUS.EXPIRADA,
+    concluida: false,
+    podeReenviarCodigo: !cancelada,
+    podeCancelar: false,
+  });
   contratoCarregado = false;
   htmlContratoEmCache = "";
   checkoutAberto = false;
   elementos.aceiteContrato.checked = false;
-  UtilitariosContratacao.showMessage(
-    elementos.emailMessage,
-    message || "A contratação expirou. Selecione o plano novamente para recomeçar.",
-    "error",
-  );
-  showStep(ETAPAS.PLANO);
-  renderPlanos();
+  const permitirNovaContratacao = !cancelada && podeIniciarNovaContratacao(EstadoContratacao.load());
+  if (elementos.expiradaMessage) {
+    elementos.expiradaMessage.textContent = message || (cancelada
+      ? "Esta contratação foi cancelada. Inicie uma nova contratação."
+      : permitirNovaContratacao
+        ? "O código expirou. Você pode iniciar uma nova contratação."
+        : "Este link de contratação expirou. Solicite um novo link ao seu contato comercial.");
+    elementos.expiradaMessage.hidden = false;
+  }
+  if (elementos.expiradaTitulo) {
+    elementos.expiradaTitulo.textContent = cancelada ? "Contratação cancelada" : "Código expirado";
+  }
+  if (elementos.btnReenviarCodigoExpirada) elementos.btnReenviarCodigoExpirada.hidden = cancelada;
+  if (elementos.btnNovaContratacaoExpirada) elementos.btnNovaContratacaoExpirada.hidden = !permitirNovaContratacao;
+  showStep(ETAPAS.EXPIRADA);
 }
