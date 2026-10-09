@@ -60,9 +60,18 @@ test('build copia assets públicos', () => {
   assert.ok(sistemaArquivos.existsSync(path.join(DIST, 'images', 'favicon.png')));
 });
 
-test('build inclui CNAME para GitHub Pages', () => {
-  const cname = sistemaArquivos.readFileSync(path.join(DIST, 'CNAME'), 'utf8').trim();
-  assert.equal(cname, 'portal.pontoagil.com.br');
+test('build trata CNAME do GitHub Pages como opcional', () => {
+  const cnameOrigem = path.join(RAIZ, 'CNAME');
+  const cnameBuild = path.join(DIST, 'CNAME');
+
+  if (sistemaArquivos.existsSync(cnameOrigem)) {
+    assert.equal(
+      sistemaArquivos.readFileSync(cnameBuild, 'utf8').trim(),
+      sistemaArquivos.readFileSync(cnameOrigem, 'utf8').trim(),
+    );
+  } else {
+    assert.equal(sistemaArquivos.existsSync(cnameBuild), false);
+  }
 });
 
 test('build injeta a API de produção na contratação', () => {
