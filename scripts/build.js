@@ -47,6 +47,15 @@ async function copiarAssets() {
   await copiarDiretorio(path.join(PUBLIC, 'js'), path.join(DIST, 'js'));
   await copiarDiretorio(path.join(PUBLIC, 'images'), path.join(DIST, 'images'));
 
+  // Sanitizador do contrato, vendorizado a partir do node_modules para nao
+  // depender de CDN nem de blob commitado no repositorio.
+  const vendorDestino = path.join(DIST, 'js', 'vendor');
+  await sistemaArquivos.mkdir(vendorDestino, { recursive: true });
+  await sistemaArquivos.copyFile(
+    path.join(RAIZ, 'node_modules', 'dompurify', 'dist', 'purify.min.js'),
+    path.join(vendorDestino, 'purify.min.js'),
+  );
+
   const incluirCname = process.env.INCLUIR_CNAME !== 'false';
   const cname = path.join(RAIZ, 'CNAME');
   if (incluirCname) {

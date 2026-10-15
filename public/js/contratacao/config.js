@@ -1,5 +1,13 @@
 (function () {
-  const baseUrl = window.PONTO_AGIL_CONFIG.api.replace(/\/$/, "");
+  var elementoDados = document.getElementById("dados-contratacao");
+  var dadosContratacao = {};
+  try {
+    dadosContratacao = JSON.parse((elementoDados && elementoDados.textContent) || "{}");
+  } catch (erro) {
+    dadosContratacao = {};
+  }
+
+  const baseUrl = String(dadosContratacao.api || "").replace(/\/$/, "");
 
   const API_ENDPOINTS = {
     PLANOS_PUBLICO: "/plano/publico",
