@@ -72,13 +72,15 @@ function renderPlanos() {
     .map((plano) => {
       const faixas = Array.isArray(plano.faixas) ? plano.faixas : [];
       const funcs = Array.isArray(plano.funcionalidades)
-        ? plano.funcionalidades.map((f) => `<li>${f.nome || ""}</li>`).join("")
+        ? plano.funcionalidades
+            .map((f) => `<li>${UtilitariosContratacao.escaparHtml(f.nome || "")}</li>`)
+            .join("")
         : "";
 
       return `
         <article class="plano-picker">
-          <h3>${plano.nome || ""}</h3>
-          ${plano.descricao ? `<p class="ctr-step__hint">${plano.descricao}</p>` : ""}
+          <h3>${UtilitariosContratacao.escaparHtml(plano.nome || "")}</h3>
+          ${plano.descricao ? `<p class="ctr-step__hint">${UtilitariosContratacao.escaparHtml(plano.descricao)}</p>` : ""}
           <div class="faixa-options">
             ${faixas
               .map(
@@ -86,10 +88,10 @@ function renderPlanos() {
               <button
                 type="button"
                 class="faixa-option"
-                data-plan-id="${plano.id}"
-                data-faixa-id="${faixa.id}"
+                data-plan-id="${UtilitariosContratacao.escaparHtml(plano.id)}"
+                data-faixa-id="${UtilitariosContratacao.escaparHtml(faixa.id)}"
               >
-                <span>${faixa.nome || ""}</span>
+                <span>${UtilitariosContratacao.escaparHtml(faixa.nome || "")}</span>
                 <span class="faixa-option__price">R$ ${UtilitariosContratacao.formatCurrencyBRL(faixa.preco)}/mês</span>
               </button>
             `,

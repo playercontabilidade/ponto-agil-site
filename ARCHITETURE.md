@@ -158,13 +158,9 @@ GET /
   → layouts/main.ejs + pages/index.ejs + partials
 ```
 
-Dados injetados no HTML para o cliente:
+Dados injetados no HTML para o cliente saem em um bloco `<script type="application/json" id="dados-pagina">` (nao em globals `window.*`), com `apiBaseUrl`, `planos` (quando houver) e `parceiro` (quando houver). Um bloco JSON nao e executavel pelo navegador, entao a pagina dispensa `script-src 'unsafe-inline'` na CSP. No cliente, `lerDadosPagina('dados-pagina')` (em `public/js/utils/dados_pagina.js`) le e faz o parse desse bloco.
 
-- `window.__PLANOS__` — planos renderizados no servidor
-- `window.__PARCEIRO__` — parceiro da query `?partner=`
-- `window.__CONFIG__.apiBaseUrl` — URL da API
-
-O JS em `public/js/app.js` cuida apenas de interação (menu, slider, planos, animações).
+O JS em `public/js/app.js` cuida apenas de interação (menu, slider, planos, animações). A configuração do gtag saiu do inline e virou o arquivo `public/js/analytics.js`, carregado via `<script src="/js/analytics.js" defer>`.
 
 ### Privacidade — `GET /privacidade`
 
@@ -185,7 +181,7 @@ GET /ouvidoria
   → res.render('layouts/ouvidoria', { configOuvidoria, tipoManifestacao, ... })
 ```
 
-Config injetada em `window.PONTO_AGIL_CONFIG` (baseUrl, endpoints, tipos de manifestação). O formulário roda inteiramente no cliente (`public/js/modules/ouvidoria/`), chamando a API externa via `fetch`.
+Config injetada em `<script type="application/json" id="dados-ouvidoria">` (baseUrl, endpoints, tipos de manifestação), lida no cliente com `lerDadosPagina('dados-ouvidoria')`. O formulário roda inteiramente no cliente (`public/js/modules/ouvidoria/`), chamando a API externa via `fetch`.
 
 ### API interna — `GET /api/planos`
 
@@ -197,7 +193,7 @@ GET /api/planos
   → res.json(planos)
 ```
 
-Disponível apenas com Express em dev. No GitHub Pages o cliente usa `window.__PLANOS__` (build) ou `fetch` direto à API.
+Disponível apenas com Express em dev. No GitHub Pages o cliente usa o bloco `dados-pagina` (build, via `lerDadosPagina`) ou `fetch` direto à API.
 
 ### Build estático — `npm run build`
 

@@ -15,10 +15,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/css', express.static(path.join(raizProjeto, 'public', 'css')));
 app.use('/images', express.static(path.join(raizProjeto, 'public', 'images')));
 app.use('/js', express.static(path.join(raizProjeto, 'public', 'js')));
-
-app.get('/mock.png', (req, res) => {
-  res.sendFile(path.join(raizProjeto, 'mock.png'));
-});
+app.use(
+  '/js/vendor',
+  express.static(path.join(raizProjeto, 'node_modules', 'dompurify', 'dist')),
+);
 
 app.get('/index.html', (req, res) => res.redirect(301, '/'));
 
