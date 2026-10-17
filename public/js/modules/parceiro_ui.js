@@ -1,8 +1,11 @@
+import { lerDadosPagina } from '../utils/dados_pagina.js';
+
 const CHAVE_LOCAL_STORAGE = 'partner';
 
 export function inicializarParceiro() {
-  if (typeof window.__PARCEIRO__ === 'string' && window.__PARCEIRO__) {
-    localStorage.setItem(CHAVE_LOCAL_STORAGE, window.__PARCEIRO__);
+  const parceiro = lerDadosPagina()?.parceiro;
+  if (typeof parceiro === 'string' && parceiro) {
+    localStorage.setItem(CHAVE_LOCAL_STORAGE, parceiro);
   }
 
   const hash = window.location.hash;
