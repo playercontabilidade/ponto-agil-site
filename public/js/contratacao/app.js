@@ -31,6 +31,10 @@ async function resumeFromState() {
 }
 
 async function init() {
+  window.addEventListener("contratacao-sessao-expirada", () => {
+    EstadoContratacao.save({ status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL });
+    showStep(ETAPAS.EMAIL);
+  });
   UtilitariosContratacao.bindMask($("cnpj"), UtilitariosContratacao.maskCnpj);
   UtilitariosContratacao.bindMask($("responsavelCpf"), UtilitariosContratacao.maskCpf);
   UtilitariosContratacao.bindMask($("cep"), UtilitariosContratacao.maskCep);
@@ -238,7 +242,10 @@ function bindEvents() {
 
     try {
       const result = await ApiContratacao.validarEmail(state.contratacaoId, codigo);
-      EstadoContratacao.save({ status: StatusContratacao.normalizeStatus(result.status) || StatusContratacao.STATUS.AGUARDANDO_ASSINATURA });
+      EstadoContratacao.save({
+        status: StatusContratacao.normalizeStatus(result.status) || StatusContratacao.STATUS.AGUARDANDO_ASSINATURA,
+      });
+      ApiContratacao.definirSessaoTemporaria(result.sessionToken);
       stopEmailTimer();
       elementos.aceiteContrato.checked = false;
       showStep(ETAPAS.CONTRATO);
