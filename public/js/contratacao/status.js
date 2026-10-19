@@ -98,7 +98,10 @@
         return "acompanhamento";
       case STATUS.CANCELADA:
       case STATUS.EXPIRADA:
-        return "plano";
+        // Contratações abertas por link administrativo (incluindo cortesia,
+        // regularização, alteração de plano e aditivo) já chegam configuradas.
+        // A etapa de plano só deve existir para uma contratação pública nova.
+        return "expirada";
       default:
         return null;
     }

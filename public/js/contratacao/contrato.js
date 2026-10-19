@@ -171,13 +171,22 @@ async function loadContract() {
 
 function updateAceiteButton() {
   const state = EstadoContratacao.load();
+  const somenteLeitura = Boolean(state.modoPreview);
   const checked = elementos.aceiteContrato.checked;
   const canProceed =
     contratoCarregado &&
     checked &&
     !envioEmAndamento &&
-    StatusContratacao.canAcceptContract(state.status);
+    StatusContratacao.canAcceptContract(state.status) &&
+    !somenteLeitura;
   elementos.btnAceitarContrato.disabled = !canProceed;
+  elementos.aceiteContrato.disabled = somenteLeitura;
+  if (somenteLeitura) {
+    elementos.aceiteContrato.checked = false;
+    elementos.btnAceitarContrato.hidden = true;
+  } else {
+    elementos.btnAceitarContrato.hidden = false;
+  }
 }
 
 function goToPayment(checkoutUrl) {
@@ -186,6 +195,11 @@ function goToPayment(checkoutUrl) {
     status: StatusContratacao.STATUS.AGUARDANDO_PAGAMENTO,
   });
   renderPagamentoStep(updated);
-  showStep(ETAPAS.PAGAMENTO);
+  const estadoAtualizado = EstadoContratacao.load();
+  if (estadoAtualizado.exigePagamento === true) {
+    showStep(ETAPAS.PAGAMENTO);
+  } else {
+    showStep(ETAPAS.ACOMPANHAMENTO);
+  }
   if (checkoutUrl) openCheckout(checkoutUrl);
 }
