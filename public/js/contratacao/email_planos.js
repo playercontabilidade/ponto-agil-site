@@ -57,7 +57,13 @@ function applyPlanoFromParams(planoId, faixaId) {
       ? plano.funcionalidades.map((f) => f.nome).filter(Boolean)
       : [],
   });
-  renderSidebarSummary();
+  renderSidebarSummary({
+    planoNome: plano.nome || "",
+    faixaNome: faixa.nome || "",
+    planoPreco: faixa.preco || 0,
+    planoContinuidadeNome: "",
+    faixaContinuidadeNome: "",
+  });
   return true;
 }
 

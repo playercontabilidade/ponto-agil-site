@@ -30,7 +30,46 @@ async function resumeFromState() {
   return false;
 }
 
+function aplicarSessaoDaUrl() {
+  const fragmento = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : "";
+  const parametrosFragmento = new URLSearchParams(fragmento);
+  const parametrosQuery = new URLSearchParams(window.location.search);
+  const sessionToken =
+    parametrosFragmento.get("sessionToken") || parametrosQuery.get("sessionToken");
+  const previewToken =
+    parametrosFragmento.get("previewToken") || parametrosQuery.get("previewToken");
+  const contratacaoId =
+    parametrosFragmento.get("contratacaoId") ||
+    parametrosFragmento.get("publicId") ||
+    parametrosQuery.get("contratacaoId") ||
+    parametrosQuery.get("publicId") ||
+    window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
+
+  const token = previewToken || sessionToken;
+  if (!token || !contratacaoId) return false;
+
+  ApiContratacao.definirSessaoTemporaria(token);
+  if (previewToken || sessionToken) {
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+  }
+  EstadoContratacao.save({
+    contratacaoId,
+    fluxo: "CONTRATACAO_EXISTENTE",
+    status: null,
+    concluida: false,
+    modoPreview: Boolean(previewToken),
+    contratacaoCreatedAt: Date.now(),
+  });
+  return true;
+}
+
 async function init() {
+  window.addEventListener("contratacao-sessao-expirada", () => {
+    EstadoContratacao.save({ status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL });
+    showStep(ETAPAS.EMAIL);
+  });
   UtilitariosContratacao.bindMask($("cnpj"), UtilitariosContratacao.maskCnpj);
   UtilitariosContratacao.bindMask($("responsavelCpf"), UtilitariosContratacao.maskCpf);
   UtilitariosContratacao.bindMask($("cep"), UtilitariosContratacao.maskCep);
@@ -51,12 +90,33 @@ async function init() {
     );
   }
 
+  aplicarSessaoDaUrl();
+
   const params = new URLSearchParams(window.location.search);
   const planoParam = params.get("planoId");
   const faixaParam = params.get("faixaId");
+  const publicIdDaRota = window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
+  const entrouPorLinkPublico = Boolean(
+    publicIdDaRota &&
+    !params.get("previewToken") &&
+    !params.get("sessionToken") &&
+    !window.location.hash,
+  );
+  if (entrouPorLinkPublico) {
+    EstadoContratacao.save({
+      contratacaoId: publicIdDaRota,
+      fluxo: "CONTRATACAO_EXISTENTE",
+      status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL,
+      modoPreview: false,
+      podeReenviarCodigo: true,
+      podeCancelar: true,
+    });
+  }
 
   if (planoParam && faixaParam && applyPlanoFromParams(planoParam, faixaParam)) {
     if (!(await resumeFromState())) showStep(ETAPAS.EMPRESA);
+  } else if (entrouPorLinkPublico) {
+    showStep(ETAPAS.EMAIL);
   } else if (!(await resumeFromState())) {
     showStep(ETAPAS.PLANO);
     renderPlanos();
@@ -238,7 +298,10 @@ function bindEvents() {
 
     try {
       const result = await ApiContratacao.validarEmail(state.contratacaoId, codigo);
-      EstadoContratacao.save({ status: StatusContratacao.normalizeStatus(result.status) || StatusContratacao.STATUS.AGUARDANDO_ASSINATURA });
+      EstadoContratacao.save({
+        status: StatusContratacao.normalizeStatus(result.status) || StatusContratacao.STATUS.AGUARDANDO_ASSINATURA,
+      });
+      ApiContratacao.definirSessaoTemporaria(result.sessionToken);
       stopEmailTimer();
       elementos.aceiteContrato.checked = false;
       showStep(ETAPAS.CONTRATO);
@@ -309,7 +372,11 @@ function bindEvents() {
       const normalized = applyStatusPayload(result);
       const checkoutUrl = normalized.checkoutUrl;
 
-      if (!checkoutUrl && !StatusContratacao.canOpenCheckout(normalized.status)) {
+      const aguardandoPagamento =
+        StatusContratacao.normalizeStatus(normalized.status) ===
+        StatusContratacao.STATUS.AGUARDANDO_PAGAMENTO;
+
+      if (aguardandoPagamento && !checkoutUrl) {
         throw new Error("Não foi possível obter o link de pagamento. Tente novamente.");
       }
 
@@ -378,6 +445,18 @@ function bindEvents() {
 
   elementos.btnReenviarCodigoEmail?.addEventListener("click", () => {
     reenviarCodigo(elementos.emailMessage);
+  });
+
+  elementos.btnReenviarCodigoExpirada?.addEventListener("click", async () => {
+    await reenviarCodigo(elementos.expiradaMessage);
+    const state = EstadoContratacao.load();
+    if (StatusContratacao.canValidateEmail(state.status)) showStep(ETAPAS.EMAIL);
+  });
+
+  elementos.btnNovaContratacaoExpirada?.addEventListener("click", () => {
+    resetParaNovaContratacao();
+    showStep(EstadoContratacao.hasPlanoSelecionado() ? ETAPAS.EMPRESA : ETAPAS.PLANO);
+    if (!EstadoContratacao.hasPlanoSelecionado()) renderPlanos();
   });
 
   elementos.btnAtualizarStatus?.addEventListener("click", async () => {
