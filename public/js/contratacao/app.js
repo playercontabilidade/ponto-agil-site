@@ -40,6 +40,8 @@ function aplicarSessaoDaUrl() {
     parametrosFragmento.get("sessionToken") || parametrosQuery.get("sessionToken");
   const previewToken =
     parametrosFragmento.get("previewToken") || parametrosQuery.get("previewToken");
+  const accessToken =
+    parametrosFragmento.get("accessToken") || parametrosQuery.get("accessToken");
   const contratacaoId =
     parametrosFragmento.get("contratacaoId") ||
     parametrosFragmento.get("publicId") ||
@@ -47,13 +49,16 @@ function aplicarSessaoDaUrl() {
     parametrosQuery.get("publicId") ||
     window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
 
-  const token = previewToken || sessionToken;
+  const token = previewToken || sessionToken || accessToken;
   if (!token || !contratacaoId) return false;
 
   ApiContratacao.definirSessaoTemporaria(token);
-  if (previewToken || sessionToken) {
-    window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-  }
+  const urlLimpa = new URL(window.location.href);
+  urlLimpa.searchParams.delete("previewToken");
+  urlLimpa.searchParams.delete("sessionToken");
+  urlLimpa.searchParams.delete("accessToken");
+  urlLimpa.hash = "";
+  window.history.replaceState({}, document.title, urlLimpa.pathname + urlLimpa.search);
   EstadoContratacao.save({
     contratacaoId,
     fluxo: "CONTRATACAO_EXISTENTE",
@@ -100,6 +105,7 @@ async function init() {
     publicIdDaRota &&
     !params.get("previewToken") &&
     !params.get("sessionToken") &&
+    !params.get("accessToken") &&
     !window.location.hash,
   );
   if (entrouPorLinkPublico) {
