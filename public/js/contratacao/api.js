@@ -10,7 +10,6 @@
   let sessionToken =
     parametrosUrl.get("previewToken") || parametrosQuery.get("previewToken") ||
     parametrosUrl.get("sessionToken") || parametrosQuery.get("sessionToken") ||
-    parametrosUrl.get("accessToken") || parametrosQuery.get("accessToken") ||
     sessionStorage.getItem(tokenStorageKey) || null;
 
   function createApiError(response, body, message) {
@@ -22,15 +21,16 @@
 
   async function request(path, options) {
     const urlRequisicao = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+    const { semAutorizacao = false, ...opcoesFetch } = options || {};
     const response = await fetch(urlRequisicao, {
-      ...options,
+      ...opcoesFetch,
       headers: {
         Accept: "application/json",
-        ...(sessionToken
+        ...(!semAutorizacao && sessionToken
           ? { Authorization: `Bearer ${sessionToken}` }
           : {}),
-        ...(options?.body ? { "Content-Type": "application/json" } : {}),
-        ...options?.headers,
+        ...(opcoesFetch.body ? { "Content-Type": "application/json" } : {}),
+        ...opcoesFetch.headers,
       },
     });
 
@@ -61,6 +61,14 @@
     return request(API_ENDPOINTS.CRIAR_CONTRATACAO, {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  }
+
+  function acessarPorLink(accessToken) {
+    const parametros = new URLSearchParams({ accessToken });
+    return request(`${API_ENDPOINTS.ACESSAR_POR_LINK}?${parametros.toString()}`, {
+      method: "GET",
+      semAutorizacao: true,
     });
   }
 
@@ -116,6 +124,7 @@
   window.ContratacaoApi = Object.freeze({
     getPlanosPublicos,
     criarContratacao,
+    acessarPorLink,
     validarEmail,
     getContrato,
     aceitarContrato,
