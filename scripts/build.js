@@ -126,6 +126,37 @@ function montarHtmlContratacao() {
   });
 }
 
+function montarHtmlNaoEncontrado() {
+  return `<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Página não encontrada - Ponto Ágil</title>
+    <script>
+      (function () {
+        var rotaContratacao = window.location.pathname.match(/^\\/contratacao\\/([^/]+)\\/?$/);
+        if (!rotaContratacao) return;
+
+        var destino = new URL('/contratacao/', window.location.origin);
+        destino.search = window.location.search;
+        destino.searchParams.set('publicId', decodeURIComponent(rotaContratacao[1]));
+        destino.hash = window.location.hash;
+        window.location.replace(destino.toString());
+      })();
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>Página não encontrada</h1>
+      <p>O endereço informado não existe.</p>
+      <a href="/">Voltar ao início</a>
+    </main>
+  </body>
+</html>`;
+}
+
 async function gravarPaginas() {
   const [htmlInicio, htmlPrivacidade, htmlOuvidoria, htmlContratacao] = await Promise.all([
     montarHtmlInicio(),
@@ -135,6 +166,7 @@ async function gravarPaginas() {
   ]);
 
   await sistemaArquivos.writeFile(path.join(DIST, 'index.html'), htmlInicio, 'utf8');
+  await sistemaArquivos.writeFile(path.join(DIST, '404.html'), montarHtmlNaoEncontrado(), 'utf8');
 
   await sistemaArquivos.mkdir(path.join(DIST, 'privacidade'), { recursive: true });
   await sistemaArquivos.writeFile(

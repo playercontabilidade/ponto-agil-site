@@ -2,11 +2,15 @@
   const { baseUrl, API_ENDPOINTS } = window.PONTO_AGIL_CONTRATACAO_CONFIG;
   const { parseApiError, parseApiBody } = window.ContratacaoUtils;
   const parametrosUrl = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const parametrosQuery = new URLSearchParams(window.location.search);
   const publicIdDaUrl = window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1] ||
-    parametrosUrl.get("publicId") || parametrosUrl.get("contratacaoId") || "global";
+    parametrosUrl.get("publicId") || parametrosUrl.get("contratacaoId") ||
+    parametrosQuery.get("publicId") || parametrosQuery.get("contratacaoId") || "global";
   const tokenStorageKey = `ponto_agil_contratacao_token_${publicIdDaUrl}`;
   let sessionToken =
-    parametrosUrl.get("previewToken") || parametrosUrl.get("sessionToken") ||
+    parametrosUrl.get("previewToken") || parametrosQuery.get("previewToken") ||
+    parametrosUrl.get("sessionToken") || parametrosQuery.get("sessionToken") ||
+    parametrosUrl.get("accessToken") || parametrosQuery.get("accessToken") ||
     sessionStorage.getItem(tokenStorageKey) || null;
 
   function createApiError(response, body, message) {
