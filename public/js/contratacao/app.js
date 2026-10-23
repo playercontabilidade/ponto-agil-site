@@ -1,3 +1,28 @@
+const CHAVE_CODIGO_CONSULTOR = "codigoConsultor";
+const CHAVE_CODIGO_CONSULTOR_LEGADO = "partner";
+const CHAVE_ORIGEM_CONSULTOR = "codigoConsultorOrigemUrl";
+
+function guardarCodigoConsultorContratacao() {
+  const params = new URLSearchParams(window.location.search);
+  const codigo = (params.get("codigoConsultor") || params.get("partner") || "").trim();
+  if (!codigo) return;
+  localStorage.setItem(CHAVE_CODIGO_CONSULTOR, codigo);
+  localStorage.setItem(CHAVE_CODIGO_CONSULTOR_LEGADO, codigo);
+  localStorage.setItem(CHAVE_ORIGEM_CONSULTOR, window.location.href);
+}
+
+function obterCodigoConsultorContratacao() {
+  return (
+    localStorage.getItem(CHAVE_CODIGO_CONSULTOR) ||
+    localStorage.getItem(CHAVE_CODIGO_CONSULTOR_LEGADO) ||
+    ""
+  ).trim();
+}
+
+function obterOrigemConsultorContratacao() {
+  return (localStorage.getItem(CHAVE_ORIGEM_CONSULTOR) || window.location.href).trim();
+}
+
 async function resumeFromState() {
   const state = EstadoContratacao.load();
   fillEmpresaForm(state.empresa);
@@ -31,6 +56,8 @@ async function resumeFromState() {
 }
 
 async function init() {
+  guardarCodigoConsultorContratacao();
+
   UtilitariosContratacao.bindMask($("cnpj"), UtilitariosContratacao.maskCnpj);
   UtilitariosContratacao.bindMask($("responsavelCpf"), UtilitariosContratacao.maskCpf);
   UtilitariosContratacao.bindMask($("cep"), UtilitariosContratacao.maskCep);
@@ -158,6 +185,11 @@ function bindEvents() {
         responsavelEmail: responsavel.responsavelEmail,
         responsavelTelefone: responsavel.responsavelTelefone,
       };
+      const codigoConsultor = obterCodigoConsultorContratacao();
+      if (codigoConsultor) {
+        payload.codigoConsultor = codigoConsultor;
+        payload.origemUrl = obterOrigemConsultorContratacao();
+      }
 
       const result = await ApiContratacao.criarContratacao(payload);
       const contratacaoId = result.contratacaoId;

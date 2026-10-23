@@ -5,6 +5,7 @@ import {
   faixaEhAcimaDe100,
   interpretarErroApi,
 } from '../utils/formatadores.js';
+import { obterCodigoConsultor, obterOrigemConsultorUrl } from './parceiro_ui.js';
 
 const WHATSAPP_URL = 'https://wa.me/5563993124723';
 const FAIXA_ENTERPRISE = 'Acima de 100 colaboradores';
@@ -149,7 +150,10 @@ function vincularModalCheckout() {
       const planoId = botaoPlano.getAttribute('data-plan-id');
       const faixaId = botaoPlano.getAttribute('data-faixa-id');
       if (planoId != null && faixaId != null && planoId !== '' && faixaId !== '') {
-        window.location.href = `/contratacao?planoId=${encodeURIComponent(planoId)}&faixaId=${encodeURIComponent(faixaId)}`;
+        const paramsContratacao = new URLSearchParams({ planoId, faixaId });
+        const codigoConsultor = obterCodigoConsultor();
+        if (codigoConsultor) paramsContratacao.set('codigoConsultor', codigoConsultor);
+        window.location.href = `/contratacao?${paramsContratacao.toString()}`;
       }
       return;
     }
@@ -312,10 +316,23 @@ function vincularFormularioLead() {
       if (textoBotao) textoBotao.textContent = 'Abrindo pagamento...';
       else if (botao) botao.textContent = 'Abrindo pagamento...';
 
+      const codigoConsultor = obterCodigoConsultor();
+      const corpoCobranca = {
+        lead_id: leadId,
+        plano_id: planoId,
+        faixa_id: faixaId,
+        planoId,
+        faixaId,
+      };
+      if (codigoConsultor) {
+        corpoCobranca.codigoConsultor = codigoConsultor;
+        corpoCobranca.origemUrl = obterOrigemConsultorUrl();
+      }
+
       const respostaCobranca = await fetch(`${baseUrl}/cobrancas`, {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lead_id: leadId, plano_id: planoId, faixa_id: faixaId }),
+        body: JSON.stringify(corpoCobranca),
       });
 
       if (!respostaCobranca.ok) throw new Error(await interpretarErroApi(respostaCobranca));

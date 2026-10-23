@@ -8,8 +8,9 @@
                         <div class="hero-title-slider">
                             <div class="slider-container">
                                 <h1 class="hero-title active">
-                                    <span class="text-line">Controle de ponto que</span><br>
-                                    <span class="text-line">realmente funciona.</span>
+                                    <span class="text-line">Do ponto</span><br>
+                                    <span class="text-line">ao <strong>potencial</strong></span><br>
+                                    <span class="text-line">da sua equipe</span>
                                 </h1>
                                 <h1 class="hero-title">
                                     <span class="text-line">Automatize seu RH e</span><br>
@@ -32,20 +33,26 @@
                             </div>
                         </div>
                         <p class="hero-subtitle fade-in" data-scroll-reveal>
-                            Pare de perder tempo com planilhas e processos manuais. O Ponto Ágil une marcação com
-                            reconhecimento facial, conformidade com a Portaria 671 e indicadores de RH — relatórios de
-                            absenteísmo, turnover e clima organizacional — no mesmo lugar.
+                            Plataforma completa de registro de ponto e gestão de jornada. Biometria, analytics e
+                            integração em um único lugar.
                         </p>
                         <div class="hero-bottom">
                             <div class="hero-buttons fade-in" data-scroll-reveal>
-                                <a href="#planos" class="btn btn-primary">Ver planos</a>
-                                <a href="#recursos" class="btn btn-secondary">Ver como funciona</a>
+                                <a href="#planos" class="btn btn-primary">Agendar Demo</a>
+                                <a href="#recursos" class="btn btn-secondary btn-secondary--play">Ver como funciona</a>
                             </div>
                         </div>
                     </div>
                     <div class="hero-image">
                         <div class="prototype-placeholder">
                             <img src="/mock.png" alt="Interface do Ponto Ágil" data-scroll-reveal>
+                            <div class="hero-confirmation-card" aria-hidden="true">
+                                <span class="hero-confirmation-icon"><i class="fa-regular fa-hand"></i></span>
+                                <span>
+                                    <strong>Registro confirmado</strong>
+                                    <small>Biometria verificada · agora</small>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -141,7 +148,7 @@
             </div>
         </div>
     </section>
-    <section class="benefits">
+    <section class="benefits" id="beneficios">
         <div class="container">
             <div class="benefits-header" data-scroll-reveal>
                 <h2 class="section-title">Por que escolher o Ponto Ágil?</h2>
@@ -243,6 +250,71 @@
                     <i class="fa-solid fa-headset"></i>
                     <span>Suporte 24/7</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: programa de parceiros -->
+    <div class="partner-modal" id="partnerModal" hidden aria-hidden="true">
+        <div class="partner-modal__backdrop" data-close-partner-modal tabindex="-1"></div>
+        <div class="partner-modal__panel" role="dialog" aria-modal="true" aria-labelledby="partnerModalTitle">
+            <button type="button" class="partner-modal__close" data-close-partner-modal aria-label="Fechar programa de parceiros">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <div class="partner-modal__hero">
+                <p class="partner-modal__eyebrow">Programa de Parceiros</p>
+                <h2 class="partner-modal__title" id="partnerModalTitle">Cresça com o Ponto Ágil</h2>
+                <p class="partner-modal__subtitle">Cadastre-se para revender ou indicar a plataforma e gerar renda recorrente enquanto ajuda empresas a modernizarem sua gestão de ponto.</p>
+            </div>
+            <div class="partner-modal__body">
+                <div class="partner-benefits" aria-label="Benefícios do programa">
+                    <div class="partner-benefit">
+                        <i class="fa-solid fa-dollar-sign" aria-hidden="true"></i>
+                        <span>Comissão recorrente sobre cada cliente ativo</span>
+                    </div>
+                    <div class="partner-benefit">
+                        <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+                        <span>Painel exclusivo para acompanhar sua carteira</span>
+                    </div>
+                    <div class="partner-benefit">
+                        <i class="fa-solid fa-users" aria-hidden="true"></i>
+                        <span>Suporte comercial e material de vendas incluso</span>
+                    </div>
+                    <div class="partner-benefit">
+                        <i class="fa-regular fa-handshake" aria-hidden="true"></i>
+                        <span>Treinamento completo da plataforma</span>
+                    </div>
+                </div>
+                <form class="partner-form" id="partnerForm" action="#" method="post">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="partner_nome">Nome completo *</label>
+                            <input type="text" id="partner_nome" name="nome" class="form-input" placeholder="Seu nome" required maxlength="120" autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="partner_empresa">Empresa</label>
+                            <input type="text" id="partner_empresa" name="empresa" class="form-input" placeholder="Nome da empresa (opcional)" maxlength="160" autocomplete="organization">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="partner_email">E-mail *</label>
+                            <input type="email" id="partner_email" name="email" class="form-input" placeholder="seu@email.com" required autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="partner_telefone">WhatsApp *</label>
+                            <input type="tel" id="partner_telefone" name="telefone" class="form-input" placeholder="(00) 00000-0000" required maxlength="20" autocomplete="tel">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="partner_mensagem">Conte um pouco sobre você</label>
+                        <textarea id="partner_mensagem" name="mensagem" class="form-input partner-form__textarea" placeholder="Ex: sou consultor de RH e atendo médias empresas na minha região..." maxlength="600"></textarea>
+                    </div>
+                    <div id="partner-form-message" class="form-message" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary btn-full btn-submit">
+                        <span class="btn-text">Quero ser Parceiro</span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>

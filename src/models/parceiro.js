@@ -1,4 +1,4 @@
-const CHAVE_LOCAL_STORAGE = 'partner';
+const CHAVE_LOCAL_STORAGE = 'codigoConsultor';
 
 function normalizarCodigo(valor) {
   const codigo = String(valor ?? '').trim();
@@ -6,7 +6,7 @@ function normalizarCodigo(valor) {
 }
 
 function obterDaQuery(query) {
-  return normalizarCodigo(query?.partner);
+  return normalizarCodigo(query?.codigoConsultor ?? query?.partner);
 }
 
 module.exports = {
