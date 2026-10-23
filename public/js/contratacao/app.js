@@ -30,7 +30,7 @@ async function resumeFromState() {
   return false;
 }
 
-function aplicarSessaoDaUrl() {
+async function aplicarSessaoDaUrl() {
   const fragmento = window.location.hash.startsWith("#")
     ? window.location.hash.slice(1)
     : "";
@@ -49,8 +49,14 @@ function aplicarSessaoDaUrl() {
     parametrosQuery.get("publicId") ||
     window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
 
-  const token = previewToken || sessionToken || accessToken;
-  if (!token || !contratacaoId) return false;
+  let token = previewToken || sessionToken;
+  if (!contratacaoId || (!token && !accessToken)) return false;
+
+  if (accessToken) {
+    const sessao = await ApiContratacao.acessarPorLink(accessToken);
+    token = sessao?.sessionToken;
+    if (!token) throw new Error("A API não retornou uma sessão para o link de acesso.");
+  }
 
   ApiContratacao.definirSessaoTemporaria(token);
   const urlLimpa = new URL(window.location.href);
@@ -95,22 +101,50 @@ async function init() {
     );
   }
 
-  aplicarSessaoDaUrl();
+  let erroAcessoLink = null;
+  let sessaoAplicada = false;
+  try {
+    sessaoAplicada = await aplicarSessaoDaUrl();
+  } catch (erro) {
+    erroAcessoLink = erro;
+  }
 
   const params = new URLSearchParams(window.location.search);
   const planoParam = params.get("planoId");
   const faixaParam = params.get("faixaId");
   const publicIdDaRota = window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
+  const publicIdDaUrl = publicIdDaRota || params.get("publicId") || params.get("contratacaoId");
   const entrouPorLinkPublico = Boolean(
-    publicIdDaRota &&
+    publicIdDaUrl &&
+    !sessaoAplicada &&
     !params.get("previewToken") &&
     !params.get("sessionToken") &&
     !params.get("accessToken") &&
     !window.location.hash,
   );
+  if (erroAcessoLink && publicIdDaUrl) {
+    EstadoContratacao.save({
+      contratacaoId: publicIdDaUrl,
+      fluxo: "CONTRATACAO_EXISTENTE",
+      status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL,
+      modoPreview: false,
+      podeReenviarCodigo: true,
+      podeCancelar: true,
+    });
+    showStep(ETAPAS.EMAIL);
+    UtilitariosContratacao.showMessage(
+      elementos.emailMessage,
+      erroAcessoLink instanceof Error
+        ? erroAcessoLink.message
+        : "Não foi possível acessar a contratação por este link.",
+      "error",
+    );
+    bindEvents();
+    return;
+  }
   if (entrouPorLinkPublico) {
     EstadoContratacao.save({
-      contratacaoId: publicIdDaRota,
+      contratacaoId: publicIdDaUrl,
       fluxo: "CONTRATACAO_EXISTENTE",
       status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL,
       modoPreview: false,

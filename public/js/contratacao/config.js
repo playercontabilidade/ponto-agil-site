@@ -4,6 +4,7 @@
   const API_ENDPOINTS = {
     PLANOS_PUBLICO: "/plano/publico",
     CRIAR_CONTRATACAO: "/public/contratacoes",
+    ACESSAR_POR_LINK: "/public/contratacoes/acesso",
     VALIDAR_EMAIL: (id) =>
       `/public/contratacoes/${encodeURIComponent(String(id ?? "").trim())}/validar-email`,
     CONTRATO: (id) =>
