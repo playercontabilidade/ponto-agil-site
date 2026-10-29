@@ -35,6 +35,7 @@ const ORDEM_INDICADOR_ETAPAS = ["empresa", "responsavel", "contrato", "pagamento
 let etapaAtual = ETAPAS.PLANO;
 let planosEmCache = [];
 let identificadorTemporizadorEmail = null;
+let identificadorTemporizadorSessao = null;
 let identificadorConsultaStatus = null;
 let contratoCarregado = false;
 let zoomContrato = 100;
@@ -98,7 +99,8 @@ const elementos = {
   sidebarPlanoNome: document.getElementById("sidebarPlanoNome"),
   sidebarFaixa: document.getElementById("sidebarFaixa"),
   sidebarPreco: document.getElementById("sidebarPreco"),
-  sidebarRecommended: document.getElementById("sidebarRecommended"),
+  sessionTimer: document.getElementById("sessionTimer"),
+  sessionTimerValue: document.getElementById("sessionTimerValue"),
   conflictPanel: document.getElementById("conflictPanel"),
   conflictMessage: document.getElementById("conflictMessage"),
   conflictEmail: document.getElementById("conflictEmail"),
@@ -205,10 +207,6 @@ function renderSidebarSummary(resumo = EstadoContratacao.load()) {
     elementos.sidebarPreco.textContent = `R$ ${UtilitariosContratacao.formatCurrencyBRL(resumo.planoPreco)}`;
   }
 
-  const nome = String(resumo.planoNome || resumo.planoContinuidadeNome || "").toLowerCase();
-  const isRecommended =
-    nome.includes("essencial") || nome.includes("profissional") || nome.includes("recomend");
-  if (elementos.sidebarRecommended) elementos.sidebarRecommended.hidden = !isRecommended;
 }
 
 function applyStatusPayload(payload) {
@@ -361,14 +359,20 @@ async function navigateByStatus(preferredStep) {
   }
 
   // A contratação concluída deve abrir no acompanhamento, inclusive no
-  // preview administrativo; o contrato fica disponível para consulta, mas
-  // não deve reabrir a etapa de assinatura.
+  // preview administrativo. Assim o preview reflete o status real final.
   if (
     concluida ||
     status === StatusContratacao.STATUS.CONCLUIDA
   ) {
     renderAcompanhamentoStep(state);
     showStep(ETAPAS.ACOMPANHAMENTO);
+    return;
+  }
+
+  // Para os demais status, o preview abre o contrato somente para leitura.
+  if (estaEmModoPreview() && StatusContratacao.canViewContract(status)) {
+    showStep(ETAPAS.CONTRATO);
+    await loadContract();
     return;
   }
 
@@ -382,12 +386,6 @@ async function navigateByStatus(preferredStep) {
     if (state.checkoutUrl && !checkoutAberto && !estaEmModoPreview()) {
       openCheckout(state.checkoutUrl);
     }
-    return;
-  }
-
-  if (estaEmModoPreview() && StatusContratacao.canViewContract(status)) {
-    showStep(ETAPAS.CONTRATO);
-    await loadContract();
     return;
   }
 

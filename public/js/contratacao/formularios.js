@@ -90,12 +90,23 @@ function handleConflict409(erro) {
   );
 }
 
+function podeReenviarCodigoAntesDaValidacao(state) {
+  return Boolean(state?.podeReenviarCodigo) &&
+    state?.dataEmailValidado == null &&
+    StatusContratacao.canValidateEmail(StatusContratacao.normalizeStatus(state?.status));
+}
+
+function podeCancelarAntesDaValidacao(state) {
+  return Boolean(state?.contratacaoId) &&
+    state?.dataEmailValidado == null &&
+    StatusContratacao.normalizeStatus(state?.status) === StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL;
+}
+
 function updateEmailActionButtons() {
   const state = EstadoContratacao.load();
-  const podeReenviar =
-    Boolean(state.podeReenviarCodigo) && StatusContratacao.canValidateEmail(StatusContratacao.normalizeStatus(state.status));
+  const podeReenviar = podeReenviarCodigoAntesDaValidacao(state);
   elementos.btnReenviarCodigoEmail.hidden = !podeReenviar;
-  elementos.btnCancelarRecomecar.hidden = !state.podeCancelar;
+  elementos.btnCancelarRecomecar.hidden = !state.podeCancelar || !podeCancelarAntesDaValidacao(state);
   elementos.btnRecomecarLocal.hidden = Boolean(state.contratacaoId);
 }
 
@@ -133,6 +144,14 @@ async function continuarContratacao(messageEl) {
 async function reenviarCodigo(messageEl) {
   const state = EstadoContratacao.load();
   if (!state.contratacaoId || envioEmAndamento) return;
+  if (!podeReenviarCodigoAntesDaValidacao(state)) {
+    UtilitariosContratacao.showMessage(
+      messageEl || elementos.emailMessage,
+      "O código só pode ser reenviado antes da validação do e-mail.",
+      "error",
+    );
+    return;
+  }
 
   envioEmAndamento = true;
   if (messageEl) UtilitariosContratacao.showMessage(messageEl, "", "");
@@ -175,7 +194,7 @@ async function cancelarERecomecar(messageEl) {
     return;
   }
 
-  if (!state.podeCancelar) {
+  if (!state.podeCancelar || !podeCancelarAntesDaValidacao(state)) {
     UtilitariosContratacao.showMessage(
       messageEl || elementos.emailMessage,
       "Não é possível cancelar esta contratação pelo portal. Entre em contato com o suporte.",
@@ -219,10 +238,12 @@ function handleExpiredContratacao(message, { cancelada = false } = {}) {
   stopStatusPolling();
   stopEmailTimer();
   hideConflictPanel();
+  const stateBeforeExpiration = EstadoContratacao.load();
+  const podeReenviarAntesDaValidacao = !cancelada && podeReenviarCodigoAntesDaValidacao(stateBeforeExpiration);
   EstadoContratacao.save({
     status: cancelada ? StatusContratacao.STATUS.CANCELADA : StatusContratacao.STATUS.EXPIRADA,
     concluida: false,
-    podeReenviarCodigo: !cancelada,
+    podeReenviarCodigo: podeReenviarAntesDaValidacao,
     podeCancelar: false,
   });
   contratoCarregado = false;
@@ -241,7 +262,9 @@ function handleExpiredContratacao(message, { cancelada = false } = {}) {
   if (elementos.expiradaTitulo) {
     elementos.expiradaTitulo.textContent = cancelada ? "Contratação cancelada" : "Código expirado";
   }
-  if (elementos.btnReenviarCodigoExpirada) elementos.btnReenviarCodigoExpirada.hidden = cancelada;
+  // O reenvio pertence somente à etapa de validação do e-mail.
+  // A tela de código/link expirado deve exibir apenas a orientação ao usuário.
+  if (elementos.btnReenviarCodigoExpirada) elementos.btnReenviarCodigoExpirada.hidden = true;
   if (elementos.btnNovaContratacaoExpirada) elementos.btnNovaContratacaoExpirada.hidden = !permitirNovaContratacao;
   showStep(ETAPAS.EXPIRADA);
 }
