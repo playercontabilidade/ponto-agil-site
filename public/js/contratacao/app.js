@@ -9,6 +9,25 @@ async function resumeFromState() {
       await navigateByStatus();
       return true;
     } catch (erro) {
+      if (state.modoPreview) {
+        UtilitariosContratacao.showMessage(
+          elementos.planoMessage,
+          "Não foi possível carregar o preview desta contratação. Gere um novo preview e tente novamente.",
+          "error",
+        );
+        return true;
+      }
+      if (ApiContratacao.temSessaoTemporaria()) {
+        showStep(ETAPAS.CONTRATO);
+        UtilitariosContratacao.showMessage(
+          elementos.contratoMessage,
+          erro instanceof Error
+            ? erro.message
+            : "Não foi possível atualizar a contratação. Tente novamente.",
+          "error",
+        );
+        return true;
+      }
       UtilitariosContratacao.showMessage(
         elementos.planoMessage,
         erro instanceof Error ? erro.message : "Não foi possível recuperar a contratação.",
@@ -50,15 +69,19 @@ async function aplicarSessaoDaUrl() {
     window.location.pathname.match(/^\/contratacao\/([^/]+)\/?$/)?.[1];
 
   let token = previewToken || sessionToken;
-  if (!contratacaoId || (!token && !accessToken)) return false;
+  const sessaoPersistida = !token && !accessToken && ApiContratacao.temSessaoTemporaria();
+  if (!contratacaoId || (!token && !accessToken && !sessaoPersistida)) return false;
 
   if (accessToken) {
     const sessao = await ApiContratacao.acessarPorLink(accessToken);
     token = sessao?.sessionToken;
     if (!token) throw new Error("A API não retornou uma sessão para o link de acesso.");
+    ApiContratacao.definirSessaoTemporaria(token, sessao.expiresAt);
+    EstadoContratacao.save({ sessionExpiresAt: sessao.expiresAt });
+    iniciarTemporizadorSessao();
   }
 
-  ApiContratacao.definirSessaoTemporaria(token);
+  if (!accessToken && token) ApiContratacao.definirSessaoTemporaria(token);
   const urlLimpa = new URL(window.location.href);
   urlLimpa.searchParams.delete("previewToken");
   urlLimpa.searchParams.delete("sessionToken");
@@ -70,15 +93,33 @@ async function aplicarSessaoDaUrl() {
     fluxo: "CONTRATACAO_EXISTENTE",
     status: null,
     concluida: false,
-    modoPreview: Boolean(previewToken),
+    planoId: previewToken ? null : EstadoContratacao.load().planoId,
+    faixaId: previewToken ? null : EstadoContratacao.load().faixaId,
+    planoNome: previewToken ? "" : EstadoContratacao.load().planoNome,
+    faixaNome: previewToken ? "" : EstadoContratacao.load().faixaNome,
+    modoPreview: Boolean(previewToken) || (sessaoPersistida && EstadoContratacao.load().modoPreview),
     contratacaoCreatedAt: Date.now(),
   });
   return true;
 }
 
 async function init() {
+  if (EstadoContratacao.load().sessionExpiresAt) iniciarTemporizadorSessao();
   window.addEventListener("contratacao-sessao-expirada", () => {
-    EstadoContratacao.save({ status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL });
+    pararTemporizadorSessao();
+    EstadoContratacao.save({ sessionExpiresAt: null });
+    const state = EstadoContratacao.load();
+    if (state.status === StatusContratacao.STATUS.AGUARDANDO_ASSINATURA ||
+        state.status === StatusContratacao.STATUS.CONTRATO_ASSINADO ||
+        state.status === StatusContratacao.STATUS.AGUARDANDO_PAGAMENTO) {
+      UtilitariosContratacao.showMessage(
+        elementos.contratoMessage,
+        "Sua sessão expirou. Por segurança, o contrato não pode mais ser acessado nesta sessão. Solicite um novo link ao contato comercial para continuar a assinatura.",
+        "error",
+      );
+      showStep(ETAPAS.CONTRATO);
+      return;
+    }
     showStep(ETAPAS.EMAIL);
   });
   UtilitariosContratacao.bindMask($("cnpj"), UtilitariosContratacao.maskCnpj);
@@ -126,18 +167,13 @@ async function init() {
     EstadoContratacao.save({
       contratacaoId: publicIdDaUrl,
       fluxo: "CONTRATACAO_EXISTENTE",
-      status: StatusContratacao.STATUS.AGUARDANDO_VALIDACAO_EMAIL,
+      status: StatusContratacao.STATUS.EXPIRADA,
       modoPreview: false,
-      podeReenviarCodigo: true,
-      podeCancelar: true,
+      podeReenviarCodigo: false,
+      podeCancelar: false,
     });
-    showStep(ETAPAS.EMAIL);
-    UtilitariosContratacao.showMessage(
-      elementos.emailMessage,
-      erroAcessoLink instanceof Error
-        ? erroAcessoLink.message
-        : "Não foi possível acessar a contratação por este link.",
-      "error",
+    handleExpiredContratacao(
+      "Este link de contratação expirou ou não está mais disponível. Solicite um novo link ao seu contato comercial.",
     );
     bindEvents();
     return;
@@ -341,7 +377,10 @@ function bindEvents() {
       EstadoContratacao.save({
         status: StatusContratacao.normalizeStatus(result.status) || StatusContratacao.STATUS.AGUARDANDO_ASSINATURA,
       });
-      ApiContratacao.definirSessaoTemporaria(result.sessionToken);
+      ApiContratacao.definirSessaoTemporaria(result.sessionToken, result.expiresAt);
+      EstadoContratacao.save({ sessionExpiresAt: result.expiresAt });
+      iniciarTemporizadorSessao();
+      await syncWithServer();
       stopEmailTimer();
       elementos.aceiteContrato.checked = false;
       showStep(ETAPAS.CONTRATO);
@@ -349,6 +388,16 @@ function bindEvents() {
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : "Código inválido.";
       const attempts = EstadoContratacao.incrementEmailAttempts();
+      const etapaJaAvancou = /etapa inválida/i.test(mensagem);
+
+      if (etapaJaAvancou) {
+        UtilitariosContratacao.showMessage(
+          elementos.emailMessage,
+          "Este código não está mais disponível porque a contratação já avançou para a próxima etapa. Solicite um novo link ao seu contato comercial.",
+          "error",
+        );
+        return;
+      }
 
       if (
         attempts.emailAttempts >= EMAIL_MAX_ATTEMPTS ||
@@ -436,6 +485,7 @@ function bindEvents() {
       updateAceiteButton();
     }
   });
+
 
   elementos.btnContractZoomIn?.addEventListener("click", () => {
     zoomContrato = Math.min(150, zoomContrato + 10);

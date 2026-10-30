@@ -160,7 +160,7 @@ async function loadContract() {
   } catch (erro) {
     elementos.contractContent.innerHTML = "";
     const mensagem = erro instanceof Error ? erro.message : "Não foi possível carregar o contrato.";
-    if (/valid/i.test(mensagem) || /e-?mail/i.test(mensagem)) {
+    if (/e-?mail/i.test(mensagem)) {
       showStep(ETAPAS.EMAIL);
     }
     UtilitariosContratacao.showMessage(elementos.contratoMessage, mensagem, "error");
@@ -188,6 +188,7 @@ function updateAceiteButton() {
     elementos.btnAceitarContrato.hidden = false;
   }
 }
+
 
 function goToPayment(checkoutUrl) {
   const updated = EstadoContratacao.save({

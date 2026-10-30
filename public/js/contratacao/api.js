@@ -54,7 +54,10 @@
   }
 
   function getPlanosPublicos() {
-    return request(API_ENDPOINTS.PLANOS_PUBLICO, { method: "GET" });
+    return request(API_ENDPOINTS.PLANOS_PUBLICO, {
+      method: "GET",
+      semAutorizacao: true,
+    });
   }
 
   function criarContratacao(payload) {
@@ -115,10 +118,19 @@
     });
   }
 
-  function definirSessaoTemporaria(token) {
+  function definirSessaoTemporaria(token, expiresAt) {
     sessionToken = token || null;
-    if (sessionToken) sessionStorage.setItem(tokenStorageKey, sessionToken);
-    else sessionStorage.removeItem(tokenStorageKey);
+    if (sessionToken) {
+      sessionStorage.setItem(tokenStorageKey, sessionToken);
+      if (expiresAt) sessionStorage.setItem(`${tokenStorageKey}_expiresAt`, expiresAt);
+    } else {
+      sessionStorage.removeItem(tokenStorageKey);
+      sessionStorage.removeItem(`${tokenStorageKey}_expiresAt`);
+    }
+  }
+
+  function temSessaoTemporaria() {
+    return Boolean(sessionToken);
   }
 
   window.ContratacaoApi = Object.freeze({
@@ -133,5 +145,6 @@
     cancelarContratacao,
     regularizarCortesia,
     definirSessaoTemporaria,
+    temSessaoTemporaria,
   });
 })();

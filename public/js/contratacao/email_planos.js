@@ -30,6 +30,32 @@ function stopEmailTimer() {
   identificadorTemporizadorEmail = null;
 }
 
+function atualizarTemporizadorSessao() {
+  const state = EstadoContratacao.load();
+  const expiresAt = Date.parse(state.sessionExpiresAt || "");
+  if (!expiresAt || !elementos.sessionTimer || !elementos.sessionTimerValue) return;
+  const restante = expiresAt - Date.now();
+  elementos.sessionTimer.hidden = false;
+  if (restante <= 0) {
+    pararTemporizadorSessao();
+    window.dispatchEvent(new CustomEvent("contratacao-sessao-expirada"));
+    return;
+  }
+  elementos.sessionTimerValue.textContent = UtilitariosContratacao.formatCountdown(restante);
+}
+
+function iniciarTemporizadorSessao() {
+  pararTemporizadorSessao();
+  atualizarTemporizadorSessao();
+  identificadorTemporizadorSessao = setInterval(atualizarTemporizadorSessao, 1000);
+}
+
+function pararTemporizadorSessao() {
+  clearInterval(identificadorTemporizadorSessao);
+  identificadorTemporizadorSessao = null;
+  if (elementos.sessionTimer) elementos.sessionTimer.hidden = true;
+}
+
 async function loadPlanos() {
   planosEmCache = await ApiContratacao.getPlanosPublicos();
   if (!Array.isArray(planosEmCache)) planosEmCache = [];
