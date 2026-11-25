@@ -6,7 +6,7 @@ import {
   interpretarErroApi,
 } from '../utils/formatadores.js';
 
-const WHATSAPP_URL = 'https://wa.me/5563993124723';
+const WHATSAPP_URL = 'https://wa.me/5511994453204';
 const FAIXA_ENTERPRISE = 'Acima de 100 colaboradores';
 
 let cachePlanos = [];
